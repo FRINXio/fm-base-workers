@@ -1,5 +1,5 @@
 import time
-import worker_wrapper
+from conductor.FrinxConductorWrapper import FrinxConductorWrapper
 from frinx_rest import conductor_url_base, conductor_headers
 import cli_worker
 import netconf_worker
@@ -18,7 +18,7 @@ def main():
         os.remove(healtchchek_file_path)
 
     print('Starting FRINX workers')
-    cc = worker_wrapper.FrinxConductorWrapper(conductor_url_base, 1, 1, headers=conductor_headers)
+    cc = FrinxConductorWrapper(conductor_url_base, 1, 1, headers=conductor_headers)
     cc.start_queue_polling()
     register_workers(cc)
     import_workflows(workflows_folder_path)
