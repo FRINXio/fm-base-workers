@@ -3,7 +3,7 @@ FROM python:3.6.10-buster
 RUN apt-get update
 
 # Copy conductor integration files
-RUN pip3 install -i https://test.pypi.org/simple/ frinx-conductor==1.0.0
+RUN pip install -i https://test.pypi.org/simple/ frinx-conductor-client
 
 # Install package dependencies
 RUN pip3 install requests
