@@ -3,8 +3,8 @@ import os
 from http.cookies import SimpleCookie
 
 uniconfig_url_base = os.getenv("UNICONFIG_URL_BASE","http://uniconfig:8181/rests")
-elastic_url_base = "http://elasticsearch:9200"
-conductor_url_base = "http://workflow-proxy:8088/proxy/api"
+elastic_url_base = os.getenv("ELASTICSEACRH_URL_BASE","http://elasticsearch:9200")
+conductor_url_base = os.getenv("CONDUCTOR_URL_BASE","http://workflow-proxy:8088/proxy/api")
 
 # username = ''
 # password = ''
@@ -14,11 +14,15 @@ conductor_url_base = "http://workflow-proxy:8088/proxy/api"
 #     username = lines[0].split(':')[1].rstrip('\n')
 #     password = lines[1].split(':')[1].rstrip('\n')
 
-uniconfig_credentials = ('admin', 'admin')
+uniconfig_user = os.getenv("UNICONFIG_USER",'admin')
+uniconfig_passwd = os.getenv("UNICONFIG_PASSWD",'admin')
+uniconfig_credentials = (uniconfig_user, uniconfig_passwd)
 # uniconfig_credentials = (username, password)
 uniconfig_headers = {"Content-Type": "application/json"}
 elastic_headers = {"Content-Type": "application/json"}
-conductor_headers = {"Content-Type": "application/json", "x-tenant-id": "frinx", "from": "uniflow-micros", "x-auth-user-groups": "network-admin"}
+
+x_auth_user_group = os.getenv("X_AUTH_USER_GROUP","network-admin")
+conductor_headers = {"Content-Type": "application/json", "x-tenant-id": "frinx", "from": "uniflow-micros", "x-auth-user-groups": x_auth_user_group}
 
 additional_uniconfig_request_params = {
     'auth': uniconfig_credentials,
