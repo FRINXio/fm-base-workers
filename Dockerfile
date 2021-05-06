@@ -16,9 +16,10 @@ RUN pip3 install -r requirements.txt
 # Copy workers and workflows
 COPY ./workers /home/app/workers
 COPY ./workflows /home/app/workflows
+COPY ./main.py /home/app
 
-WORKDIR /home/app/workers
-RUN python3 -m unittest uniconfig_worker_test.py
-RUN python3 -m unittest netconf_worker_test.py
-RUN python3 -m unittest cli_worker_test.py
+WORKDIR /home/app/
+RUN python3 -m unittest workers/uniconfig_worker_test.py
+RUN python3 -m unittest workers/netconf_worker_test.py
+RUN python3 -m unittest workers/cli_worker_test.py
 ENTRYPOINT [ "python3", "main.py" ]
