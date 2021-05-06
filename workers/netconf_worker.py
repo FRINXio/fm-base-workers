@@ -6,7 +6,7 @@ from string import Template
 
 import requests
 
-from frinx_rest import uniconfig_url_base, additional_uniconfig_request_params, parse_response, elastic_url_base, elastic_headers, add_uniconfig_tx_cookie
+from workers.frinx_rest import uniconfig_url_base, additional_uniconfig_request_params, parse_response, elastic_url_base, elastic_headers, add_uniconfig_tx_cookie
 
 uniconfig_url_netconf_mount = uniconfig_url_base + "/data/network-topology:network-topology/topology=topology-netconf/node=$id"
 uniconfig_url_netconf_mount_oper = uniconfig_url_base + "/data/network-topology:network-topology/topology=topology-netconf/node=$id?content=nonconfig"

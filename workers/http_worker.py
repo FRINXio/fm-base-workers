@@ -6,7 +6,7 @@ from string import Template
 
 import requests
 
-from frinx_rest import parse_response
+from workers.frinx_rest import parse_response
 
 
 # Example 1: simple GET request returning HTML

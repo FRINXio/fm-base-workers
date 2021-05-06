@@ -1,4 +1,4 @@
-import uniconfig_worker
+from workers import uniconfig_worker
 
 # Uniconfig RPCs
 
