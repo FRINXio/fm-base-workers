@@ -1,7 +1,7 @@
 import os
 import requests
 import traceback
-from workers.frinx_rest import conductor_url_base, conductor_headers
+from frinx_conductor_workers.frinx_rest import conductor_url_base, conductor_headers
 
 workflow_import_url = conductor_url_base + '/metadata/workflow'
 

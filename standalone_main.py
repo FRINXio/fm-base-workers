@@ -1,4 +1,4 @@
-import workers.frinx_rest
+import frinx_conductor_workers.frinx_rest
 frinx_rest.uniconfig_url_base = "http://localhost:8181/rests"
 import json
 import time

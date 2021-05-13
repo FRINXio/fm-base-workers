@@ -8,7 +8,7 @@ from string import Template
 
 import requests
 
-from workers.frinx_rest import uniconfig_url_base, uniconfig_headers, additional_uniconfig_request_params, parse_response, parse_header, add_uniconfig_tx_cookie
+from frinx_conductor_workers.frinx_rest import uniconfig_url_base, uniconfig_headers, additional_uniconfig_request_params, parse_response, parse_header, add_uniconfig_tx_cookie
 
 uniconfig_url_uniconfig_config_shallow = uniconfig_url_base + "/data/network-topology:network-topology/topology=uniconfig?content=config&depth=3"
 uniconfig_url_uniconfig_oper = uniconfig_url_base + "/data/network-topology:network-topology/topology=uniconfig?content=nonconfig"

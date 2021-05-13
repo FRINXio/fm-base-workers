@@ -2,8 +2,8 @@ import json
 from unittest.mock import patch
 import unittest
 
-import workers.netconf_worker
-from workers.frinx_rest import uniconfig_url_base
+import frinx_conductor_workers.netconf_worker
+from frinx_conductor_workers.frinx_rest import uniconfig_url_base
 
 netconf_node_connecting = {
     "node": [
@@ -99,9 +99,9 @@ class MockResponse:
 
 class TestMount(unittest.TestCase):
     def test_mount_new_device(self):
-        with patch('workers.netconf_worker.requests.put') as mock:
+        with patch('frinx_conductor_workers.netconf_worker.requests.put') as mock:
             mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 201)
-            request = workers.netconf_worker.execute_mount_netconf(
+            request = frinx_conductor_workers.netconf_worker.execute_mount_netconf(
                 {"inputData": {"device_id": "xr6", "host": "192.168.1.1", "port": "830", "keepalive-delay": "1000",
                                "tcp-only": "false", "username": "name", "password": "password"}})
             self.assertEqual(request["status"], "COMPLETED")
@@ -111,9 +111,9 @@ class TestMount(unittest.TestCase):
             self.assertEqual(request["output"]["response_body"], {})
 
     def test_mount_existing_device(self):
-        with patch('workers.netconf_worker.requests.put') as mock:
+        with patch('frinx_conductor_workers.netconf_worker.requests.put') as mock:
             mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 204)
-            request = workers.netconf_worker.execute_mount_netconf(
+            request = frinx_conductor_workers.netconf_worker.execute_mount_netconf(
                 {"inputData": {"device_id": "xr6", "host": "192.168.1.1", "port": "830", "keepalive-delay": "1000",
                                "tcp-only": "false", "username": "name", "password": "password"}})
             self.assertEqual(request["status"], "COMPLETED")
@@ -125,9 +125,9 @@ class TestMount(unittest.TestCase):
 
 class TestUnmount(unittest.TestCase):
     def test_unmount_existing_device(self):
-        with patch('workers.netconf_worker.requests.delete') as mock:
+        with patch('frinx_conductor_workers.netconf_worker.requests.delete') as mock:
             mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 204)
-            request = workers.netconf_worker.execute_unmount_netconf({"inputData": {"device_id": "xr6"}})
+            request = frinx_conductor_workers.netconf_worker.execute_unmount_netconf({"inputData": {"device_id": "xr6"}})
             self.assertEqual(request["status"], "COMPLETED")
             self.assertEqual(request["output"]["url"], uniconfig_url_base
                              + "/data/network-topology:network-topology/topology=topology-netconf/node=xr6")
@@ -137,9 +137,9 @@ class TestUnmount(unittest.TestCase):
 
 class TestReadStructuredData(unittest.TestCase):
     def test_read_structured_data_with_device(self):
-        with patch('workers.netconf_worker.requests.get') as mock:
+        with patch('frinx_conductor_workers.netconf_worker.requests.get') as mock:
             mock.return_value = MockResponse(bytes(json.dumps(alarms_response), encoding='utf-8'), 200)
-            request = workers.netconf_worker.read_structured_data(
+            request = frinx_conductor_workers.netconf_worker.read_structured_data(
                 {"inputData": {"device_id": "xr5", "uri": "/openconfig-system/system/alarms"}})
             self.assertEqual(request["status"], "COMPLETED")
             self.assertEqual(request["output"]["url"],
@@ -155,9 +155,9 @@ class TestReadStructuredData(unittest.TestCase):
                              "Transceiver Missing - Link Down")
 
     def test_read_structured_data_no_device(self):
-        with patch('workers.netconf_worker.requests.get') as mock:
+        with patch('frinx_conductor_workers.netconf_worker.requests.get') as mock:
             mock.return_value = MockResponse(bytes(json.dumps(bad_request_response), encoding='utf-8'), 404)
-            request = workers.netconf_worker.read_structured_data(
+            request = frinx_conductor_workers.netconf_worker.read_structured_data(
                 {"inputData": {"device_id": "", "uri": "/openconfig-system/system/alarms"}})
             self.assertEqual(request["status"], "FAILED")
             self.assertEqual(request["output"]["response_code"], 404)
@@ -168,9 +168,9 @@ class TestReadStructuredData(unittest.TestCase):
 
 class TestCheckCliConnected(unittest.TestCase):
     def test_execute_check_connected_netconf_connecting(self):
-        with patch('workers.netconf_worker.requests.get') as mock:
+        with patch('frinx_conductor_workers.netconf_worker.requests.get') as mock:
             mock.return_value = MockResponse(bytes(json.dumps(netconf_node_connecting), encoding='utf-8'), 200)
-            request = workers.netconf_worker.execute_check_connected_netconf({"inputData": {"device_id": "xr6"}})
+            request = frinx_conductor_workers.netconf_worker.execute_check_connected_netconf({"inputData": {"device_id": "xr6"}})
             self.assertEqual(request["status"], "FAILED")
             self.assertEqual(request["output"]["url"], uniconfig_url_base
                              + "/data/network-topology:network-topology/topology=topology-netconf"
@@ -179,9 +179,9 @@ class TestCheckCliConnected(unittest.TestCase):
                              "connecting")
 
     def test_execute_check_connected_netconf_connected(self):
-        with patch('workers.netconf_worker.requests.get') as mock:
+        with patch('frinx_conductor_workers.netconf_worker.requests.get') as mock:
             mock.return_value = MockResponse(bytes(json.dumps(netconf_node_connected), encoding='utf-8'), 200)
-            request = workers.netconf_worker.execute_check_connected_netconf({"inputData": {"device_id": "xr6"}})
+            request = frinx_conductor_workers.netconf_worker.execute_check_connected_netconf({"inputData": {"device_id": "xr6"}})
             self.assertEqual(request["status"], "COMPLETED")
             self.assertEqual(request["output"]["url"], uniconfig_url_base
                              + "/data/network-topology:network-topology/topology=topology-netconf"
@@ -192,18 +192,18 @@ class TestCheckCliConnected(unittest.TestCase):
 
 class TestCheckNetconfIdAvailable(unittest.TestCase):
     def test_execute_check_netconf_id_available_exist(self):
-        with patch('workers.netconf_worker.requests.get') as mock:
+        with patch('frinx_conductor_workers.netconf_worker.requests.get') as mock:
             mock.return_value = MockResponse(bytes(json.dumps(netconf_node_connected), encoding='utf-8'), 200)
-            request = workers.netconf_worker.execute_check_netconf_id_available({"inputData": {"device_id": "xr6"}})
+            request = frinx_conductor_workers.netconf_worker.execute_check_netconf_id_available({"inputData": {"device_id": "xr6"}})
             self.assertEqual(request["status"], "FAILED")
             self.assertEqual(request["output"]["url"], uniconfig_url_base
                              + "/data/network-topology:network-topology"
                                "/topology=topology-netconf/node=xr6?content=config")
 
     def test_execute_check_netconf_id_available_non_exist(self):
-        with patch('workers.netconf_worker.requests.get') as mock:
+        with patch('frinx_conductor_workers.netconf_worker.requests.get') as mock:
             mock.return_value = MockResponse(bytes(json.dumps(netconf_node_non_exist), encoding='utf-8'), 404)
-            request = workers.netconf_worker.execute_check_netconf_id_available({"inputData": {"device_id": "xr6"}})
+            request = frinx_conductor_workers.netconf_worker.execute_check_netconf_id_available({"inputData": {"device_id": "xr6"}})
             self.assertEqual(request["status"], "COMPLETED")
             self.assertEqual(request["output"]["url"], uniconfig_url_base
                              + "/data/network-topology:network-topology"
