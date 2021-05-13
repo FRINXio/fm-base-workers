@@ -2,12 +2,6 @@ FROM python:3.6.10-buster
 
 RUN apt-get update
 
-# Copy conductor integration files
-RUN pip install -i https://test.pypi.org/simple/ frinx-conductor-client
-
-# Install package dependencies
-RUN pip3 install requests
-
 # Install dependencies of workers
 COPY requirements.txt /home/app/requirements.txt
 WORKDIR /home/app

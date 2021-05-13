@@ -1,2 +1,4 @@
 jinja2==2.11.2
 psycopg2==2.8.5
+frinx-conductor-client==1.0.0
+requests 
