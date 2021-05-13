@@ -1,4 +1,4 @@
-from workers import uniconfig_worker
+from frinx_conductor_workers import uniconfig_worker
 
 # Uniconfig RPCs
 

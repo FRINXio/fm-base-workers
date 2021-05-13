@@ -2,13 +2,13 @@ import time
 import os
 
 from conductor.FrinxConductorWrapper import FrinxConductorWrapper
-from workers.frinx_rest import conductor_url_base, conductor_headers
-from workers import cli_worker
-from workers import netconf_worker
-from workers import uniconfig_worker
-from workers import common_worker
-from workers import http_worker
-from workers.import_workflows import import_workflows
+from frinx_conductor_workers.frinx_rest import conductor_url_base, conductor_headers
+from frinx-conductor-workers import cli_worker
+from frinx-conductor-workers import netconf_worker
+from frinx-conductor-workers import uniconfig_worker
+from frinx-conductor-workers import common_worker
+from frinx-conductor-workers import http_worker
+from frinx-conductor-workers.import_workflows import import_workflows
 
 workflows_folder_path = './workflows'
 healtchchek_file_path = './healthcheck'
