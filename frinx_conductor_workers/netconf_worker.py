@@ -10,9 +10,7 @@ from frinx_conductor_workers.frinx_rest import (
     uniconfig_url_base,
     additional_uniconfig_request_params,
     parse_response,
-    elastic_url_base,
-    elastic_headers,
-    add_uniconfig_tx_cookie
+    add_uniconfig_tx_cookie,
 )
 
 
@@ -204,7 +202,7 @@ def execute_unmount_netconf(task):
     device_id = task['inputData']['device_id']
     uniconfig_tx_id = task['inputData']['uniconfig_tx_id'] if 'uniconfig_tx_id' in task['inputData'] else ""
 
-    id_url = Template(uniconfig_url_netconf_mount_sync).substitute(
+    id_url = Template(uniconfig_url_netconf_unmount_sync).substitute(
         {"id": device_id}
     )
 
@@ -251,9 +249,7 @@ def read_structured_data(task):
     uri = task['inputData']['uri']
     uniconfig_tx_id = task['inputData']['uniconfig_tx_id'] if 'uniconfig_tx_id' in task['inputData'] else ""
 
-    id_url = Template(uniconfig_url_netconf_mount).substitute(
-        {"id": device_id, "base_url": task['inputData']['uniconfig_url_base']}
-    ) + "/yang-ext:mount" + (uri if uri else "")
+    id_url = Template(uniconfig_url_netconf_mount).substitute({"id": device_id}) + "/yang-ext:mount" + (uri if uri else "")
 
     r = requests.get(id_url, headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
                      **additional_uniconfig_request_params)
@@ -276,14 +272,8 @@ def start(cc):
     local_logs.info("Starting Netconf workers")
 
     cc.register('Netconf_mount_netconf', {
-        "name": "Netconf_mount_netconf",
-        "description": "{\"description\": \"mount a Netconf device\", \"labels\": [\"BASICS\",\"NETCONF\"]}",
-        "retryCount": 0,
-        "ownerEmail":"example@example.com",
+        "description": '{"description": "mount a Netconf device", "labels": ["BASICS","NETCONF"]}',
         "timeoutSeconds": 600,
-        "timeoutPolicy": "TIME_OUT_WF",
-        "retryLogic": "FIXED",
-        "retryDelaySeconds": 0,
         "responseTimeoutSeconds": 600,
         "inputKeys": [
             "device_id",
@@ -308,19 +298,10 @@ def start(cc):
             "response_code",
             "response_body"
         ]
-    })
-    cc.start('Netconf_mount_netconf', execute_mount_netconf, False, limit_to_thread_count=None)
+    }, execute_mount_netconf)
 
     cc.register('Netconf_unmount_netconf', {
-        "name": "Netconf_unmount_netconf",
-        "description": "{\"description\": \"unmount a CLI device\", \"labels\": [\"BASICS\",\"NETCONF\"]}",
-        "retryCount": 0,
-        "ownerEmail":"example@example.com",
-        "timeoutSeconds": 60,
-        "timeoutPolicy": "TIME_OUT_WF",
-        "retryLogic": "FIXED",
-        "retryDelaySeconds": 0,
-        "responseTimeoutSeconds": 10,
+        "description": '{"description": "unmount a CLI device", "labels": ["BASICS","NETCONF"]}',
         "inputKeys": [
             "device_id",
             "uniconfig_tx_id"
@@ -330,19 +311,10 @@ def start(cc):
             "response_code",
             "response_body"
         ]
-    })
-    cc.start('Netconf_unmount_netconf', execute_unmount_netconf, False, limit_to_thread_count=None)
+    }, execute_unmount_netconf)
 
     cc.register('Netconf_read_structured_device_data', {
-        "name": "Netconf_read_structured_device_data",
-        "description": "{\"description\": \"Read device configuration or operational data in structured format e.g. netconf\", \"labels\": [\"BASICS\",\"NETCONF\"]}",
-        "retryCount": 0,
-        "ownerEmail":"example@example.com",
-        "timeoutSeconds": 60,
-        "timeoutPolicy": "TIME_OUT_WF",
-        "retryLogic": "FIXED",
-        "retryDelaySeconds": 0,
-        "responseTimeoutSeconds": 10,
+        "description": '{"description": "Read device configuration or operational data in structured format e.g. netconf", "labels": ["BASICS","NETCONF"]}',
         "inputKeys": [
             "device_id",
             "uri",
@@ -353,5 +325,4 @@ def start(cc):
             "response_code",
             "response_body"
         ]
-    })
-    cc.start('Netconf_read_structured_device_data', read_structured_data, False)
+    }, read_structured_data)

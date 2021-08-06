@@ -19,20 +19,20 @@ uniconfig_url_cli_mount_rpc = uniconfig_url_base + "/operations/network-topology
 uniconfig_url_cli_read_journal = uniconfig_url_base + "/operations/network-topology:network-topology/topology=cli/node=$id/yang-ext:mount/journal:read-journal?content=nonconfig"
 
 sync_mount_template = {
-    "input": {
+    "input":{
         "node-id": "",
         "cli":
-            {
-                "cli-topology:host": "",
-                "cli-topology:port": "",
-                "cli-topology:transport-type": "ssh",
-                "cli-topology:device-type": "",
-                "cli-topology:device-version": "",
-                "cli-topology:username": "",
-                "cli-topology:password": "",
-                "cli-topology:journal-size": 500,
-                "cli-topology:dry-run-journal-size": 180,
-            }
+        {
+            "cli-topology:host": "",
+            "cli-topology:port": "",
+            "cli-topology:transport-type": "ssh",
+            "cli-topology:device-type": "",
+            "cli-topology:device-version": "",
+            "cli-topology:username": "",
+            "cli-topology:password": "",
+            "cli-topology:journal-size": 500,
+            "cli-topology:dry-run-journal-size": 180,
+        }
     }
 }
 
@@ -77,7 +77,7 @@ def execute_mount_cli(task):
     r = requests.post(id_url, data=json.dumps(mount_body),
                       headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
                       timeout=600,
-                      **additional_uniconfig_request_params)
+                     **additional_uniconfig_request_params)
     response_code, response_json = parse_response(r)
 
     error_message_for_already_installed = "Node has already been installed using CLI protocol"
@@ -147,17 +147,16 @@ def execute_unmount_cli(task):
         {"id": device_id}
     )
 
-    unmount_body = {"input":
+    unmount_body = { "input":
         {
             "node-id": device_id,
-            "connection-type": "cli"
+            "connection-type":"cli"
         }}
 
     r = requests.post(id_url,
-                      data=json.dumps(unmount_body),
-                      headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
-                      **additional_uniconfig_request_params)
-
+                        data=json.dumps(unmount_body),
+                        headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
+                        **additional_uniconfig_request_params)
     response_code, response_json = parse_response(r)
 
     return {'status': 'COMPLETED', 'output': {'url': id_url,
@@ -191,13 +190,8 @@ def start(cc):
     local_logs.info('Starting CLI workers')
 
     cc.register('CLI_mount_cli', {
-        "name": "CLI_mount_cli",
-        "description": "{\"description\": \"mount a CLI device\", \"labels\": [\"BASICS\",\"CLI\"]}",
-        "retryCount": 0,
+        "description": '{"description": "mount a CLI device", "labels": ["BASICS","CLI"]}',
         "timeoutSeconds": 600,
-        "timeoutPolicy": "TIME_OUT_WF",
-        "retryLogic": "FIXED",
-        "retryDelaySeconds": 0,
         "responseTimeoutSeconds": 600,
         "inputKeys": [
             "device_id",
@@ -216,17 +210,11 @@ def start(cc):
             "response_code",
             "response_body"
         ]
-    })
-    cc.start('CLI_mount_cli', execute_mount_cli, False, limit_to_thread_count=None)
+    }, execute_mount_cli)
 
     cc.register('CLI_unmount_cli', {
-        "name": "CLI_unmount_cli",
-        "description": "{\"description\": \"unmount a CLI device\", \"labels\": [\"BASICS\",\"CLI\"]}",
-        "retryCount": 0,
+        "description": '{"description": "unmount a CLI device", "labels": ["BASICS","CLI"]}',
         "timeoutSeconds": 600,
-        "timeoutPolicy": "TIME_OUT_WF",
-        "retryLogic": "FIXED",
-        "retryDelaySeconds": 0,
         "responseTimeoutSeconds": 600,
         "inputKeys": [
             "device_id",
@@ -237,18 +225,10 @@ def start(cc):
             "response_code",
             "response_body"
         ]
-    })
-    cc.start('CLI_unmount_cli', execute_unmount_cli, False, limit_to_thread_count=None)
+    },  execute_unmount_cli)
 
     cc.register('CLI_execute_and_read_rpc_cli', {
-        "name": "CLI_execute_and_read_rpc_cli",
-        "description": "{\"description\": \"execute commands for a CLI device\", \"labels\": [\"BASICS\",\"CLI\"]}",
-        "retryCount": 0,
-        "timeoutSeconds": 30,
-        "timeoutPolicy": "TIME_OUT_WF",
-        "retryLogic": "FIXED",
-        "retryDelaySeconds": 0,
-        "responseTimeoutSeconds": 30,
+        "description": '{"description": "execute commands for a CLI device", "labels": ["BASICS","CLI"]}',
         "inputKeys": [
             "device_id",
             "template",
@@ -262,18 +242,10 @@ def start(cc):
             "response_code",
             "response_body"
         ]
-    })
-    cc.start('CLI_execute_and_read_rpc_cli', execute_and_read_rpc_cli, False)
+    }, execute_and_read_rpc_cli)
 
     cc.register('CLI_get_cli_journal', {
-        "name": "CLI_get_cli_journal",
-        "description": "{\"description\": \"Read cli journal for a device\", \"labels\": [\"BASICS\",\"CLI\"]}",
-        "retryCount": 0,
-        "ownerEmail":"example@example.com",
-        "timeoutSeconds": 60,
-        "timeoutPolicy": "TIME_OUT_WF",
-        "retryLogic": "FIXED",
-        "retryDelaySeconds": 0,
+        "description": '{"description": "Read cli journal for a device", "labels": ["BASICS","CLI"]}',
         "responseTimeoutSeconds": 10,
         "inputKeys": [
             "device_id",
@@ -284,5 +256,4 @@ def start(cc):
             "response_code",
             "response_body"
         ]
-    })
-    cc.start('CLI_get_cli_journal', execute_get_cli_journal, False)
+    }, execute_get_cli_journal)
