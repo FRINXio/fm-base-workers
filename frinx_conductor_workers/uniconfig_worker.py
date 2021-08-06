@@ -7,18 +7,18 @@ import urllib
 import requests
 
 from string import Template
-from frinx_conductor_workers.frinx_rest import uniconfig_url_base, uniconfig_headers, \
-    additional_uniconfig_request_params, parse_response, parse_header, add_uniconfig_tx_cookie
+from frinx_conductor_workers.frinx_rest import uniconfig_url_base, parse_response, add_uniconfig_tx_cookie, \
+    additional_uniconfig_request_params
 
 local_logs = logging.getLogger(__name__)
 
 uniconfig_url_uniconfig_mount = uniconfig_url_base + "/data/network-topology:network-topology/topology=uniconfig/node=$id"
-uniconfig_url_uniconfig_commit = uniconfig_url_base + '/operations/uniconfig-manager:commit'
-uniconfig_url_uniconfig_dryrun_commit = uniconfig_url_base + '/operations/dryrun-manager:dryrun-commit'
-uniconfig_url_uniconfig_calculate_diff = uniconfig_url_base + '/operations/uniconfig-manager:calculate-diff'
-uniconfig_url_uniconfig_sync_from_network = uniconfig_url_base + '/operations/uniconfig-manager:sync-from-network'
-uniconfig_url_uniconfig_replace_config_with_operational = uniconfig_url_base + '/operations/uniconfig-manager:replace-config-with-operational'
-uniconfig_url_show_connection_status = uniconfig_url_base + '/operations/uniconfig-manager:show-connection-status'
+uniconfig_url_uniconfig_commit = uniconfig_url_base + "/operations/uniconfig-manager:commit"
+uniconfig_url_uniconfig_dryrun_commit = uniconfig_url_base + "/operations/dryrun-manager:dryrun-commit"
+uniconfig_url_uniconfig_calculate_diff = uniconfig_url_base + "/operations/uniconfig-manager:calculate-diff"
+uniconfig_url_uniconfig_sync_from_network = uniconfig_url_base + "/operations/uniconfig-manager:sync-from-network"
+uniconfig_url_uniconfig_replace_config_with_operational = uniconfig_url_base + "/operations/uniconfig-manager:replace-config-with-operational"
+uniconfig_url_show_connection_status = uniconfig_url_base + "/operations/uniconfig-manager:show-connection-status"
 
 
 def apply_functions(uri):
@@ -50,23 +50,22 @@ def read_structured_data(task):
 
     id_url = Template(uniconfig_url_uniconfig_mount).substitute(
         {"id": device_id}
-    ) \
-             + "/frinx-uniconfig-topology:configuration" + (uri if uri else "")
+    ) + "/frinx-uniconfig-topology:configuration" + (uri if uri else "")
 
-    response = requests.get(id_url, headers=add_uniconfig_tx_cookie(uniconfig_tx_id), \
+    response = requests.get(id_url, headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
                             **additional_uniconfig_request_params)
     response_code, response_json = parse_response(response)
 
-    if response_code == requests.codes.ok:
-        return {'status': 'COMPLETED', 'output': {'url': id_url,
-                                                  'response_code': response_code,
-                                                  'response_body': response_json},
-                'logs': ["Node with ID %s read successfully" % device_id]}
-    else:
+    if response_code == 500:
         return {'status': 'FAILED', 'output': {'url': id_url,
                                                'response_code': response_code,
                                                'response_body': response_json},
                 'logs': ["Unable to read device with ID %s" % device_id]}
+    else:
+        return {'status': 'COMPLETED', 'output': {'url': id_url,
+                                                  'response_code': response_code,
+                                                  'response_body': response_json},
+                'logs': ["Node with ID %s read successfully" % device_id]}
 
 
 def write_structured_data(task):
@@ -96,11 +95,10 @@ def write_structured_data(task):
 
     id_url = Template(uniconfig_url_uniconfig_mount).substitute(
         {"id": device_id}
-    ) \
-             + "/frinx-uniconfig-topology:configuration" + (uri if uri else "")
+    ) + "/frinx-uniconfig-topology:configuration" + (uri if uri else "")
     id_url = Template(id_url).substitute(params)
 
-    response = requests.put(id_url, data=data_json, headers=add_uniconfig_tx_cookie(uniconfig_tx_id), \
+    response = requests.put(id_url, data=data_json, headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
                             **additional_uniconfig_request_params)
     response_code, response_json = parse_response(response)
 
@@ -118,7 +116,6 @@ def write_structured_data(task):
 
 def delete_structured_data(task):
     device_id = task['inputData']['device_id']
-    ignore_404 = task['inputData'].get("ignore_404")
     uri = task['inputData']['uri']
     uri = apply_functions(uri)
     uniconfig_tx_id = task['inputData']['uniconfig_tx_id'] if 'uniconfig_tx_id' in task[
@@ -264,7 +261,7 @@ def create_commit_request(task):
     device_list = parse_devices(task)
     if device_list:
         commit_body["input"]["target-nodes"]["node"] = device_list
-        
+
     return commit_body
 
 
@@ -285,15 +282,7 @@ def start(cc):
     local_logs.info("Starting Uniconfig workers")
 
     cc.register('UNICONFIG_read_structured_device_data', {
-        "name": "UNICONFIG_read_structured_device_data",
-        "description": "{\"description\": \"Read device configuration or operational data in structured format e.g. openconfig\", \"labels\": [\"BASICS\",\"UNICONFIG\",\"OPENCONFIG\"]}",
-        "retryCount": 0,
-        "ownerEmail": "example@example.com",
-        "timeoutSeconds": 60,
-        "timeoutPolicy": "TIME_OUT_WF",
-        "retryLogic": "FIXED",
-        "retryDelaySeconds": 0,
-        "responseTimeoutSeconds": 60,
+        "description": '{"description": "Read device configuration or operational data in structured format e.g. openconfig", "labels": ["BASICS","UNICONFIG","OPENCONFIG"]}',
         "inputKeys": [
             "device_id",
             "uri",
@@ -304,19 +293,10 @@ def start(cc):
             "response_code",
             "response_body"
         ]
-    })
-    cc.start('UNICONFIG_read_structured_device_data', read_structured_data, False, limit_to_thread_count=None)
+    }, read_structured_data)
 
     cc.register('UNICONFIG_write_structured_device_data', {
-        "name": "UNICONFIG_write_structured_device_data",
-        "description": "{\"description\": \"Write device configuration data in structured format e.g. openconfig\", \"labels\": [\"BASICS\",\"UNICONFIG\"]}",
-        "retryCount": 0,
-        "ownerEmail": "example@example.com",
-        "timeoutSeconds": 60,
-        "timeoutPolicy": "TIME_OUT_WF",
-        "retryLogic": "FIXED",
-        "retryDelaySeconds": 0,
-        "responseTimeoutSeconds": 10,
+        "description": '{"description": "Write device configuration data in structured format e.g. openconfig", "labels": ["BASICS","UNICONFIG"]}',
         "inputKeys": [
             "device_id",
             "uri",
@@ -329,19 +309,10 @@ def start(cc):
             "response_code",
             "response_body"
         ]
-    })
-    cc.start('UNICONFIG_write_structured_device_data', write_structured_data, False)
+    }, write_structured_data)
 
     cc.register('UNICONFIG_delete_structured_device_data', {
-        "name": "UNICONFIG_delete_structured_device_data",
-        "description": "{\"description\": \"Delete device configuration data in structured format e.g. openconfig\", \"labels\": [\"BASICS\",\"UNICONFIG\",\"OPENCONFIG\"]}",
-        "retryCount": 0,
-        "ownerEmail": "example@example.com",
-        "timeoutSeconds": 60,
-        "timeoutPolicy": "TIME_OUT_WF",
-        "retryLogic": "FIXED",
-        "retryDelaySeconds": 0,
-        "responseTimeoutSeconds": 10,
+        "description": '{"description": "Delete device configuration data in structured format e.g. openconfig", "labels": ["BASICS","UNICONFIG","OPENCONFIG"]}',
         "inputKeys": [
             "device_id",
             "uri",
@@ -352,12 +323,10 @@ def start(cc):
             "response_code",
             "response_body"
         ]
-    })
-    cc.start('UNICONFIG_delete_structured_device_data', delete_structured_data, False)
+    }, delete_structured_data)
 
     cc.register('UNICONFIG_commit', {
-        "name": "UNICONFIG_commit",
-        "description": "{\"description\": \"Commit uniconfig\", \"labels\": [\"BASICS\",\"UNICONFIG\"]}",
+        "description": '{"description": "Commit uniconfig", "labels": ["BASICS","UNICONFIG"]}',
         "inputKeys": [
             "devices",
             "uniconfig_tx_id"
@@ -367,15 +336,12 @@ def start(cc):
             "response_code",
             "response_body"
         ],
-        "retryCount": 0,
-        "ownerEmail": "example@example.com",
-        "responseTimeoutSeconds": 600
-    })
-    cc.start('UNICONFIG_commit', commit, False)
+        "timeoutSeconds": 600,
+        "responseTimeoutSeconds": 600,
+    }, commit)
 
     cc.register('UNICONFIG_dryrun_commit', {
-        "name": "UNICONFIG_dryrun_commit",
-        "description": "{\"description\": \"Dryrun Commit uniconfig\", \"labels\": [\"BASICS\",\"UNICONFIG\"]}",
+        "description": '{"description": "Dryrun Commit uniconfig", "labels": ["BASICS","UNICONFIG"]}',
         "inputKeys": [
             "devices",
             "uniconfig_tx_id"
@@ -385,15 +351,12 @@ def start(cc):
             "response_code",
             "response_body"
         ],
-        "retryCount": 0,
-        "ownerEmail": "example@example.com",
-        "responseTimeoutSeconds": 600
-    })
-    cc.start('UNICONFIG_dryrun_commit', dryrun_commit, False)
+        "timeoutSeconds": 600,
+        "responseTimeoutSeconds": 600,
+    }, dryrun_commit)
 
     cc.register('UNICONFIG_calculate_diff', {
-        "name": "UNICONFIG_calculate_diff",
-        "description": "{\"description\": \"Calculate uniconfig diff\", \"labels\": [\"BASICS\",\"UNICONFIG\"]}",
+        "description": '{"description": "Calculate uniconfig diff", "labels": ["BASICS","UNICONFIG"]}',
         "inputKeys": [
             "devices",
             "uniconfig_tx_id"
@@ -403,15 +366,12 @@ def start(cc):
             "response_code",
             "response_body"
         ],
-        "retryCount": 0,
-        "ownerEmail": "example@example.com",
-        "responseTimeoutSeconds": 600
-    })
-    cc.start('UNICONFIG_calculate_diff', calc_diff, False)
+        "timeoutSeconds": 600,
+        "responseTimeoutSeconds": 600,
+    }, calc_diff)
 
     cc.register('UNICONFIG_sync_from_network', {
-        "name": "UNICONFIG_sync_from_network",
-        "description": "{\"description\": \"Sync uniconfig from network\", \"labels\": [\"BASICS\",\"UNICONFIG\"]}",
+        "description": '{"description": "Sync uniconfig from network", "labels": ["BASICS","UNICONFIG"]}',
         "inputKeys": [
             "devices",
             "uniconfig_tx_id"
@@ -419,15 +379,12 @@ def start(cc):
         "outputKeys": [
             "responses",
         ],
-        "retryCount": 0,
-        "ownerEmail": "example@example.com",
-        "responseTimeoutSeconds": 600
-    })
-    cc.start('UNICONFIG_sync_from_network', sync_from_network, False, limit_to_thread_count=None)
+        "timeoutSeconds": 600,
+        "responseTimeoutSeconds": 600,
+    }, sync_from_network)
 
     cc.register('UNICONFIG_replace_config_with_oper', {
-        "name": "UNICONFIG_replace_config_with_oper",
-        "description": "{\"description\": \"Replace config with oper in uniconfig\", \"labels\": [\"BASICS\",\"UNICONFIG\"]}",
+        "description": '{"description": "Replace config with oper in uniconfig", "labels": ["BASICS","UNICONFIG"]}',
         "inputKeys": [
             "devices",
             "uniconfig_tx_id"
@@ -435,8 +392,6 @@ def start(cc):
         "outputKeys": [
             "responses"
         ],
-        "retryCount": 0,
-        "ownerEmail": "example@example.com",
-        "responseTimeoutSeconds": 600
-    })
-    cc.start('UNICONFIG_replace_config_with_oper', replace_config_with_oper, False, limit_to_thread_count=None)
+        "timeoutSeconds": 600,
+        "responseTimeoutSeconds": 600,
+    }, replace_config_with_oper)

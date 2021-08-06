@@ -149,13 +149,8 @@ def start(cc):
 
     cc.register('HTTP_task', {
         "name": "HTTP_task",
-        "description": "{\"description\": \"Generic http task\", \"labels\": [\"BASICS\",\"HTTP\"]}",
-        "retryCount": 0,
-        "ownerEmail":"example@example.com",
+        "description": '{"description": "Generic http task", "labels": ["BASICS","HTTP"]}',
         "timeoutSeconds": 360,
-        "timeoutPolicy": "TIME_OUT_WF",
-        "retryLogic": "FIXED",
-        "retryDelaySeconds": 0,
         "responseTimeoutSeconds": 360,
         "inputKeys": [
             "http_request"
@@ -166,5 +161,4 @@ def start(cc):
             "statusCode",
             "cookies"
         ]
-    })
-    cc.start('HTTP_task', http_task, False)
+    }, http_task)
