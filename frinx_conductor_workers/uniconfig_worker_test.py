@@ -164,72 +164,6 @@ class MockResponse:
         return self.content
 
 
-class TestExecuteReadUniconfigTopologyOperational(unittest.TestCase):
-    def test_execute_read_uniconfig_topology_operational_no_device(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.read_all_devices') as mock:
-            mock.return_value = 200, xr5_response
-            request = frinx_conductor_workers.uniconfig_worker.execute_read_uniconfig_topology_operational({"inputData": {"devices": ""}})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology/topology=uniconfig?content=nonconfig")
-            self.assertEqual(request["output"]["response_code"], 200)
-            self.assertEqual(request["output"]["response_body"]["topology"][0]["topology-id"], "uniconfig")
-            self.assertEqual(request["output"]["response_body"]["topology"][0]["node"][0]["node-id"], "xr5")
-
-    def test_execute_read_uniconfig_topology_operational_one_device(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.read_selected_devices') as mock:
-            mock.return_value = 200, xr5_response
-            request = frinx_conductor_workers.uniconfig_worker.execute_read_uniconfig_topology_operational({"inputData": {"devices": "xr5"}})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology/topology=uniconfig?content=nonconfig")
-            self.assertEqual(request["output"]["response_code"], 200)
-            self.assertEqual(request["output"]["response_body"]["topology"][0]["topology-id"], "uniconfig")
-            self.assertEqual(request["output"]["response_body"]["topology"][0]["node"][0]["node-id"], "xr5")
-
-
-class TestExecuteReadUniconfigTopologyConfig(unittest.TestCase):
-    def test_execute_read_uniconfig_topology_config_no_device(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.read_all_devices') as mock:
-            mock.return_value = 200, xr5_response
-            request = frinx_conductor_workers.uniconfig_worker.execute_read_uniconfig_topology_config({"inputData": {"devices": ""}})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology/topology=uniconfig?content=config")
-            self.assertEqual(request["output"]["response_code"], 200)
-            self.assertEqual(request["output"]["response_body"]["topology"][0]["topology-id"], "uniconfig")
-            self.assertEqual(request["output"]["response_body"]["topology"][0]["node"][0]["node-id"], "xr5")
-
-    def test_execute_read_uniconfig_topology_config_one_device(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.read_selected_devices') as mock:
-            mock.return_value = 200, xr5_response
-            request = frinx_conductor_workers.uniconfig_worker.execute_read_uniconfig_topology_config({"inputData": {"devices": "xr5"}})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology/topology=uniconfig?content=config")
-            self.assertEqual(request["output"]["response_code"], 200)
-            self.assertEqual(request["output"]["response_body"]["topology"][0]["topology-id"], "uniconfig")
-            self.assertEqual(request["output"]["response_body"]["topology"][0]["node"][0]["node-id"], "xr5")
-
-
-class TestGetAllDevicesAsDynamicForkTasks(unittest.TestCase):
-    def test_get_all_devices_as_dynamic_fork_tasks(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.read_all_devices') as mock:
-            mock.return_value = 200, xr5_response
-            request = frinx_conductor_workers.uniconfig_worker.get_all_devices_as_dynamic_fork_tasks(
-                {"inputData": {"task": "Create_loopback_interface_uniconfig",
-                               "task_params": "{\"loopback_id\": \"${workflow.input.loopback_id}\"}"}})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["dynamic_tasks_i"]["xr5"]["loopback_id"],
-                             "${workflow.input.loopback_id}")
-            self.assertEqual(request["output"]["dynamic_tasks_i"]["xr5"]["device_id"], "xr5")
-            self.assertEqual(request["output"]["dynamic_tasks"][0]["name"], "sub_task")
-            self.assertEqual(request["output"]["dynamic_tasks"][0]["taskReferenceName"], "xr5")
-            self.assertEqual(request["output"]["dynamic_tasks"][0]["type"], "SUB_WORKFLOW")
-            self.assertEqual(request["output"]["dynamic_tasks"][0]["subWorkflowParam"]["name"],
-                             "Create_loopback_interface_uniconfig")
-            self.assertEqual(request["output"]["dynamic_tasks"][0]["subWorkflowParam"]["version"], 1)
-
 
 class TestReadStructuredData(unittest.TestCase):
     def test_read_structured_data_with_device(self):
@@ -252,11 +186,11 @@ class TestReadStructuredData(unittest.TestCase):
 
     def test_read_structured_data_no_device(self):
         with patch('frinx_conductor_workers.uniconfig_worker.requests.get') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(bad_request_response), encoding='utf-8'), 404, "")
+            mock.return_value = MockResponse(bytes(json.dumps(bad_request_response), encoding='utf-8'), 500, "")
             request = frinx_conductor_workers.uniconfig_worker.read_structured_data(
                 {"inputData": {"device_id": "", "uri": "/frinx-openconfig-interfaces:interfaces"}})
             self.assertEqual(request["status"], "FAILED")
-            self.assertEqual(request["output"]["response_code"], 404)
+            self.assertEqual(request["output"]["response_code"], 500)
             self.assertEqual(request["output"]["response_body"]['errors']['error'][0]["error-type"], "protocol")
             self.assertEqual(request["output"]["response_body"]['errors']['error'][0]["error-message"],
                              "Request could not be completed because the relevant data model content does not exist")
@@ -330,42 +264,6 @@ class TestWriteStructuredData(unittest.TestCase):
             self.assertEqual(request["output"]["response_body"]['errors']['error'][0]["error-tag"], "malformed-message")
 
 
-class TestWriteStructuredDataAsDynamicForkTasks(unittest.TestCase):
-    def test_write_structured_data_as_dynamic_fork_tasks(self):
-        request = frinx_conductor_workers.uniconfig_worker.write_structured_data_as_dynamic_fork_tasks(
-            {"inputData": {"device_id": "XR01",
-                           "uri": "/frinx-openconfig-interfaces:interfaces/interface=$iface",
-                           "template": "{\"interface\":[{\"name\":\"$iface\","
-                                       "\"config\":{\"type\":\"iana-if-type:ethernetCsmacd\","
-                                       "\"name\":\"$iface\"},"
-                                       "\"frinx-openconfig-if-ethernet:ethernet\":{"
-                                       "\"config\":{\"frinx-openconfig-if-aggregate:aggregate-id\": "
-                                       "\"Bundle-Ether3\"}}}]}",
-                           "task_params": "GigabitEthernet0/0/0/0, GigabitEthernet0/0/0/1"
-                           }})
-        self.assertEqual(request["status"], "COMPLETED")
-        self.assertEqual(request["output"]["dynamic_tasks_i"]["XR01GigabitEthernet0/0/0/0"]["device_id"], "XR01")
-        self.assertEqual(request["output"]["dynamic_tasks_i"]["XR01GigabitEthernet0/0/0/0"]["template"],
-                         "{\"interface\":[{\"name\":\"GigabitEthernet0/0/0/0\",\"config\":"
-                         "{\"type\":\"iana-if-type:ethernetCsmacd\",\"name\":\"GigabitEthernet0/0/0/0\"},"
-                         "\"frinx-openconfig-if-ethernet:ethernet\":{\"config\":"
-                         "{\"frinx-openconfig-if-aggregate:aggregate-id\": \"Bundle-Ether3\"}}}]}",)
-        self.assertEqual(request["output"]["dynamic_tasks_i"]["XR01GigabitEthernet0/0/0/0"]["uri"],
-                         "/frinx-openconfig-interfaces:interfaces/interface=GigabitEthernet0%2F0%2F0%2F0")
-        self.assertEqual(request["output"]["dynamic_tasks_i"]["XR01GigabitEthernet0/0/0/1"]["device_id"], "XR01")
-        self.assertEqual(request["output"]["dynamic_tasks_i"]["XR01GigabitEthernet0/0/0/1"]["template"],
-                         "{\"interface\":[{\"name\":\"GigabitEthernet0/0/0/1\",\"config\":"
-                         "{\"type\":\"iana-if-type:ethernetCsmacd\",\"name\":\"GigabitEthernet0/0/0/1\"},"
-                         "\"frinx-openconfig-if-ethernet:ethernet\":{\"config\":"
-                         "{\"frinx-openconfig-if-aggregate:aggregate-id\": \"Bundle-Ether3\"}}}]}")
-        self.assertEqual(request["output"]["dynamic_tasks"][0]["name"], "UNICONFIG_write_structured_device_data")
-        self.assertEqual(request["output"]["dynamic_tasks"][0]["taskReferenceName"], "XR01GigabitEthernet0/0/0/0")
-        self.assertEqual(request["output"]["dynamic_tasks"][0]["type"], "SIMPLE")
-        self.assertEqual(request["output"]["dynamic_tasks"][1]["name"], "UNICONFIG_write_structured_device_data")
-        self.assertEqual(request["output"]["dynamic_tasks"][1]["taskReferenceName"], "XR01GigabitEthernet0/0/0/1")
-        self.assertEqual(request["output"]["dynamic_tasks"][1]["type"], "SIMPLE")
-
-
 class TestDeleteStructuredData(unittest.TestCase):
     def test_delete_structured_data_with_device(self):
         with patch('frinx_conductor_workers.uniconfig_worker.requests.delete') as mock:
@@ -392,38 +290,6 @@ class TestDeleteStructuredData(unittest.TestCase):
             self.assertEqual(request["output"]["response_body"]['errors']['error'][0]["error-message"],
                              "Request could not be completed because the relevant data model content does not exist")
             self.assertEqual(request["output"]["response_body"]['errors']['error'][0]["error-tag"], "data-missing")
-
-
-class TestExecuteCheckUniconfigNodeExists(unittest.TestCase):
-    def test_execute_check_uniconfig_node_exists_with_existing_device_installed(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.requests.get') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(
-                {"frinx-uniconfig-topology:connection-status": "installed"}), encoding='utf-8'), 200, "")
-            request = frinx_conductor_workers.uniconfig_worker.execute_check_uniconfig_node_exists({"inputData": {"device_id": "xr5"}})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["response_code"], 200)
-            self.assertEqual(request["output"]["response_body"]["frinx-uniconfig-topology:connection-status"],
-                             "installed")
-
-    def test_execute_check_uniconfig_node_exists_with_existing_device_installing(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.requests.get') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(
-                {"frinx-uniconfig-topology:connection-status": "installing"}), encoding='utf-8'), 200, "")
-            request = frinx_conductor_workers.uniconfig_worker.execute_check_uniconfig_node_exists({"inputData": {"device_id": "xr5"}})
-            self.assertEqual(request["status"], "FAILED")
-            self.assertEqual(request["output"]["response_code"], 200)
-            self.assertEqual(request["output"]["response_body"]["frinx-uniconfig-topology:connection-status"],
-                             "installing")
-
-    def test_execute_check_uniconfig_node_exists_with_non_existing_device(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.requests.get') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(bad_request_response), encoding='utf-8'), 404, "")
-            request = frinx_conductor_workers.uniconfig_worker.execute_check_uniconfig_node_exists({"inputData": {"device_id": "xr5"}})
-            self.assertEqual(request["status"], "FAILED")
-            self.assertEqual(request["output"]["response_code"], 404)
-            self.assertEqual(request["output"]["response_body"]['errors']['error'][0]["error-type"], "protocol")
-            self.assertEqual(request["output"]["response_body"]['errors']['error'][0]["error-message"],
-                             "Request could not be completed because the relevant data model content does not exist")
 
 
 class TestCommit(unittest.TestCase):
@@ -476,30 +342,6 @@ class TestDryRun(unittest.TestCase):
             return
         self.assertFalse("Calling RPC with empty device list is not allowed")
 
-
-class TestCheckCommit(unittest.TestCase):
-    def test_check_commit_with_existing_devices(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.requests.post') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(commit_output), encoding='utf-8'), 200, "")
-            request = frinx_conductor_workers.uniconfig_worker.checked_commit({"inputData": {"devices": "xr5, xr6"}})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["response_code"], 200)
-            self.assertEqual(request["output"]["response_body"]["output"]["overall-status"], "complete")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0]["node-id"],
-                             "xr5")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0][
-                                 "configuration-status"], "complete")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][1]["node-id"],
-                             "xr6")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][1][
-                                 "configuration-status"], "complete")
-
-    def test_commit_with_non_existing_device(self):
-        try:
-            frinx_conductor_workers.uniconfig_worker.checked_commit({"inputData": {"devices": ""}})
-        except Exception:
-            return
-        self.assertFalse("Calling RPC with empty device list is not allowed")
 
 
 class TestCalculateDiff(unittest.TestCase):
@@ -587,38 +429,7 @@ class TestReplaceConfigWithOper(unittest.TestCase):
         self.assertFalse("Calling RPC with empty device list is not allowed")
 
 
-class TestSnapshot(unittest.TestCase):
-    def test_create_snapshot_with_existing_devices(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.requests.post') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(RPC_output_one_device), encoding='utf-8'), 200, "")
-            request = frinx_conductor_workers.uniconfig_worker.create_snapshot({"inputData": {"devices": "xr5", "name": "xr5_snapshot"}})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["response_code"], 200)
-            self.assertEqual(request["output"]["response_body"]["output"]["overall-status"], "complete")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0]["node-id"],
-                             "xr5")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0][
-                                 "status"], "complete")
-
-
 class TestUtilityFunction(unittest.TestCase):
-    def test_create_snapshot_request(self):
-        request = frinx_conductor_workers.uniconfig_worker.create_snapshot_request({"inputData": {"name": "abcd", "devices": "IOS1"}})
-        assert request["input"]["name"] == "abcd"
-        assert request["input"]["target-nodes"]["node"] == ["IOS1"]
-        request = frinx_conductor_workers.uniconfig_worker.create_snapshot_request({"inputData": {"name": "abcd", "devices": ", IOS1, IOS2 ,"}})
-        assert request["input"]["name"] == "abcd"
-        assert request["input"]["target-nodes"]["node"] == ["IOS1", "IOS2"]
-        assert "{\"input\": {\"name\": \"abcd\", \"target-nodes\": {\"node\": [\"IOS1\", \"IOS2\"]}}}" == json.dumps(
-            request)
-
-    def test_create_snapshot_no_devices(self):
-        try:
-            frinx_conductor_workers.uniconfig_worker.create_snapshot_request({"inputData": {"name": "abcd", "devices": ""}})
-        except Exception:
-            return
-        assert False, "Calling RPC with empty device list is not allowed"
-
     def test_escape(self):
         uri = frinx_conductor_workers.uniconfig_worker.apply_functions("interfaces/interface=escape(GigabitEthernet0/0/0/0)/abcd/escape(a/b)")
         assert uri == "interfaces/interface=GigabitEthernet0%2F0%2F0%2F0/abcd/a%2Fb"
@@ -627,49 +438,6 @@ class TestUtilityFunction(unittest.TestCase):
         uri = frinx_conductor_workers.uniconfig_worker.apply_functions("")
         assert uri is ""
 
-
-class TestCreateTransaction(unittest.TestCase):
-    def test_create_transaction(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.requests.post') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 201,
-                                             SimpleCookie(r'UNICONFIGTXID=92a26bac-d623-407e-9a76-3fad3e7cc698'
-                                                          r' JSESSIONID=1g82dajs6marv18scrdabpgc3m'))
-            request = frinx_conductor_workers.uniconfig_worker.create_transaction({"inputData": {"maxAgeSec": "30"}})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["response_code"], 201)
-            self.assertEqual(request["output"]["response_body"],
-                             {"UNICONFIGTXID": "92a26bac-d623-407e-9a76-3fad3e7cc698"})
-
-
-class TestCloseTransaction(unittest.TestCase):
-    def test_close_transaction_successful(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.requests.post') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 200,
-                                             SimpleCookie(r'UNICONFIGTXID=92a26bac-d623-407e-9a76-3fad3e7cc698'
-                                                          r' JSESSIONID=1g82dajs6marv18scrdabpgc3m'))
-            request = frinx_conductor_workers.uniconfig_worker.close_transaction({
-                "inputData": {"uniconfig_tx_id": "882ce396-1235-43eb-9596-bad0b25c81d6"}})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["response_code"], 200)
-            self.assertEqual(request["output"]["response_body"], {})
-
-    def test_close_transaction_closed_trans(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.requests.post') as mock:
-            mock.return_value = MockResponse(bytes("Unknown uniconfig transaction 92a26bac-d623-407e-9a76-3fad3e7cc698",
-                                                   encoding='utf-8'), 403, "")
-            request = frinx_conductor_workers.uniconfig_worker.close_transaction({
-                "inputData": {"uniconfig_tx_id": "92a26bac-d623-407e-9a76-3fad3e7cc698"}})
-            self.assertEqual(request["status"], "FAILED")
-            self.assertEqual(request["output"]["response_code"], 403)
-            self.assertEqual(request["output"]["response_body"], {})
-
-    def test_close_transaction_no_uniconfig_tx_id(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.requests.post') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 400, "")
-            request = frinx_conductor_workers.uniconfig_worker.close_transaction({"inputData": {"uniconfig_tx_id": ""}})
-            self.assertEqual(request["status"], "FAILED")
-            self.assertEqual(request["output"]["response_code"], 400)
-            self.assertEqual(request["output"]["response_body"], {})
 
 
 if __name__ == "__main__":
