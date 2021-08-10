@@ -99,38 +99,38 @@ class MockResponse:
 
 class TestMount(unittest.TestCase):
     def test_mount_new_device(self):
-        with patch('frinx_conductor_workers.netconf_worker.requests.put') as mock:
+        with patch('frinx_conductor_workers.netconf_worker.requests.post') as mock:
             mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 201)
             request = frinx_conductor_workers.netconf_worker.execute_mount_netconf(
                 {"inputData": {"device_id": "xr6", "host": "192.168.1.1", "port": "830", "keepalive-delay": "1000",
                                "tcp-only": "false", "username": "name", "password": "password"}})
             self.assertEqual(request["status"], "COMPLETED")
             self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology/topology=topology-netconf/node=xr6")
+                             + "/operations/connection-manager:install-node")
             self.assertEqual(request["output"]["response_code"], 201)
             self.assertEqual(request["output"]["response_body"], {})
 
     def test_mount_existing_device(self):
-        with patch('frinx_conductor_workers.netconf_worker.requests.put') as mock:
+        with patch('frinx_conductor_workers.netconf_worker.requests.post') as mock:
             mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 204)
             request = frinx_conductor_workers.netconf_worker.execute_mount_netconf(
                 {"inputData": {"device_id": "xr6", "host": "192.168.1.1", "port": "830", "keepalive-delay": "1000",
                                "tcp-only": "false", "username": "name", "password": "password"}})
             self.assertEqual(request["status"], "COMPLETED")
             self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology/topology=topology-netconf/node=xr6")
+                             + "/operations/connection-manager:install-node")
             self.assertEqual(request["output"]["response_code"], 204)
             self.assertEqual(request["output"]["response_body"], {})
 
 
 class TestUnmount(unittest.TestCase):
     def test_unmount_existing_device(self):
-        with patch('frinx_conductor_workers.netconf_worker.requests.delete') as mock:
+        with patch('frinx_conductor_workers.netconf_worker.requests.post') as mock:
             mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 204)
             request = frinx_conductor_workers.netconf_worker.execute_unmount_netconf({"inputData": {"device_id": "xr6"}})
             self.assertEqual(request["status"], "COMPLETED")
             self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology/topology=topology-netconf/node=xr6")
+                             + "/operations/connection-manager:uninstall-node")
             self.assertEqual(request["output"]["response_code"], 204)
             self.assertEqual(request["output"]["response_body"], {})
 
@@ -189,25 +189,6 @@ class TestCheckCliConnected(unittest.TestCase):
             self.assertEqual(request["output"]["response_body"]["node"][0]["netconf-node-topology:connection-status"],
                              "connected")
 
-
-class TestCheckNetconfIdAvailable(unittest.TestCase):
-    def test_execute_check_netconf_id_available_exist(self):
-        with patch('frinx_conductor_workers.netconf_worker.requests.get') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(netconf_node_connected), encoding='utf-8'), 200)
-            request = frinx_conductor_workers.netconf_worker.execute_check_netconf_id_available({"inputData": {"device_id": "xr6"}})
-            self.assertEqual(request["status"], "FAILED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology"
-                               "/topology=topology-netconf/node=xr6?content=config")
-
-    def test_execute_check_netconf_id_available_non_exist(self):
-        with patch('frinx_conductor_workers.netconf_worker.requests.get') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(netconf_node_non_exist), encoding='utf-8'), 404)
-            request = frinx_conductor_workers.netconf_worker.execute_check_netconf_id_available({"inputData": {"device_id": "xr6"}})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology"
-                               "/topology=topology-netconf/node=xr6?content=config")
 
 
 if __name__ == "__main__":

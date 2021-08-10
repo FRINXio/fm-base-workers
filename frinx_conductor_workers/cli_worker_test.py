@@ -117,7 +117,7 @@ class MockResponse:
 
 class TestMount(unittest.TestCase):
     def test_mount_new_device(self):
-        with patch('frinx_conductor_workers.cli_worker.requests.put') as mock:
+        with patch('frinx_conductor_workers.cli_worker.requests.post') as mock:
             mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 201)
             request = frinx_conductor_workers.cli_worker.execute_mount_cli(
                 {"inputData": {"device_id": "xr5", "host": "192.168.1.1", "port": "22", "protocol": "ssh",
@@ -125,32 +125,32 @@ class TestMount(unittest.TestCase):
                                "parsing-engine": "one-line-parser"}})
             self.assertEqual(request["status"], "COMPLETED")
             self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology/topology=cli/node=xr5")
+                             + "/operations/connection-manager:install-node")
             self.assertEqual(request["output"]["response_code"], 201)
             self.assertEqual(request["output"]["response_body"], {})
 
     def test_mount_existing_device(self):
-        with patch('frinx_conductor_workers.cli_worker.requests.put') as mock:
+        with patch('frinx_conductor_workers.cli_worker.requests.post') as mock:
             mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 204)
             request = frinx_conductor_workers.cli_worker.execute_mount_cli(
                 {"inputData": {"device_id": "xr5", "host": "192.168.1.1", "port": "22", "protocol": "ssh",
                                "type": "ios xr", "version": "5.3.4", "username": "name", "password": "password"}})
             self.assertEqual(request["status"], "COMPLETED")
             self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology/topology=cli/node=xr5")
+                             + "/operations/connection-manager:install-node")
             self.assertEqual(request["output"]["response_code"], 204)
             self.assertEqual(request["output"]["response_body"], {})
 
 
 class TestUnmount(unittest.TestCase):
     def test_unmount_existing_device(self):
-        with patch('frinx_conductor_workers.cli_worker.requests.delete') as mock:
+        with patch('frinx_conductor_workers.cli_worker.requests.post') as mock:
             mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 204)
             request = frinx_conductor_workers.cli_worker.execute_unmount_cli(
                 {"inputData": {"device_id": "xr5"}})
             self.assertEqual(request["status"], "COMPLETED")
             self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology/topology=cli/node=xr5")
+                             + "/operations/connection-manager:uninstall-node")
             self.assertEqual(request["output"]["response_code"], 204)
             self.assertEqual(request["output"]["response_body"], {})
 
@@ -176,111 +176,6 @@ class TestExecuteAndReadRpcCli(unittest.TestCase):
             self.assertEqual(request["output"]["url"], uniconfig_url_base
                              + "/operations/network-topology:network-topology/topology=cli/"
                                "node=xr5/yang-ext:mount/cli-unit-generic:execute-and-read")
-            self.assertEqual(request["output"]["response_body"], exec_and_read_rpc_no_device)
-
-
-class TestCheckCliConnected(unittest.TestCase):
-    def test_execute_check_connected_cli_connecting(self):
-        with patch('frinx_conductor_workers.cli_worker.requests.get') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(cli_node_connecting), encoding='utf-8'), 200)
-            request = frinx_conductor_workers.cli_worker.execute_check_connected_cli({"inputData": {"device_id": "xr5"}})
-            self.assertEqual(request["status"], "FAILED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology/topology=cli/node=xr5?content=nonconfig")
-            self.assertEqual(request["output"]["response_body"]["node"][0]["cli-topology:connection-status"],
-                             "connecting")
-
-    def test_execute_check_connected_cli_connected(self):
-        with patch('frinx_conductor_workers.cli_worker.requests.get') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(cli_node_connected), encoding='utf-8'), 200)
-            request = frinx_conductor_workers.cli_worker.execute_check_connected_cli({"inputData": {"device_id": "xr5"}})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology/topology=cli/node=xr5?content=nonconfig")
-            self.assertEqual(request["output"]["response_body"]["node"][0]["cli-topology:connection-status"],
-                             "connected")
-
-
-class TestCheckCliIdAvailable(unittest.TestCase):
-    def test_execute_check_cli_id_available_exist(self):
-        with patch('frinx_conductor_workers.cli_worker.requests.get') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(cli_node_connected), encoding='utf-8'), 200)
-            request = frinx_conductor_workers.cli_worker.execute_check_cli_id_available({"inputData": {"device_id": "xr5"}})
-            self.assertEqual(request["status"], "FAILED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology/topology=cli/node=xr5")
-
-    def test_execute_check_cli_id_available_non_exist(self):
-        with patch('frinx_conductor_workers.cli_worker.requests.get') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(cli_node_non_exist), encoding='utf-8'), 404)
-            request = frinx_conductor_workers.cli_worker.execute_check_cli_id_available({"inputData": {"device_id": "xr5"}})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology/topology=cli/node=xr5")
-
-
-class TestExecuteReadCliTopologyOperational(unittest.TestCase):
-    def test_execute_read_cli_topology_operational_without_device(self):
-        with patch('frinx_conductor_workers.cli_worker.requests.get') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(cli_oper_without_device), encoding='utf-8'), 200)
-            request = frinx_conductor_workers.cli_worker.execute_read_cli_topology_operational({})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology/topology=cli?content=nonconfig")
-            self.assertEqual(request["output"]["response_body"]["topology"][0]["topology-id"], "cli")
-
-    def test_execute_read_cli_topology_operational_with_device(self):
-        with patch('frinx_conductor_workers.cli_worker.requests.get') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(cli_oper_with_device), encoding='utf-8'), 200)
-            request = frinx_conductor_workers.cli_worker.execute_read_cli_topology_operational({})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/data/network-topology:network-topology/topology=cli?content=nonconfig")
-            self.assertEqual(request["output"]["response_body"]["topology"][0]["topology-id"], "cli")
-            self.assertEqual(request["output"]["response_body"]["topology"][0]["node"][0]["node-id"], "xr5")
-            self.assertEqual(request["output"]["response_body"]["topology"][0]["node"][0][
-                                 "cli-topology:connection-status"], "connected")
-
-
-class TestGetAllDevicesAsDynamicForkTasks(unittest.TestCase):
-    def test_get_all_devices_as_dynamic_fork_tasks(self):
-        with patch('frinx_conductor_workers.cli_worker.read_all_devices') as mock:
-            mock.return_value = 200, cli_oper_with_device
-            request = frinx_conductor_workers.cli_worker.get_all_devices_as_dynamic_fork_tasks(
-                {"inputData": {"task": "Create_loopback_interface_uniconfig",
-                               "task_params": "{\"loopback_id\": \"${workflow.input.loopback_id}\"}"}})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["dynamic_tasks_i"]["xr5"]["loopback_id"],
-                             "${workflow.input.loopback_id}")
-            self.assertEqual(request["output"]["dynamic_tasks_i"]["xr5"]["device_id"], "xr5")
-            self.assertEqual(request["output"]["dynamic_tasks"][0]["name"], "sub_task")
-            self.assertEqual(request["output"]["dynamic_tasks"][0]["taskReferenceName"], "xr5")
-            self.assertEqual(request["output"]["dynamic_tasks"][0]["type"], "SUB_WORKFLOW")
-            self.assertEqual(request["output"]["dynamic_tasks"][0]["subWorkflowParam"]["name"],
-                             "Create_loopback_interface_uniconfig")
-            self.assertEqual(request["output"]["dynamic_tasks"][0]["subWorkflowParam"]["version"], 1)
-
-
-class TestExecuteGetCliJournal(unittest.TestCase):
-    def test_execute_get_cli_journal_existing_device(self):
-        with patch('frinx_conductor_workers.cli_worker.requests.post') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(cli_read_journal), encoding='utf-8'), 200)
-            request = frinx_conductor_workers.cli_worker.execute_get_cli_journal({"inputData": {"device_id": "xr5"}})
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/operations/network-topology:network-topology/topology=cli"
-                               "/node=xr5/yang-ext:mount/journal:read-journal?content=nonconfig")
-            self.assertEqual(request["output"]["response_body"]["output"]["journal"],
-                             cli_read_journal["output"]["journal"])
-
-    def test_execute_get_cli_journal_non_existing_device(self):
-        with patch('frinx_conductor_workers.cli_worker.requests.post') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(exec_and_read_rpc_no_device), encoding='utf-8'), 404)
-            request = frinx_conductor_workers.cli_worker.execute_get_cli_journal({"inputData": {"device_id": "xr5"}})
-            self.assertEqual(request["status"], "FAILED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/operations/network-topology:network-topology/topology=cli"
-                               "/node=xr5/yang-ext:mount/journal:read-journal?content=nonconfig")
             self.assertEqual(request["output"]["response_body"], exec_and_read_rpc_no_device)
 
 
