@@ -77,7 +77,7 @@ def execute_mount_cli(task):
     r = requests.post(id_url, data=json.dumps(mount_body),
                       headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
                       timeout=600,
-                     **additional_uniconfig_request_params)
+                      **additional_uniconfig_request_params)
     response_code, response_json = parse_response(r)
 
     error_message_for_already_installed = "Node has already been installed using CLI protocol"
@@ -147,16 +147,18 @@ def execute_unmount_cli(task):
         {"id": device_id}
     )
 
-    unmount_body = { "input":
+    unmount_body = {
+        "input":
         {
             "node-id": device_id,
-            "connection-type":"cli"
-        }}
+            "connection-type": "cli"
+        }
+    }
 
     r = requests.post(id_url,
-                        data=json.dumps(unmount_body),
-                        headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
-                        **additional_uniconfig_request_params)
+                      data=json.dumps(unmount_body),
+                      headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
+                      **additional_uniconfig_request_params)
     response_code, response_json = parse_response(r)
 
     return {'status': 'COMPLETED', 'output': {'url': id_url,
@@ -184,6 +186,79 @@ def execute_get_cli_journal(task):
                                                'response_code': response_code,
                                                'response_body': response_json},
                 'logs': ["Mountpoint with ID %s, cannot read journal" % device_id]}
+
+
+execute_template = {
+    "input":
+        {
+            "command": "",
+            "wait-for-output-timer": "5"
+        }
+}
+
+
+def execute_cli(task):
+    device_id = task['inputData']['device_id']
+    template = task['inputData']['template']
+    params = task['inputData']['params'] if task['inputData']['params'] else {}
+    params = params if isinstance(params, dict) else eval(params)
+    uniconfig_tx_id = task['inputData']['uniconfig_tx_id'] if 'uniconfig_tx_id' in task["inputData"] else ""
+
+    commands = Template(template).substitute(params)
+    exec_body = copy.deepcopy(execute_template)
+
+    exec_body["input"]["command"] = commands
+
+    id_url = Template(uniconfig_url_cli_mount_rpc).substitute({"id": device_id}) + "/yang-ext:mount/cli-unit-generic:execute"
+
+    r = requests.post(id_url, data=json.dumps(exec_body), headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
+                      **additional_uniconfig_request_params)
+    response_code, response_json = parse_response(r)
+
+    if response_code == requests.codes.ok:
+        return {'status': 'COMPLETED', 'output': {'url': id_url,
+                                                  'request_body': exec_body,
+                                                  'response_code': response_code,
+                                                  'response_body': response_json},
+                'logs': ["Mountpoint with ID %s configured" % device_id]}
+    else:
+        return {'status': 'FAILED', 'output': {'url': id_url,
+                                               'request_body': exec_body,
+                                               'response_code': response_code,
+                                               'response_body': response_json},
+                'logs': ["Unable to configure device with ID %s" % device_id]}
+
+
+def execute_and_expect_cli(task):
+    device_id = task['inputData']['device_id']
+    template = task['inputData']['template']
+    params = task['inputData']['params'] if task['inputData']['params'] else {}
+    params = params if isinstance(params, dict) else eval(params)
+    uniconfig_tx_id = task['inputData']['uniconfig_tx_id'] if 'uniconfig_tx_id' in task["inputData"] else ""
+
+    commands = Template(template).substitute(params)
+    exec_body = copy.deepcopy(execute_template)
+
+    exec_body["input"]["command"] = commands
+
+    id_url = Template(uniconfig_url_cli_mount_rpc).substitute({"id": device_id}) + "/yang-ext:mount/cli-unit-generic:execute-and-expect"
+
+    r = requests.post(id_url, data=json.dumps(exec_body), headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
+                      **additional_uniconfig_request_params)
+    response_code, response_json = parse_response(r)
+
+    if response_code == requests.codes.ok:
+        return {'status': 'COMPLETED', 'output': {'url': id_url,
+                                                  'request_body': exec_body,
+                                                  'response_code': response_code,
+                                                  'response_body': response_json},
+                'logs': ["Mountpoint with ID %s configured" % device_id]}
+    else:
+        return {'status': 'FAILED', 'output': {'url': id_url,
+                                               'request_body': exec_body,
+                                               'response_code': response_code,
+                                               'response_body': response_json},
+                'logs': ["Unable to configure device with ID %s" % device_id]}
 
 
 def start(cc):
@@ -257,3 +332,38 @@ def start(cc):
             "response_body"
         ]
     }, execute_get_cli_journal)
+
+    cc.register('CLI_execute_cli', {
+        "description": '{"description": "execute commands for a CLI device", "labels": ["BASICS","CLI"]}',
+        "timeoutSeconds": 60,
+        "responseTimeoutSeconds": 60,
+        "inputKeys": [
+            "device_id",
+            "template",
+            "params",
+            "uniconfig_tx_id"
+        ],
+        "outputKeys": [
+            "url",
+            "request_body",
+            "response_code",
+            "response_body"
+        ]
+    }, execute_cli)
+
+    cc.register('CLI_execute_and_expect_cli', {
+        "description": '{"description": "execute commands for a CLI device", "labels": ["BASICS","CLI"]}',
+        "responseTimeoutSeconds": 30,
+        "inputKeys": [
+            "device_id",
+            "template",
+            "params",
+            "uniconfig_tx_id"
+        ],
+        "outputKeys": [
+            "url",
+            "request_body",
+            "response_code",
+            "response_body"
+        ]
+    }, execute_and_expect_cli)
