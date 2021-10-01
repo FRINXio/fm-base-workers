@@ -103,7 +103,8 @@ def http_task(task):
     additional_headers = http_request['headers'] if 'headers' in http_request else {}
     headers.update(additional_headers)
 
-    body = http_request['body'] if 'body' in http_request else ""
+    body = http_request['body']
+    body = body if isinstance(body, str) else json.dumps(body if body else {})
 
     timeout = http_request['timeout'] if 'timeout' in http_request else 60.0
     verify_cert = http_request['verifyCertificate'] if 'verifyCertificate' in http_request else True
