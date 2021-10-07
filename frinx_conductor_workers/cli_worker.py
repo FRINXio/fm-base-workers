@@ -72,6 +72,8 @@ def execute_mount_cli(task):
     mount_body["input"]["cli"]["cli-topology:password"] = task["inputData"]["password"]
     mount_body["input"]["cli"]["cli-topology:parsing-engine"] = task["inputData"].get("parsing-engine",
                                                                                       "tree-parser")
+    mount_body["input"]["cli"]["uniconfig-config:install-uniconfig-node-enabled"] = task["inputData"].get("install-uniconfig-node-enabled", True)
+
     id_url = uniconfig_url_cli_mount_sync
 
     r = requests.post(id_url, data=json.dumps(mount_body),
