@@ -1,18 +1,11 @@
 import json
 import os
+from collections import namedtuple
 from http.cookies import SimpleCookie
 
 uniconfig_url_base = os.getenv("UNICONFIG_URL_BASE","https://uniconfig:8181/rests")
 elastic_url_base = os.getenv("ELASTICSEACRH_URL_BASE","http://elasticsearch:9200")
 conductor_url_base = os.getenv("CONDUCTOR_URL_BASE","http://workflow-proxy:8088/proxy/api")
-
-# username = ''
-# password = ''
-#
-# with open('/opt/uniconfig_pass/db-credentials.txt', 'r') as f:
-#     lines = f.readlines()
-#     username = lines[0].split(':')[1].rstrip('\n')
-#     password = lines[1].split(':')[1].rstrip('\n')
 
 uniconfig_user = os.getenv("UNICONFIG_USER",'admin')
 uniconfig_passwd = os.getenv("UNICONFIG_PASSWD",'admin')
@@ -26,10 +19,10 @@ x_auth_user_group = os.getenv("X_AUTH_USER_GROUP","network-admin")
 conductor_headers = {"Content-Type": "application/json", "x-tenant-id": x_tenant_id, "from": x_from, "x-auth-user-groups": x_auth_user_group}
 
 additional_uniconfig_request_params = {
-    'auth': uniconfig_credentials,
-    'verify': False
+    "auth": uniconfig_credentials,
+    "verify": False,
+    "headers": uniconfig_headers,
 }
-
 
 def parse_response(r):
     decode = r.content.decode('utf8')
@@ -41,7 +34,32 @@ def parse_response(r):
     response_code = r.status_code
     return response_code, response_json
 
+def extract_uniconfig_cookies(task):
+    uniconfig_cookies_multizone = extract_uniconfig_cookies_multizone(task)
 
+    cluster_for_device = get_uniconfig_cluster_from_task(task)
+
+    return uniconfig_cookies_multizone.get(cluster_for_device, {})
+
+def extract_uniconfig_cookies_multizone(task):
+    uniconfig_context = task.get("inputData",{}).get("uniconfig_context",{})
+    uniconfig_cookies_multizone = uniconfig_context.get("uniconfig_cookies_multizone", {})
+
+    return uniconfig_cookies_multizone
+
+def get_devices_by_uniconfig(devices, task, existing_uniconfig_cookies_multizone=None):
+    device_with_cluster = namedtuple("devices", ["uc_cluster", "device_names"])
+
+    return [device_with_cluster(uc_cluster=uniconfig_url_base,
+                                device_names=devices)]
+
+def get_uniconfig_cluster_from_task(task):
+    return uniconfig_url_base
+
+
+
+
+#these could be removed>>>
 def parse_header(r):
     cookie = SimpleCookie()
     cookie.load(r.cookies)
@@ -57,3 +75,4 @@ def add_uniconfig_tx_cookie(uniconfig_tx_id):
     if uniconfig_tx_id and uniconfig_tx_id != "":
         header["Cookie"] = "UNICONFIGTXID=" + uniconfig_tx_id
     return header
+#<<<these could be removed

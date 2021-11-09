@@ -298,15 +298,15 @@ class TestCommit(unittest.TestCase):
             mock.return_value = MockResponse(bytes(json.dumps(commit_output), encoding='utf-8'), 200, "")
             request = frinx_conductor_workers.uniconfig_worker.commit({"inputData": {"devices": "xr5, xr6"}})
             self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["response_code"], 200)
-            self.assertEqual(request["output"]["response_body"]["output"]["overall-status"], "complete")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0]["node-id"],
+            self.assertEqual(request["output"]["responses"][0]["response_code"], 200)
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["overall-status"], "complete")
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][0]["node-id"],
                              "xr5")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0][
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][0][
                                  "configuration-status"], "complete")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][1]["node-id"],
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][1]["node-id"],
                              "xr6")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][1][
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][1][
                                  "configuration-status"], "complete")
 
     def test_commit_with_non_existing_device(self):
@@ -323,13 +323,13 @@ class TestDryRun(unittest.TestCase):
             mock.return_value = MockResponse(bytes(json.dumps(dry_run_output), encoding='utf-8'), 200, "")
             request = frinx_conductor_workers.uniconfig_worker.dryrun_commit({"inputData": {"devices": "xr5"}})
             self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["response_code"], 200)
-            self.assertEqual(request["output"]["response_body"]["output"]["overall-status"], "complete")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0]["node-id"],
+            self.assertEqual(request["output"]["responses"][0]["response_code"], 200)
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["overall-status"], "complete")
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][0]["node-id"],
                              "xr5")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0][
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][0][
                                  "configuration-status"], "complete")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0][
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][0][
                                  "configuration"], "2019-09-13T08:37:28.331: configure terminal\n"
                                                    "2019-09-13T08:37:28.536: interface GigabitEthernet0/0/0/1\n"
                                                    "shutdown\nroot\n\n"
@@ -350,21 +350,21 @@ class TestCalculateDiff(unittest.TestCase):
             mock.return_value = MockResponse(bytes(json.dumps(calculate_diff_output), encoding='utf-8'), 200, "")
             request = frinx_conductor_workers.uniconfig_worker.calc_diff({"inputData": {"devices": "xr5"}})
             self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["response_code"], 200)
-            self.assertEqual(request["output"]["response_body"]["output"]["overall-status"], "complete")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0]["node-id"],
+            self.assertEqual(request["output"]["responses"][0]["response_code"], 200)
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["overall-status"], "complete")
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][0]["node-id"],
                              "xr5")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0][
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][0][
                                 "updated-data"][0]["path"], "network-topology:network-topology/topology=uniconfig/"
                                                             "node=xr5/frinx-uniconfig-topology:configuration/"
                                                             "frinx-openconfig-interfaces:interfaces/"
                                                             "interface=GigabitEthernet0%2F0%2F0%2F0/config")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0][
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][0][
                                  "updated-data"][0]["data-actual"], "{\n  \"frinx-openconfig-interfaces:config\": {\n"
                                                                     "    \"type\": \"iana-if-type:ethernetCsmacd\",\n"
                                                                     "    \"enabled\": false,\n"
                                                                     "    \"name\": \"GigabitEthernet0/0/0/0\"\n  }\n}")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0][
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][0][
                                  "updated-data"][0]["data-intended"],
                              "{\n  \"frinx-openconfig-interfaces:config\": {\n"
                              "    \"type\": \"iana-if-type:ethernetCsmacd\",\n"
@@ -385,15 +385,15 @@ class TestSyncFromNetwork(unittest.TestCase):
             mock.return_value = MockResponse(bytes(json.dumps(RPC_output_multiple_devices), encoding='utf-8'), 200, "")
             request = frinx_conductor_workers.uniconfig_worker.sync_from_network({"inputData": {"devices": "xr5, xr6"}})
             self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["response_code"], 200)
-            self.assertEqual(request["output"]["response_body"]["output"]["overall-status"], "complete")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0]["node-id"],
+            self.assertEqual(request["output"]["responses"][0]["response_code"], 200)
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["overall-status"], "complete")
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][0]["node-id"],
                              "xr5")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0][
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][0][
                                  "status"], "complete")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][1]["node-id"],
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][1]["node-id"],
                              "xr6")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][1][
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][1][
                                  "status"], "complete")
 
     def test_sync_from_network_with_non_existing_device(self):
@@ -410,15 +410,15 @@ class TestReplaceConfigWithOper(unittest.TestCase):
             mock.return_value = MockResponse(bytes(json.dumps(RPC_output_multiple_devices), encoding='utf-8'), 200, "")
             request = frinx_conductor_workers.uniconfig_worker.replace_config_with_oper({"inputData": {"devices": "xr5, xr6"}})
             self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["response_code"], 200)
-            self.assertEqual(request["output"]["response_body"]["output"]["overall-status"], "complete")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0]["node-id"],
+            self.assertEqual(request["output"]["responses"][0]["response_code"], 200)
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["overall-status"], "complete")
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][0]["node-id"],
                              "xr5")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][0][
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][0][
                                  "status"], "complete")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][1]["node-id"],
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][1]["node-id"],
                              "xr6")
-            self.assertEqual(request["output"]["response_body"]["output"]["node-results"]["node-result"][1][
+            self.assertEqual(request["output"]["responses"][0]["response_body"]["output"]["node-results"]["node-result"][1][
                                  "status"], "complete")
 
     def test_replace_config_with_oper_with_non_existing_device(self):

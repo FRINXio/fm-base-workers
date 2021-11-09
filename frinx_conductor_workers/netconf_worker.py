@@ -7,20 +7,19 @@ import logging
 
 from string import Template
 from frinx_conductor_workers.frinx_rest import (
-    uniconfig_url_base,
     additional_uniconfig_request_params,
     parse_response,
-    add_uniconfig_tx_cookie,
+    extract_uniconfig_cookies, get_uniconfig_cluster_from_task,
 )
 
 
 
 local_logs = logging.getLogger(__name__)
 
-uniconfig_url_netconf_mount = uniconfig_url_base + "/data/network-topology:network-topology/topology=topology-netconf/node=$id"
-uniconfig_url_netconf_mount_sync = uniconfig_url_base + "/operations/connection-manager:install-node"
-uniconfig_url_netconf_unmount_sync = uniconfig_url_base + "/operations/connection-manager:uninstall-node"
-uniconfig_url_netconf_mount_oper = uniconfig_url_base + "/data/network-topology:network-topology/topology=topology-netconf/node=$id?content=nonconfig"
+uniconfig_url_netconf_mount = "$base_url/data/network-topology:network-topology/topology=topology-netconf/node=$id"
+uniconfig_url_netconf_mount_sync = "$base_url/operations/connection-manager:install-node"
+uniconfig_url_netconf_unmount_sync = "$base_url/operations/connection-manager:uninstall-node"
+uniconfig_url_netconf_mount_oper = "$base_url/data/network-topology:network-topology/topology=topology-netconf/node=$id?content=nonconfig"
 
 sync_mount_template = {
     "input":
@@ -60,7 +59,7 @@ def execute_mount_netconf(task):
     viewed and tested also in postman collections for each device.
 
     Args:
-        task: A dict with a complete device data and optional uniconfig_tx_id
+        task: A dict with a complete device data
     Returns:
         response: dict, e.g. {'status': 'COMPLETED', 'output': {'url': id_url,
                                                   'request_body': mount_body,
@@ -71,11 +70,6 @@ def execute_mount_netconf(task):
     # First, check the validity of the provided IP address.
 
     device_id = task["inputData"]["device_id"]
-    uniconfig_tx_id = (
-        task["inputData"]["uniconfig_tx_id"]
-        if "uniconfig_tx_id" in task["inputData"]
-        else ""
-    )
 
     mount_body = copy.deepcopy(sync_mount_template)
     mount_body["input"]["node-id"] = task["inputData"]["device_id"]
@@ -169,10 +163,11 @@ def execute_mount_netconf(task):
             "inputData"
         ]["capability"])
 
-    id_url = uniconfig_url_netconf_mount_sync
+    id_url = Template(uniconfig_url_netconf_mount_sync).substitute(
+        {"base_url": get_uniconfig_cluster_from_task(task)}
+    )
 
     r = requests.post(id_url, data=json.dumps(mount_body),
-                     headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
                      timeout=600,
                      **additional_uniconfig_request_params)
     response_code, response_json = parse_response(r)
@@ -200,20 +195,14 @@ def execute_mount_netconf(task):
 
 def execute_unmount_netconf(task):
     device_id = task['inputData']['device_id']
-    uniconfig_tx_id = task['inputData']['uniconfig_tx_id'] if 'uniconfig_tx_id' in task['inputData'] else ""
 
     id_url = Template(uniconfig_url_netconf_unmount_sync).substitute(
-        {"id": device_id}
+        {"base_url": get_uniconfig_cluster_from_task(task)}
     )
+    unmount_body = {"input": {"node-id": device_id, "connection-type": "netconf"}}
 
-    unmount_body = { "input":
-            {
-                "node-id": device_id,
-                "connection-type":"netconf"
-            }}
     r = requests.post(id_url,
                         data=json.dumps(unmount_body),
-                        headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
                         **additional_uniconfig_request_params)
     response_code, response_json = parse_response(r)
 
@@ -224,11 +213,13 @@ def execute_unmount_netconf(task):
 
 def execute_check_connected_netconf(task):
     device_id = task['inputData']['device_id']
-    uniconfig_tx_id = task['inputData']['uniconfig_tx_id'] if 'uniconfig_tx_id' in task['inputData'] else ""
+    uniconfig_cookies = extract_uniconfig_cookies(task)
 
-    id_url = Template(uniconfig_url_netconf_mount_oper).substitute({"id": device_id})
+    id_url = Template(uniconfig_url_netconf_mount_oper).substitute(
+        {"id": device_id, "base_url": get_uniconfig_cluster_from_task(task)})
 
-    r = requests.get(id_url, headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
+    r = requests.get(id_url,
+                     cookies=uniconfig_cookies,
                      **additional_uniconfig_request_params)
     response_code, response_json = parse_response(r)
 
@@ -247,11 +238,15 @@ def execute_check_connected_netconf(task):
 def read_structured_data(task):
     device_id = task['inputData']['device_id']
     uri = task['inputData']['uri']
-    uniconfig_tx_id = task['inputData']['uniconfig_tx_id'] if 'uniconfig_tx_id' in task['inputData'] else ""
 
-    id_url = Template(uniconfig_url_netconf_mount).substitute({"id": device_id}) + "/yang-ext:mount" + (uri if uri else "")
+    uniconfig_cookies = extract_uniconfig_cookies(task)
 
-    r = requests.get(id_url, headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
+    id_url = Template(uniconfig_url_netconf_mount).substitute(
+        {"id": device_id, "base_url": get_uniconfig_cluster_from_task(task)}
+    ) + "/yang-ext:mount" + (uri if uri else "")
+
+    r = requests.get(id_url,
+                     cookies=uniconfig_cookies,
                      **additional_uniconfig_request_params)
     response_code, response_json = parse_response(r)
 
@@ -290,7 +285,6 @@ def start(cc):
             "sleep-factor",
             "between-attempts-timeout-millis",
             "connection-timeout-millis",
-            "uniconfig_tx_id"
         ],
         "outputKeys": [
             "url",
@@ -304,7 +298,6 @@ def start(cc):
         "description": '{"description": "unmount a CLI device", "labels": ["BASICS","NETCONF"]}',
         "inputKeys": [
             "device_id",
-            "uniconfig_tx_id"
         ],
         "outputKeys": [
             "url",
@@ -318,7 +311,7 @@ def start(cc):
         "inputKeys": [
             "device_id",
             "uri",
-            "uniconfig_tx_id"
+            "uniconfig_context"
         ],
         "outputKeys": [
             "url",

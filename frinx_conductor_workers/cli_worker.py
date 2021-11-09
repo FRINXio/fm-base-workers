@@ -6,17 +6,16 @@ import requests
 import logging
 from string import Template
 
-from frinx_conductor_workers.frinx_rest import uniconfig_url_base, additional_uniconfig_request_params, parse_response, \
-    add_uniconfig_tx_cookie
+from frinx_conductor_workers.frinx_rest import \
+    additional_uniconfig_request_params, parse_response, \
+    extract_uniconfig_cookies, get_uniconfig_cluster_from_task
 
 local_logs = logging.getLogger(__name__)
 
-uniconfig_url_cli_mount = uniconfig_url_base + "/data/network-topology:network-topology/topology=cli/node=$id"
-uniconfig_url_cli_mount_sync = uniconfig_url_base + "/operations/connection-manager:install-node"
-uniconfig_url_cli_unmount_sync = uniconfig_url_base + "/operations/connection-manager:uninstall-node"
-uniconfig_url_cli_mount_oper = uniconfig_url_base + "/data/network-topology:network-topology/topology=cli/node=$id?content=nonconfig"
-uniconfig_url_cli_mount_rpc = uniconfig_url_base + "/operations/network-topology:network-topology/topology=cli/node=$id"
-uniconfig_url_cli_read_journal = uniconfig_url_base + "/operations/network-topology:network-topology/topology=cli/node=$id/yang-ext:mount/journal:read-journal?content=nonconfig"
+uniconfig_url_cli_mount_sync = "$base_url/operations/connection-manager:install-node"
+uniconfig_url_cli_unmount_sync = "$base_url/operations/connection-manager:uninstall-node"
+uniconfig_url_cli_mount_rpc = "$base_url/operations/network-topology:network-topology/topology=cli/node=$id"
+uniconfig_url_cli_read_journal = "$base_url/operations/network-topology:network-topology/topology=cli/node=$id/yang-ext:mount/journal:read-journal?content=nonconfig"
 
 sync_mount_template = {
     "input":{
@@ -45,7 +44,6 @@ def execute_mount_cli(task):
 
     Args:
         task: A dict with a complete device data (mandatory) and optional
-        parameter uniconfig_tx_id
     Returns:
         response: dict, e.g. {"status": "COMPLETED", "output": {"url": id_url,
                                                   "request_body": mount_body,
@@ -54,12 +52,6 @@ def execute_mount_cli(task):
                 }}
     """
     device_id = task["inputData"]["device_id"]
-    uniconfig_tx_id = (
-        task["inputData"]["uniconfig_tx_id"]
-        if "uniconfig_tx_id" in task["inputData"]
-        else ""
-    )
-
     mount_body = copy.deepcopy(sync_mount_template)
 
     mount_body["input"]["node-id"] = task["inputData"]["device_id"]
@@ -74,10 +66,11 @@ def execute_mount_cli(task):
                                                                                       "tree-parser")
     mount_body["input"]["cli"]["uniconfig-config:install-uniconfig-node-enabled"] = task["inputData"].get("install-uniconfig-node-enabled", True)
 
-    id_url = uniconfig_url_cli_mount_sync
+    id_url = Template(uniconfig_url_cli_mount_sync).substitute(
+        {"base_url": get_uniconfig_cluster_from_task(task)}
+    )
 
     r = requests.post(id_url, data=json.dumps(mount_body),
-                      headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
                       timeout=600,
                       **additional_uniconfig_request_params)
     response_code, response_json = parse_response(r)
@@ -107,7 +100,7 @@ def execute_and_read_rpc_cli(task):
     template = task['inputData']['template']
     params = task['inputData']['params'] if task['inputData']['params'] else {}
     params = params if isinstance(params, dict) else eval(params)
-    uniconfig_tx_id = task['inputData']['uniconfig_tx_id'] if 'uniconfig_tx_id' in task["inputData"] else ""
+    uniconfig_cookies = extract_uniconfig_cookies(task)
     output_timer = task['inputData'].get('output_timer')
 
     commands = Template(template).substitute(params)
@@ -119,10 +112,11 @@ def execute_and_read_rpc_cli(task):
         exec_body["input"]["wait-for-output-timer"] = output_timer
 
     id_url = Template(uniconfig_url_cli_mount_rpc).substitute(
-        {"id": device_id}
+        {"id": device_id, "base_url": get_uniconfig_cluster_from_task(task)}
     ) + "/yang-ext:mount/cli-unit-generic:execute-and-read"
 
-    r = requests.post(id_url, data=json.dumps(exec_body), headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
+    r = requests.post(id_url, data=json.dumps(exec_body),
+                      cookies=uniconfig_cookies,
                       **additional_uniconfig_request_params)
 
     response_code, response_json = parse_response(r)
@@ -143,23 +137,14 @@ def execute_and_read_rpc_cli(task):
 
 def execute_unmount_cli(task):
     device_id = task['inputData']['device_id']
-    uniconfig_tx_id = task['inputData']['uniconfig_tx_id'] if 'uniconfig_tx_id' in task["inputData"] else ""
 
     id_url = Template(uniconfig_url_cli_unmount_sync).substitute(
-        {"id": device_id}
+        {"base_url": get_uniconfig_cluster_from_task(task)}
     )
 
-    unmount_body = {
-        "input":
-        {
-            "node-id": device_id,
-            "connection-type": "cli"
-        }
-    }
-
+    unmount_body = {"input": {"node-id": device_id, "connection-type": "cli"}}
     r = requests.post(id_url,
                       data=json.dumps(unmount_body),
-                      headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
                       **additional_uniconfig_request_params)
     response_code, response_json = parse_response(r)
 
@@ -171,11 +156,14 @@ def execute_unmount_cli(task):
 
 def execute_get_cli_journal(task):
     device_id = task['inputData']['device_id']
-    uniconfig_tx_id = task['inputData']['uniconfig_tx_id'] if 'uniconfig_tx_id' in task['inputData'] else ""
+    uniconfig_cookies = extract_uniconfig_cookies(task)
 
-    id_url = Template(uniconfig_url_cli_read_journal).substitute({"id": device_id})
+    id_url = Template(uniconfig_url_cli_read_journal).substitute(
+        {"id": device_id, "base_url": get_uniconfig_cluster_from_task(task)})
 
-    r = requests.post(id_url, headers=add_uniconfig_tx_cookie(uniconfig_tx_id), **additional_uniconfig_request_params)
+    r = requests.post(id_url,
+                      cookies=uniconfig_cookies,
+                      **additional_uniconfig_request_params)
     response_code, response_json = parse_response(r)
 
     if response_code == requests.codes.ok:
@@ -204,16 +192,20 @@ def execute_cli(task):
     template = task['inputData']['template']
     params = task['inputData']['params'] if task['inputData']['params'] else {}
     params = params if isinstance(params, dict) else eval(params)
-    uniconfig_tx_id = task['inputData']['uniconfig_tx_id'] if 'uniconfig_tx_id' in task["inputData"] else ""
+
+    uniconfig_cookies = extract_uniconfig_cookies(task)
 
     commands = Template(template).substitute(params)
     exec_body = copy.deepcopy(execute_template)
 
     exec_body["input"]["command"] = commands
 
-    id_url = Template(uniconfig_url_cli_mount_rpc).substitute({"id": device_id}) + "/yang-ext:mount/cli-unit-generic:execute"
+    id_url = Template(uniconfig_url_cli_mount_rpc).substitute(
+        {"id": device_id, "base_url": get_uniconfig_cluster_from_task(task)}
+    ) + "/yang-ext:mount/cli-unit-generic:execute"
 
-    r = requests.post(id_url, data=json.dumps(exec_body), headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
+    r = requests.post(id_url, data=json.dumps(exec_body),
+                      cookies=uniconfig_cookies,
                       **additional_uniconfig_request_params)
     response_code, response_json = parse_response(r)
 
@@ -236,16 +228,20 @@ def execute_and_expect_cli(task):
     template = task['inputData']['template']
     params = task['inputData']['params'] if task['inputData']['params'] else {}
     params = params if isinstance(params, dict) else eval(params)
-    uniconfig_tx_id = task['inputData']['uniconfig_tx_id'] if 'uniconfig_tx_id' in task["inputData"] else ""
+
+    uniconfig_cookies = extract_uniconfig_cookies(task)
 
     commands = Template(template).substitute(params)
     exec_body = copy.deepcopy(execute_template)
 
     exec_body["input"]["command"] = commands
 
-    id_url = Template(uniconfig_url_cli_mount_rpc).substitute({"id": device_id}) + "/yang-ext:mount/cli-unit-generic:execute-and-expect"
+    id_url = Template(uniconfig_url_cli_mount_rpc).substitute(
+        {"id": device_id, "base_url": get_uniconfig_cluster_from_task(task)}
+    ) + "/yang-ext:mount/cli-unit-generic:execute-and-expect"
 
-    r = requests.post(id_url, data=json.dumps(exec_body), headers=add_uniconfig_tx_cookie(uniconfig_tx_id),
+    r = requests.post(id_url, data=json.dumps(exec_body),
+                      cookies=uniconfig_cookies,
                       **additional_uniconfig_request_params)
     response_code, response_json = parse_response(r)
 
@@ -279,7 +275,6 @@ def start(cc):
             "port",
             "username",
             "password",
-            "uniconfig_tx_id"
         ],
         "outputKeys": [
             "url",
@@ -295,7 +290,6 @@ def start(cc):
         "responseTimeoutSeconds": 600,
         "inputKeys": [
             "device_id",
-            "uniconfig_tx_id"
         ],
         "outputKeys": [
             "url",
@@ -310,7 +304,7 @@ def start(cc):
             "device_id",
             "template",
             "params",
-            "uniconfig_tx_id",
+            "uniconfig_context",
             "output_timer"
         ],
         "outputKeys": [
@@ -326,7 +320,7 @@ def start(cc):
         "responseTimeoutSeconds": 10,
         "inputKeys": [
             "device_id",
-            "uniconfig_tx_id"
+            "uniconfig_context"
         ],
         "outputKeys": [
             "url",
@@ -343,7 +337,7 @@ def start(cc):
             "device_id",
             "template",
             "params",
-            "uniconfig_tx_id"
+            "uniconfig_context"
         ],
         "outputKeys": [
             "url",
@@ -360,7 +354,7 @@ def start(cc):
             "device_id",
             "template",
             "params",
-            "uniconfig_tx_id"
+            "uniconfig_context"
         ],
         "outputKeys": [
             "url",
