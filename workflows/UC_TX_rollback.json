@@ -1,0 +1,33 @@
+{
+  "name": "UC_TX_rollback",
+  "description": "{\"description\":\"Rolls back all transactions from current workflow\",\"labels\":[\"TX\", \"MULTIZONE\"]}",
+  "version": 1,
+  "tasks": [
+    {
+      "name": "UNICONFIG_tx_find_started",
+      "taskReferenceName": "find",
+      "inputParameters": {
+        "failed_wf_id": "${workflow.input.workflowId}"
+      },
+      "type": "SIMPLE"
+    },
+    {
+      "name": "UNICONFIG_tx_rollback",
+      "taskReferenceName": "rollback",
+      "inputParameters": {
+        "uniconfig_contexts": "${find.output.uniconfig_contexts}",
+        "committed_contexts": "${find.output.committed_contexts}"
+      },
+      "type": "SIMPLE"
+    }
+  ],
+  "inputParameters": [],
+  "outputParameters": {
+    "uniconfig_contexts": "${rollback.output.uniconfig_contexts}"
+  },
+  "schemaVersion": 2,
+  "restartable": false,
+  "workflowStatusListenerEnabled": true,
+  "timeoutPolicy": "ALERT_ONLY",
+  "timeoutSeconds": 600
+}

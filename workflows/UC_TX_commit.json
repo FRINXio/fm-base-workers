@@ -1,0 +1,74 @@
+{
+  "name": "UC_TX_commit",
+  "description": "{\"description\":\"Commit a running uniconfig TX in case it was started by the same WF\",\"labels\":[\"TX\", \"MULTIZONE\"]}",
+  "version": 1,
+  "tasks": [
+    {
+      "name": "decide_task",
+      "taskReferenceName": "should_commit_current_tx",
+      "inputParameters": {
+        "started_by_wf": "${workflow.input.uniconfig_context.started_by_wf}",
+        "parent_wf": "${workflow.parentWorkflowId}"
+      },
+      "type": "DECISION",
+      "caseExpression": "$.started_by_wf === $.parent_wf ? 'True' : 'False'",
+      "decisionCases": {
+        "True": [
+          {
+            "name": "UNICONFIG_commit",
+            "taskReferenceName": "commit_multizone",
+            "inputParameters": {
+              "devices": "${workflow.input.devices}",
+              "uniconfig_context": "${workflow.input.uniconfig_context}"
+            },
+            "type": "SIMPLE",
+            "decisionCases": {},
+            "defaultCase": [],
+            "forkTasks": [],
+            "startDelay": 0,
+            "joinOn": [],
+            "optional": false,
+            "defaultExclusiveJoinTask": [],
+            "asyncComplete": false,
+            "loopOver": []
+          },
+          {
+            "name": "terminate",
+            "taskReferenceName": "committed_tx",
+            "inputParameters": {
+              "terminationStatus": "COMPLETED",
+              "workflowOutput": {
+                "committed_current_context": "${workflow.input.uniconfig_context}"
+              }
+            },
+            "type": "TERMINATE",
+            "startDelay": 0,
+            "optional": false
+          }
+        ],
+        "False": [
+          {
+            "name": "terminate",
+            "taskReferenceName": "dont_commit_parent_tx",
+            "inputParameters": {
+              "terminationStatus": "COMPLETED",
+              "workflowOutput": {
+                "uncommitted_parent_uniconfig_context": "${workflow.input.uniconfig_context}"
+              }
+            },
+            "type": "TERMINATE",
+            "startDelay": 0,
+            "optional": false
+          }
+        ]
+      }
+    }
+  ],
+  "inputParameters": [],
+  "outputParameters": {},
+  "schemaVersion": 2,
+  "restartable": false,
+  "workflowStatusListenerEnabled": true,
+  "timeoutPolicy": "ALERT_ONLY",
+  "timeoutSeconds": 1200
+}
