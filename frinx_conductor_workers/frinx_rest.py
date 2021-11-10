@@ -39,11 +39,11 @@ def extract_uniconfig_cookies(task):
 
     cluster_for_device = get_uniconfig_cluster_from_task(task)
 
-    return uniconfig_cookies_multizone.get(cluster_for_device, {})
+    return uniconfig_cookies_multizone.get(cluster_for_device, {}) or {}
 
 def extract_uniconfig_cookies_multizone(task):
-    uniconfig_context = task.get("inputData",{}).get("uniconfig_context",{})
-    uniconfig_cookies_multizone = uniconfig_context.get("uniconfig_cookies_multizone", {})
+    uniconfig_context = task.get("inputData",{}).get("uniconfig_context",{}) or {}
+    uniconfig_cookies_multizone = uniconfig_context.get("uniconfig_cookies_multizone", {}) or {}
 
     return uniconfig_cookies_multizone
 
