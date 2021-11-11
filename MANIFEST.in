@@ -1,0 +1,1 @@
+recursive-include frinx_conductor_workflows *.json
