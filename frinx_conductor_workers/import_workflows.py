@@ -10,12 +10,17 @@ local_logs = logging.getLogger(__name__)
 workflow_import_url = conductor_url_base + '/metadata/workflow'
 
 
+def import_base_workflows():
+    import frinx_conductor_workflows
+    import_workflows(os.path.dirname(frinx_conductor_workflows.__file__))
+
+
 def import_workflows(path):
     if os.path.isdir(path):
         local_logs.info("Importing workflows from folder %s", path)
         with os.scandir(path) as entries:
             for entry in entries:
-                if entry.is_file():
+                if entry.is_file() and entry.name.endswith('.json'):
                     try:
                         local_logs.info("Importing workflow %s", entry.name)
                         with open(entry, 'r') as payload_file:

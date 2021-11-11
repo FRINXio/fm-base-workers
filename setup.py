@@ -16,16 +16,17 @@
 from setuptools import setup
 
 setup(
-  name = 'frinx_conductor_workers',
-  packages = ['frinx_conductor_workers'],
-  version = '1.0.4',
-  description = 'Conductor python client workers',
-  author = 'Frinx',
-  author_email = 'info@frinx.io',
-  url = 'https://github.com/FRINXio/uniflow-micros',
-  keywords = ['conductor'],
-  license = 'Apache 2.0',
-  # install_requires = [
-  #   'requests',
-  # ]
+    name='frinx_conductor_workers',
+    packages=['frinx_conductor_workers', 'frinx_conductor_workflows'],
+    version='1.0.5',
+    description='Conductor python client workers',
+    author='Frinx',
+    author_email='info@frinx.io',
+    url='https://github.com/FRINXio/uniflow-micros',
+    keywords=['conductor'],
+    license='Apache 2.0',
+    include_package_data=True
+    # install_requires = [
+    #   'requests',
+    # ]
 )
