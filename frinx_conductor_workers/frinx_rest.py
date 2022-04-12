@@ -6,6 +6,9 @@ from http.cookies import SimpleCookie
 uniconfig_url_base = os.getenv("UNICONFIG_URL_BASE","https://uniconfig:8181/rests")
 elastic_url_base = os.getenv("ELASTICSEACRH_URL_BASE","http://elasticsearch:9200")
 conductor_url_base = os.getenv("CONDUCTOR_URL_BASE","http://workflow-proxy:8088/proxy/api")
+inventory_url_base = os.getenv("INVENTORY_URL_BASE","http://inventory:8000/graphql")
+influxdb_url_base = os.getenv("INFLUXDB_URL_BASE","http://influxdb:8086")
+uniresource_url_base = os.getenv("UNIRESOURCE_URL_BASE","http://uniresource:8884/query")
 
 uniconfig_user = os.getenv("UNICONFIG_USER",'admin')
 uniconfig_passwd = os.getenv("UNICONFIG_PASSWD",'admin')
