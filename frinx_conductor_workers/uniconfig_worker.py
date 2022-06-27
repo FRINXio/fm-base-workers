@@ -95,6 +95,7 @@ def write_structured_data(task):
         response_body (dict) : JSON response from UniConfig
     """
     device_id = task["inputData"]["device_id"]
+    method = task["inputData"].get("method", "PUT")
     uri = task["inputData"]["uri"]
     uri = apply_functions(uri)
     template = task["inputData"]["template"]
@@ -112,9 +113,14 @@ def write_structured_data(task):
     ) + "/frinx-uniconfig-topology:configuration" + (uri if uri else "")
     id_url = Template(id_url).substitute(params)
 
-    response = requests.put(id_url, data=data_json,
-                            cookies=uniconfig_cookies,
-                            **additional_uniconfig_request_params)
+    response = requests.request(
+        url=id_url,
+        method=method,
+        data=data_json,
+        cookies=uniconfig_cookies,
+        **additional_uniconfig_request_params
+    )
+
     response_code, response_json = parse_response(response)
 
     if response_code == requests.codes.no_content or response_code == requests.codes.created:
