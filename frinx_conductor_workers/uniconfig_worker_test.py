@@ -198,7 +198,7 @@ class TestReadStructuredData(unittest.TestCase):
 
 class TestWriteStructuredData(unittest.TestCase):
     def test_write_structured_data_with_device(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.requests.put') as mock:
+        with patch('frinx_conductor_workers.uniconfig_worker.requests.request') as mock:
             mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 201, "")
             request = frinx_conductor_workers.uniconfig_worker.write_structured_data(
                 {"inputData": {"device_id": "xr5",
@@ -218,7 +218,7 @@ class TestWriteStructuredData(unittest.TestCase):
             self.assertEqual(request["output"]["response_code"], 201)
 
     def test_write_structured_data_with_no_device(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.requests.put') as mock:
+        with patch('frinx_conductor_workers.uniconfig_worker.requests.request') as mock:
             mock.return_value = mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 404, "")
             request = frinx_conductor_workers.uniconfig_worker.write_structured_data(
                 {"inputData": {"device_id": "",
@@ -238,7 +238,7 @@ class TestWriteStructuredData(unittest.TestCase):
             self.assertEqual(request["output"]["response_code"], 404)
 
     def test_write_structured_data_with_bad_template(self):
-        with patch('frinx_conductor_workers.uniconfig_worker.requests.put') as mock:
+        with patch('frinx_conductor_workers.uniconfig_worker.requests.request') as mock:
             mock.return_value = MockResponse(bytes(json.dumps(bad_input_response), encoding='utf-8'), 400, "")
             request = frinx_conductor_workers.uniconfig_worker.write_structured_data(
                 {"inputData": {"device_id": "xr5",
