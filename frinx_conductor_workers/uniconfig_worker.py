@@ -123,7 +123,7 @@ def write_structured_data(task):
 
     response_code, response_json = parse_response(response)
 
-    if response_code == requests.codes.no_content or response_code == requests.codes.created:
+    if response_code in [requests.codes.no_content, requests.codes.created, requests.codes.ok]:
         return {'status': 'COMPLETED', 'output': {'url': id_url,
                                                   'response_code': response_code,
                                                   'response_body': response_json},
