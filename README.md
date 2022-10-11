@@ -1,6 +1,6 @@
-# uniflow-micros
+# fm-base-workers
 Network infrastructure micro services
-
+Base workers and workflows for Frinx-Machine workflow-manager
 
 ##### ENV variables
 ```
