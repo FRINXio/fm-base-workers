@@ -8,7 +8,7 @@ elastic_url_base = os.getenv("ELASTICSEACRH_URL_BASE","http://elasticsearch:9200
 conductor_url_base = os.getenv("CONDUCTOR_URL_BASE","http://workflow-proxy:8088/proxy/api")
 inventory_url_base = os.getenv("INVENTORY_URL_BASE","http://inventory:8000/graphql")
 influxdb_url_base = os.getenv("INFLUXDB_URL_BASE","http://influxdb:8086")
-uniresource_url_base = os.getenv("UNIRESOURCE_URL_BASE","http://uniresource:8884/query")
+resource_manager_url_base = os.getenv("RESOURCE_MANAGER_URL_BASE","http://resource-manager:8884/query")
 
 uniconfig_user = os.getenv("UNICONFIG_USER",'admin')
 uniconfig_passwd = os.getenv("UNICONFIG_PASSWD",'admin')
@@ -17,7 +17,7 @@ uniconfig_headers = {"Content-Type": "application/json"}
 elastic_headers = {"Content-Type": "application/json"}
 
 x_tenant_id = os.getenv("X_TENANT_ID","frinx")
-x_from = os.getenv("X_FROM","uniflow-micros")
+x_from = os.getenv("X_FROM","fm-base-workers")
 x_auth_user_group = os.getenv("X_AUTH_USER_GROUP","network-admin")
 conductor_headers = {"Content-Type": "application/json", "x-tenant-id": x_tenant_id, "from": x_from, "x-auth-user-groups": x_auth_user_group}
 
