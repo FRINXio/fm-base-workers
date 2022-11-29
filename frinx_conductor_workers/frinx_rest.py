@@ -3,6 +3,8 @@ import os
 from collections import namedtuple
 from http.cookies import SimpleCookie
 
+import requests
+
 uniconfig_url_base = os.getenv("UNICONFIG_URL_BASE","https://uniconfig:8181/rests")
 elastic_url_base = os.getenv("ELASTICSEACRH_URL_BASE","http://elasticsearch:9200")
 conductor_url_base = os.getenv("CONDUCTOR_URL_BASE","http://workflow-proxy:8088/proxy/api")
@@ -27,6 +29,7 @@ additional_uniconfig_request_params = {
     "headers": uniconfig_headers,
 }
 
+
 def parse_response(r):
     decode = r.content.decode('utf8')
     try:
@@ -37,6 +40,7 @@ def parse_response(r):
     response_code = r.status_code
     return response_code, response_json
 
+
 def extract_uniconfig_cookies(task):
     uniconfig_cookies_multizone = extract_uniconfig_cookies_multizone(task)
 
@@ -44,11 +48,13 @@ def extract_uniconfig_cookies(task):
 
     return uniconfig_cookies_multizone.get(cluster_for_device, {}) or {}
 
+
 def extract_uniconfig_cookies_multizone(task):
     uniconfig_context = task.get("inputData",{}).get("uniconfig_context",{}) or {}
     uniconfig_cookies_multizone = uniconfig_context.get("uniconfig_cookies_multizone", {}) or {}
 
     return uniconfig_cookies_multizone
+
 
 def get_devices_by_uniconfig(devices, task, existing_uniconfig_cookies_multizone=None):
     device_with_cluster = namedtuple("devices", ["uc_cluster", "device_names"])
@@ -56,10 +62,36 @@ def get_devices_by_uniconfig(devices, task, existing_uniconfig_cookies_multizone
     return [device_with_cluster(uc_cluster=uniconfig_url_base,
                                 device_names=devices)]
 
+
 def get_uniconfig_cluster_from_task(task):
     return uniconfig_url_base
 
 
+def generate_response(response_code, response_json, device_id, id_url, exec_body=None):
+    if response_code == requests.codes.ok:
+        if exec_body:
+            return {'status': 'COMPLETED', 'output': {'url': id_url,
+                                                      'request_body': exec_body,
+                                                      'response_code': response_code,
+                                                      'response_body': response_json},
+                    'logs': ["Mountpoint with ID %s configured" % device_id]}
+        else:
+            return {'status': 'COMPLETED', 'output': {'url': id_url,
+                                                      'response_code': response_code,
+                                                      'response_body': response_json},
+                    'logs': ["Node with ID %s read successfully" % device_id]}
+    else:
+        if exec_body:
+            return {'status': 'FAILED', 'output': {'url': id_url,
+                                                   'request_body': exec_body,
+                                                   'response_code': response_code,
+                                                   'response_body': response_json},
+                    'logs': ["Unable to configure device with ID %s" % device_id]}
+        else:
+            return {'status': 'FAILED', 'output': {'url': id_url,
+                                                   'response_code': response_code,
+                                                   'response_body': response_json},
+                    'logs': ["Unable to read device with ID %s" % device_id]}
 
 
 #these could be removed>>>

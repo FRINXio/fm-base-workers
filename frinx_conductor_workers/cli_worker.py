@@ -8,7 +8,8 @@ from string import Template
 
 from frinx_conductor_workers.frinx_rest import \
     additional_uniconfig_request_params, parse_response, \
-    extract_uniconfig_cookies, get_uniconfig_cluster_from_task
+    extract_uniconfig_cookies, get_uniconfig_cluster_from_task, \
+    uniconfig_headers, generate_response
 
 local_logs = logging.getLogger(__name__)
 
@@ -121,18 +122,37 @@ def execute_and_read_rpc_cli(task):
 
     response_code, response_json = parse_response(r)
 
-    if response_code == requests.codes.ok:
-        return {'status': 'COMPLETED', 'output': {'url': id_url,
-                                                  'request_body': exec_body,
-                                                  'response_code': response_code,
-                                                  'response_body': response_json},
-                'logs': ["Mountpoint with ID %s configured" % device_id]}
-    else:
-        return {'status': 'FAILED', 'output': {'url': id_url,
-                                               'request_body': exec_body,
-                                               'response_code': response_code,
-                                               'response_body': response_json},
-                'logs': ["Unable to configure device with ID %s" % device_id]}
+    return generate_response(response_code, response_json, device_id, id_url, exec_body)
+
+
+async def async_execute_and_read_rpc_cli(task):
+    device_id = task['inputData']['device_id']
+    session = task['inputData']['session']
+    output_timer = task['inputData'].get('output_timer')
+    commands = task['inputData']['ios-cli:command']
+    execute_and_read_template = {"input": {"ios-cli:command": ""}}
+    exec_body = copy.deepcopy(execute_and_read_template)
+    exec_body["input"]["ios-cli:command"] = commands
+
+    if output_timer:
+        exec_body["input"]["wait-for-output-timer"] = output_timer
+
+    id_url = Template(uniconfig_url_cli_mount_rpc).substitute(
+        {"id": device_id, "base_url": get_uniconfig_cluster_from_task(task)}
+    ) + "/yang-ext:mount/cli-unit-generic:execute-and-read"
+
+    try:
+        async with session.post(
+                id_url, data=json.dumps(exec_body), ssl=False, headers=uniconfig_headers
+        ) as r:
+            response_json = await r.json()
+            if r.ok:
+                response_code = 200
+            return generate_response(response_code, response_json, device_id, id_url, exec_body)
+
+    except Exception:
+        local_logs.error("Reading rpc from Uniconfig has failed")
+        raise
 
 
 def execute_unmount_cli(task):

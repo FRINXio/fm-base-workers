@@ -8,10 +8,9 @@ import logging
 from string import Template
 from frinx_conductor_workers.frinx_rest import (
     additional_uniconfig_request_params,
-    parse_response,
+    parse_response, generate_response, uniconfig_headers,
     extract_uniconfig_cookies, get_uniconfig_cluster_from_task,
 )
-
 
 
 local_logs = logging.getLogger(__name__)
@@ -20,6 +19,8 @@ uniconfig_url_netconf_mount = "$base_url/data/network-topology:network-topology/
 uniconfig_url_netconf_mount_sync = "$base_url/operations/connection-manager:install-node"
 uniconfig_url_netconf_unmount_sync = "$base_url/operations/connection-manager:uninstall-node"
 uniconfig_url_netconf_mount_oper = "$base_url/data/network-topology:network-topology/topology=topology-netconf/node=$id?content=nonconfig"
+url_cli_mount = "$base_url/data/network-topology:network-topology/topology=cli/node=$id"
+
 
 sync_mount_template = {
     "input":
@@ -49,7 +50,6 @@ sync_mount_template = {
         }
     }
 }
-
 
 
 def execute_mount_netconf(task):
@@ -250,17 +250,36 @@ def read_structured_data(task):
                      **additional_uniconfig_request_params)
     response_code, response_json = parse_response(r)
 
-    if response_code == requests.codes.ok:
-        return {'status': 'COMPLETED', 'output': {'url': id_url,
-                                                  'response_code': response_code,
-                                                  'response_body': response_json},
-                'logs': ["Node with ID %s read successfully" % device_id]}
-    else:
-        return {'status': 'FAILED', 'output': {'url': id_url,
-                                               'response_code': response_code,
-                                               'response_body': response_json},
-                'logs': ["Unable to read device with ID %s" % device_id]}
+    return generate_response(response_code, response_json, device_id, id_url)
 
+
+async def async_read_structured_data(task):
+    device_id = task['inputData']['device_id']
+    uri = task['inputData']['uri']
+    session = task['inputData']['session']
+    if "topology_uri" in task["inputData"]:
+        topology_uri = url_cli_mount
+    else:
+        topology_uri = uniconfig_url_netconf_mount
+    if uri:
+        uri = uri if uri.startswith("/") else f"/{uri}"
+    else:
+        uri = ""
+
+    id_url = Template(topology_uri).substitute(
+        {"id": device_id, "base_url": get_uniconfig_cluster_from_task(task)}
+    ) + "/yang-ext:mount" + (uri if uri else "")
+
+    try:
+        async with session.get(id_url, ssl=False, headers=uniconfig_headers) as r:
+            response_json = await r.json()
+            if r.ok:
+                response_code = 200
+            return generate_response(response_code, response_json, device_id, id_url)
+
+    except Exception:
+        local_logs.error("Reading structured data from Uniconfig has failed")
+        raise
 
 
 def start(cc):
