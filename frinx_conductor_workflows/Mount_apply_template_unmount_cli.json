@@ -1,6 +1,6 @@
 {
   "name": "Mount_apply_template_unmount_cli",
-  "description": "mount, check, apply template and unmount a CLI device - DEMO,CLI",
+  "description": "{\"description\":\"mount, check, apply template and unmount a CLI device - DEMO,CLI\"}",
   "workflowStatusListenerEnabled": true,
   "version": 1,
   "inputParameters": [
