@@ -1,4 +1,5 @@
 import logging
+import os
 from string import Template
 from typing import Union
 from aiohttp import ClientSession
@@ -7,7 +8,7 @@ from frinx_python_sdk.src.frinx.services.frinx_rest import uniconfig_headers, un
 logger = logging.getLogger(__name__)
 
 URL_NETCONF_MOUNT = (
-    uniconfig_url_base + "data/network-topology:network-topology/topology=topology-netconf/node=$id"
+    uniconfig_url_base + "/data/network-topology:network-topology/topology=topology-netconf/node=$id"
 )
 
 

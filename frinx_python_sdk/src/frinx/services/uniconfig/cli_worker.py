@@ -7,7 +7,7 @@ from frinx_python_sdk.src.frinx.services.frinx_rest import uniconfig_headers, un
 
 logger = logging.getLogger(__name__)
 
-URL_CLI_MOUNT_RPC = uniconfig_url_base + "operations/network-topology:network-topology/topology=cli/node=$id"
+URL_CLI_MOUNT_RPC = uniconfig_url_base + "/operations/network-topology:network-topology/topology=cli/node=$id"
 
 
 async def execute_and_read_rpc_cli(
