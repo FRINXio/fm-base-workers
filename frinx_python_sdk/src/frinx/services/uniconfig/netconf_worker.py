@@ -1,5 +1,4 @@
 import logging
-import os
 from string import Template
 from typing import Union
 from aiohttp import ClientSession
