@@ -1,16 +1,14 @@
 import logging
-import os
 from string import Template
 from typing import Union
 from aiohttp import ClientSession
+from frinx_python_sdk.src.frinx.services.frinx_rest import uniconfig_headers, uniconfig_url_base
 
 logger = logging.getLogger(__name__)
 
-URL_BASE = os.getenv("UC_URL_BASE", "http://localhost:1080/")
 URL_NETCONF_MOUNT = (
-    URL_BASE + "data/network-topology:network-topology/topology=topology-netconf/node=$id"
+    uniconfig_url_base + "data/network-topology:network-topology/topology=topology-netconf/node=$id"
 )
-uniconfig_headers = {"Content-Type": "application/json"}
 
 
 async def read_structured_data(

@@ -10,9 +10,6 @@ inventory_url_base = os.getenv("INVENTORY_URL_BASE","http://inventory:8000/graph
 influxdb_url_base = os.getenv("INFLUXDB_URL_BASE","http://influxdb:8086")
 resource_manager_url_base = os.getenv("RESOURCE_MANAGER_URL_BASE","http://resource-manager:8884/query")
 
-uniconfig_user = os.getenv("UNICONFIG_USER",'admin')
-uniconfig_passwd = os.getenv("UNICONFIG_PASSWD",'admin')
-uniconfig_credentials = (uniconfig_user, uniconfig_passwd)
 uniconfig_headers = {"Content-Type": "application/json"}
 elastic_headers = {"Content-Type": "application/json"}
 
@@ -22,10 +19,10 @@ x_auth_user_group = os.getenv("X_AUTH_USER_GROUP","network-admin")
 conductor_headers = {"Content-Type": "application/json", "x-tenant-id": x_tenant_id, "from": x_from, "x-auth-user-groups": x_auth_user_group}
 
 additional_uniconfig_request_params = {
-    "auth": uniconfig_credentials,
     "verify": False,
     "headers": uniconfig_headers,
 }
+
 
 def parse_response(r):
     decode = r.content.decode('utf8')
@@ -37,6 +34,7 @@ def parse_response(r):
     response_code = r.status_code
     return response_code, response_json
 
+
 def extract_uniconfig_cookies(task):
     uniconfig_cookies_multizone = extract_uniconfig_cookies_multizone(task)
 
@@ -44,11 +42,13 @@ def extract_uniconfig_cookies(task):
 
     return uniconfig_cookies_multizone.get(cluster_for_device, {}) or {}
 
+
 def extract_uniconfig_cookies_multizone(task):
     uniconfig_context = task.get("inputData",{}).get("uniconfig_context",{}) or {}
     uniconfig_cookies_multizone = uniconfig_context.get("uniconfig_cookies_multizone", {}) or {}
 
     return uniconfig_cookies_multizone
+
 
 def get_devices_by_uniconfig(devices, task, existing_uniconfig_cookies_multizone=None):
     device_with_cluster = namedtuple("devices", ["uc_cluster", "device_names"])
@@ -56,9 +56,9 @@ def get_devices_by_uniconfig(devices, task, existing_uniconfig_cookies_multizone
     return [device_with_cluster(uc_cluster=uniconfig_url_base,
                                 device_names=devices)]
 
+
 def get_uniconfig_cluster_from_task(task):
     return uniconfig_url_base
-
 
 
 

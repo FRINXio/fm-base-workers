@@ -1,15 +1,13 @@
 import copy
 import json
 import logging
-import os
 from string import Template
 from aiohttp import ClientSession
+from frinx_python_sdk.src.frinx.services.frinx_rest import uniconfig_headers, uniconfig_url_base
 
 logger = logging.getLogger(__name__)
 
-URL_BASE = os.getenv("UC_URL_BASE", "http://localhost:1080/")
-URL_CLI_MOUNT_RPC = URL_BASE + "operations/network-topology:network-topology/topology=cli/node=$id"
-uniconfig_headers = {"Content-Type": "application/json"}
+URL_CLI_MOUNT_RPC = uniconfig_url_base + "operations/network-topology:network-topology/topology=cli/node=$id"
 
 
 async def execute_and_read_rpc_cli(
