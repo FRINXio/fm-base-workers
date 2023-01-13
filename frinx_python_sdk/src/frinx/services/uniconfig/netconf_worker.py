@@ -2,7 +2,7 @@ import logging
 from string import Template
 from typing import Union
 from aiohttp import ClientSession
-from frinx_python_sdk.src.frinx.services.frinx_rest import uniconfig_headers, uniconfig_url_base
+from frinx.services.frinx_rest import uniconfig_headers, uniconfig_url_base
 
 logger = logging.getLogger(__name__)
 

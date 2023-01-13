@@ -7,7 +7,7 @@ def __read__(file_name):
 
 
 setup(
-    name='fm-base-workers',
+    name='frinx-python-sdk',
     package_dir = {"": "src"},
     version='0.0.1',
     description='Python SDK for Frinx Machine Workflow Manager',

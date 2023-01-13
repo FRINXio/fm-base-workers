@@ -3,7 +3,7 @@ import os
 import requests
 import json
 
-from frinx_conductor_workers.frinx_rest import conductor_url_base, conductor_headers
+from frinx.services.frinx_rest import conductor_url_base, conductor_headers
 
 local_logs = logging.getLogger(__name__)
 
