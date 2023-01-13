@@ -1,0 +1,73 @@
+{
+  "name": "UC_TX_close",
+  "description": "{\"description\":\"Close a running uniconfig TX in case it was started by the same WF\",\"labels\":[\"TX\", \"MULTIZONE\"]}",
+  "version": 1,
+  "tasks": [
+    {
+      "name": "decide_task",
+      "taskReferenceName": "should_close_current_tx",
+      "inputParameters": {
+        "started_by_wf": "${workflow.input.uniconfig_context.started_by_wf}",
+        "parent_wf": "${workflow.parentWorkflowId}"
+      },
+      "type": "DECISION",
+      "caseExpression": "$.started_by_wf === $.parent_wf ? 'True' : 'False'",
+      "decisionCases": {
+        "True": [
+          {
+            "name": "UNICONFIG_tx_close_multizone",
+            "taskReferenceName": "close",
+            "inputParameters": {
+              "uniconfig_context": "${workflow.input.uniconfig_context}"
+            },
+            "type": "SIMPLE",
+            "decisionCases": {},
+            "defaultCase": [],
+            "forkTasks": [],
+            "startDelay": 0,
+            "joinOn": [],
+            "optional": false,
+            "defaultExclusiveJoinTask": [],
+            "asyncComplete": false,
+            "loopOver": []
+          },
+          {
+            "name": "terminate",
+            "taskReferenceName": "closed_tx",
+            "inputParameters": {
+              "terminationStatus": "COMPLETED",
+              "workflowOutput": {
+                "closed_current_context": "${workflow.input.uniconfig_context}"
+              }
+            },
+            "type": "TERMINATE",
+            "startDelay": 0,
+            "optional": false
+          }
+        ],
+        "False": [
+          {
+            "name": "terminate",
+            "taskReferenceName": "dont_close_parent_tx",
+            "inputParameters": {
+              "terminationStatus": "COMPLETED",
+              "workflowOutput": {
+                "unclosed_parent_uniconfig_context": "${workflow.input.uniconfig_context}"
+              }
+            },
+            "type": "TERMINATE",
+            "startDelay": 0,
+            "optional": false
+          }
+        ]
+      }
+    }
+  ],
+  "inputParameters": [],
+  "outputParameters": {},
+  "schemaVersion": 2,
+  "restartable": false,
+  "workflowStatusListenerEnabled": true,
+  "timeoutPolicy": "ALERT_ONLY",
+  "timeoutSeconds": 60
+}
