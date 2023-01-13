@@ -1,16 +1,6 @@
 # fm-base-workers
-
-Common repository for Frinx-Machine workflow manager pypi packages.
-
-## frinx_conductor_workers
-
-Base workers and workflows for Frinx-Machine workflow-manager.
-https://pypi.org/project/frinx-conductor-workers/
-
-## frinx_python_sdk
-
-Python SDK for Frinx-Machine workflow manager.
-Including common workers for services.
+Network infrastructure micro services
+Base workers and workflows for Frinx-Machine workflow-manager
 
 ### For developers
 
