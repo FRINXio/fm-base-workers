@@ -1,22 +1,17 @@
-name: PyPi Conductor-workers update
+name: PyPi Frinx-Python-SDK update
 
 on:
   push:
-    # Publish `master` as Docker `latest` image.
     branches:
       - master
 
-    # Publish `v1.2.3` tags as releases.
-    tags:
-      - v*
-
 jobs:
-  build-n-publish:
-    name: Build and publish frinx conductor workers
+  build-n-publish-sdk:
+    name: Build and publish frinx python sdk
     runs-on: ubuntu-latest
     steps:
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Set up Python 3.10
       uses: actions/setup-python@v2
@@ -24,13 +19,13 @@ jobs:
         python-version: '3.10'
 
     - name: Install dependencies
-      working-directory: ./frinx_conductor_workers
+      working-directory: ./frinx_python_sdk
       run: |
         python -m pip install --upgrade pip
         pip install setuptools wheel twine
 
     - name: Build and publish
-      working-directory: ./frinx_conductor_workers
+      working-directory: ./frinx_python_sdk
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
