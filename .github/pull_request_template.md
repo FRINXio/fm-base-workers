@@ -1,7 +1,3 @@
-## Summary
-Describe the changes made in this PR.
-
-## Test Plan
-Steps to test or reproduce.
-
-## Other comments
+#### Checklist
+- [ ] Add description to the PR
+- [ ] Bump version in setup.py for dedicated python package
