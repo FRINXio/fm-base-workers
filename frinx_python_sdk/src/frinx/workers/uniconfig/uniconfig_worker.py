@@ -10,8 +10,8 @@ import requests
 
 from string import Template
 
-from frinx_conductor_workers import util
-from frinx_conductor_workers.frinx_rest import parse_response, \
+from frinx.services import task_response
+from frinx.services.frinx_rest import parse_response, \
     additional_uniconfig_request_params, extract_uniconfig_cookies, \
     extract_uniconfig_cookies_multizone, get_devices_by_uniconfig, get_uniconfig_cluster_from_task, \
     conductor_url_base, conductor_headers
@@ -269,9 +269,9 @@ def request_uniconfig(devices, url, uniconfig_cookies_multizone={}):
         ):
             responses.append(response)
         else:
-            return util.failed_response(response)
+            return task_response.failed_response(response)
 
-    return util.completed_response({"responses": responses})
+    return task_response.completed_response({"responses": responses})
 
 def commit_uniconfig(devices, url, uniconfig_cookies_multizone={}):
     responses = []
@@ -317,9 +317,9 @@ def commit_uniconfig(devices, url, uniconfig_cookies_multizone={}):
             except KeyError:
                 error_messages["uncaught_error"] = response
 
-            return util.failed_response(error_messages)
+            return task_response.failed_response(error_messages)
 
-    return util.completed_response({"responses": responses})
+    return task_response.completed_response({"responses": responses})
 
 def create_tx_multizone(task):
     devices = parse_devices(task, fail_on_empty=False)
@@ -329,7 +329,7 @@ def create_tx_multizone(task):
 
     for d in devices_by_uniconfig:
         response = create_tx_internal(uniconfig_cluster=d.uc_cluster)
-        if response["status"] != util.COMPLETED_STATUS:
+        if response["status"] != task_response.COMPLETED_STATUS:
 
             # Failed to create some transaction, close already opened transactions
             for already_opened_tx_uc_cluster in uniconfig_cookies_multizone:
@@ -412,7 +412,7 @@ def close_tx_multizone_internal(uniconfig_cookies_multizone):
         response = close_tx_internal(uniconfig_cookies, uc_cluster)
 
         close_tx_response[uc_cluster] = {"UNICONFIGTXID": tx_id, "status": response["status"]}
-        if response["status"] != util.COMPLETED_STATUS:
+        if response["status"] != task_response.COMPLETED_STATUS:
             pass #todo:?
 
     return close_tx_response
@@ -424,11 +424,11 @@ def find_started_tx(task):
     response_code, response_json = parse_response(r)
 
     if response_code != requests.codes.ok:
-        return util.failed_response({"failed_wf_id": failed_wf, "message":"Unable to get workflow"})
+        return task_response.failed_response({"failed_wf_id": failed_wf, "message":"Unable to get workflow"})
 
     opened_contexts, committed_contexts = find_opened_contexts_in_wf(failed_wf, response_json)
 
-    return util.completed_response(
+    return task_response.completed_response(
         {"uniconfig_contexts": opened_contexts, "committed_contexts": committed_contexts}
     )
 
@@ -479,26 +479,26 @@ def rollback_all_tx(task):
             # Reverting committed
             # return_logs.info("Reverting committed transactions in context: %s", ctx_multizone)
             response = revert_tx_multizone(ctx_multizone["uniconfig_cookies_multizone"])
-            if response["status"] != util.COMPLETED_STATUS:
+            if response["status"] != task_response.COMPLETED_STATUS:
                 # Revert failed, stop and return error
                 # return_logs.error(
                 #     "Reverting transactions in context: '%s' FAILED. Stopping reverts. Response: '%s'",
                 #     ctx_multizone,
                 #     response,
                 # )
-                ctx_multizone["rollback_status"] = "revert " + util.FAILED_STATUS
-                return util.failed_response(
+                ctx_multizone["rollback_status"] = "revert " + task_response.FAILED_STATUS
+                return task_response.failed_response(
                     {"failed_context": ctx_multizone, "uniconfig_contexts": ctxs}
                 )
             else:
-                ctx_multizone["rollback_status"] = "revert " + util.COMPLETED_STATUS
+                ctx_multizone["rollback_status"] = "revert " + task_response.COMPLETED_STATUS
         else:
             # Closing uncommitted, consider all closes a success
             # return_logs.info("Closing transactions in context: '%s'", ctx_multizone)
             close_tx_multizone_internal(ctx_multizone["uniconfig_cookies_multizone"])
-            ctx_multizone["rollback_status"] = "close " + util.COMPLETED_STATUS
+            ctx_multizone["rollback_status"] = "close " + task_response.COMPLETED_STATUS
 
-    return util.completed_response({"uniconfig_contexts": ctxs})
+    return task_response.completed_response({"uniconfig_contexts": ctxs})
 
 def revert_tx_multizone(uniconfig_cookies_multizone):
     # return_logs.info("Reverting transactions in UCs on context: '%s'", uniconfig_cookies_multizone)
@@ -512,20 +512,20 @@ def revert_tx_multizone(uniconfig_cookies_multizone):
 
         close_tx_response[uc_cluster] = {"UNICONFIGTXID": tx_id, "status": response["status"]}
 
-        if response["status"] != util.COMPLETED_STATUS:
+        if response["status"] != task_response.COMPLETED_STATUS:
             # Failing to revert is an error
             # return_logs.error(
             #     "Unable to revert multizone transactions for : '%s'. Response: '%s'",
             #     uc_cluster,
             #     response,
             # )
-            return util.failed_response({"UNICONFIGTXID_multizone": close_tx_response})
+            return task_response.failed_response({"UNICONFIGTXID_multizone": close_tx_response})
 
     # return_logs.info(
     #     "Multizone transactions reverted successfully for: '%s'",
     #     [zone for zone in uniconfig_cookies_multizone],
     # )
-    return util.completed_response({"UNICONFIGTXID_multizone": close_tx_response})
+    return task_response.completed_response({"UNICONFIGTXID_multizone": close_tx_response})
 
 def check_and_revert_tx(uniconfig_cookies, uniconfig_cluster):
     tx_id_to_revert = uniconfig_cookies["UNICONFIGTXID"]
@@ -537,14 +537,14 @@ def check_and_revert_tx(uniconfig_cookies, uniconfig_cluster):
 
     # 1. Create transaction to do the revert
     response = create_tx_internal(uniconfig_cluster)
-    if response["status"] != util.COMPLETED_STATUS:
+    if response["status"] != task_response.COMPLETED_STATUS:
         # If we cannot create a dedicated transaction to perform rollback, we need to return error
         # return_logs.error(
         #     "Unable to revert transaction: '%s', Cannot create a revert transaction, response '%s'",
         #     tx_id_to_revert,
         #     response,
         # )
-        return util.failed_response(
+        return task_response.failed_response(
             {"UNICONFIGTXID": tx_id_to_revert, "create_tx_response": response}
         )
 
@@ -576,7 +576,7 @@ def check_and_revert_tx(uniconfig_cookies, uniconfig_cluster):
         # )
         close_tx_internal(uniconfig_cookies_for_revert, uniconfig_cluster)
 
-        return util.completed_response({"UNICONFIGTXID": tx_id_to_revert})
+        return task_response.completed_response({"UNICONFIGTXID": tx_id_to_revert})
     elif response.status_code == requests.codes.ok:
         # return_logs.info("Reverting '%s', step 2: Transaction log found", tx_id_to_revert)
         pass #todo:?
@@ -593,14 +593,14 @@ def check_and_revert_tx(uniconfig_cookies, uniconfig_cluster):
 
     # 2. Do the revert
     response = revert_tx_internal(uniconfig_cluster, tx_id_to_revert, uniconfig_cookies_for_revert)
-    if response["status"] != util.COMPLETED_STATUS:
+    if response["status"] != task_response.COMPLETED_STATUS:
         # If we cannot revert the transaction, we need to return error
         # return_logs.error(
         #     "Unable to revert transaction: '%s', Revert RPC failed, response '%s'",
         #     tx_id_to_revert,
         #     response,
         # )
-        return util.failed_response(
+        return task_response.failed_response(
             {"UNICONFIGTXID": tx_id_to_revert, "create_tx_response": response}
         )
 
@@ -614,19 +614,19 @@ def check_and_revert_tx(uniconfig_cookies, uniconfig_cluster):
         {uniconfig_cluster: uniconfig_cookies_for_revert},
     )
 
-    if response["status"] != util.COMPLETED_STATUS:
+    if response["status"] != task_response.COMPLETED_STATUS:
         # If we cannot commit the revert, we need to return error
         # return_logs.error(
         #     "Unable to revert transaction: '%s', Cannot commit transaction with revert, response '%s'",
         #     tx_id_to_revert,
         #     response,
         # )
-        return util.failed_response({"UNICONFIGTXID": tx_id_to_revert, "commit_response": response})
+        return task_response.failed_response({"UNICONFIGTXID": tx_id_to_revert, "commit_response": response})
 
     # return_logs.info("Reverting '%s', step 4: Commit RPC successful.", tx_id_to_revert)
 
     # return_logs.info("Transaction '%s' reverted successfully", tx_id_to_revert)
-    return util.completed_response({"UNICONFIGTXID": tx_id_to_revert})
+    return task_response.completed_response({"UNICONFIGTXID": tx_id_to_revert})
 
 def revert_tx_internal(uniconfig_cluster, tx_id, uniconfig_cookies):
     id_url = Template(uniconfig_url_uniconfig_tx_revert).substitute({"base_url": uniconfig_cluster})
@@ -654,12 +654,12 @@ def revert_tx_internal(uniconfig_cluster, tx_id, uniconfig_cookies):
         #     response_code,
         #     response_body,
         # )
-        return util.failed_response(
+        return task_response.failed_response(
             {"UNICONFIGTXID": tx_id, "response_body": response_body, "response_code": response_code}
         )
 
     # return_logs.info("Revert RPC called successfully for transaction: '%s'", tx_id)
-    return util.completed_response({"UNICONFIGTXID": tx_id})
+    return task_response.completed_response({"UNICONFIGTXID": tx_id})
 
 
 def start(cc):

@@ -4,7 +4,7 @@ from jinja2 import Template
 from python_graphql_client import GraphqlClient
 from logging_helpers import logging_handler
 from util import completed_response, failed_response
-from frinx_conductor_workers.frinx_rest import conductor_headers, resource_manager_url_base
+from frinx.services.frinx_rest import conductor_headers, resource_manager_url_base
 
 log = logging.getLogger(__name__)
 

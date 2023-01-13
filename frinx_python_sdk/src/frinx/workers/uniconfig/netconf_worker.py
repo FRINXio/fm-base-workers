@@ -6,12 +6,11 @@ import requests
 import logging
 
 from string import Template
-from frinx_conductor_workers.frinx_rest import (
+from frinx.services.frinx_rest import (
     additional_uniconfig_request_params,
     parse_response,
     extract_uniconfig_cookies, get_uniconfig_cluster_from_task,
 )
-
 
 
 local_logs = logging.getLogger(__name__)
