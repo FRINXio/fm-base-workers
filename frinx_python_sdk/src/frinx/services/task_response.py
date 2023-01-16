@@ -1,6 +1,7 @@
 FAILED_STATUS = "FAILED"
 COMPLETED_STATUS = "COMPLETED"
 
+
 def completed_response(response_body=None):
     """
     Use for workflow responses with COMPLETED status.

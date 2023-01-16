@@ -1,6 +1,6 @@
-import os
 import json
 import logging.config
+import os
 from pathlib import Path
 
 import requests
@@ -10,7 +10,8 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 from conductor.FrinxConductorWrapper import FrinxConductorWrapper
-from frinx_conductor_workers.frinx_rest import conductor_url_base, conductor_headers
+from frinx_conductor_workers.frinx_rest import conductor_headers
+from frinx_conductor_workers.frinx_rest import conductor_url_base
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ HEALTHCHECK_FILE: Path = Path("./healthcheck")
 
 
 def configure_logging(
-        default_path='logging-config.json', default_level=logging.INFO, env_key='LOG_CFG'
+    default_path="logging-config.json", default_level=logging.INFO, env_key="LOG_CFG"
 ) -> None:
     """Setup logging configuration"""
 
@@ -28,7 +29,7 @@ def configure_logging(
     if value:
         path = value
     if os.path.exists(path):
-        with open(path, 'rt') as f:
+        with open(path, "rt") as f:
             config = json.load(f)
         logging.config.dictConfig(config)
     else:
@@ -37,10 +38,10 @@ def configure_logging(
 
 def _register_workers(conductor) -> None:
     from frinx_conductor_workers import cli_worker
-    from frinx_conductor_workers import netconf_worker
-    from frinx_conductor_workers import uniconfig_worker
     from frinx_conductor_workers import common_worker
     from frinx_conductor_workers import http_worker
+    from frinx_conductor_workers import netconf_worker
+    from frinx_conductor_workers import uniconfig_worker
 
     cli_worker.start(conductor)
     netconf_worker.start(conductor)
@@ -76,9 +77,7 @@ def main():
     logger = logging.getLogger(__name__)
 
     conductor = FrinxConductorWrapper(
-        server_url=conductor_url_base,
-        headers=conductor_headers,
-        max_thread_count=200
+        server_url=conductor_url_base, headers=conductor_headers, max_thread_count=200
     )
 
     _register_workers(conductor)
@@ -94,5 +93,5 @@ def main():
     conductor.start_workers()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -1,10 +1,13 @@
-import logging
 import json
+import logging
+
+from frinx.services.frinx_rest import conductor_headers
+from frinx.services.frinx_rest import resource_manager_url_base
 from jinja2 import Template
-from python_graphql_client import GraphqlClient
 from logging_helpers import logging_handler
-from util import completed_response, failed_response
-from frinx.services.frinx_rest import conductor_headers, resource_manager_url_base
+from python_graphql_client import GraphqlClient
+from util import completed_response
+from util import failed_response
 
 log = logging.getLogger(__name__)
 
@@ -144,25 +147,15 @@ def claim_resource(task, logs):
     pool_id = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
     if pool_id is None:
         return failed_response("No pool id")
-    user_input = (
-        task["inputData"]["userInput"] if "userInput" in task["inputData"] else {}
-    )
-    description = (
-        task["inputData"]["description"] if "description" in task["inputData"] else ""
-    )
+    user_input = task["inputData"]["userInput"] if "userInput" in task["inputData"] else {}
+    description = task["inputData"]["description"] if "description" in task["inputData"] else ""
     alternative_id = (
-        None
-        if "alternativeId" not in task["inputData"]
-        else task["inputData"]["alternativeId"]
+        None if "alternativeId" not in task["inputData"] else task["inputData"]["alternativeId"]
     )
-    variables = {
-        "pool_id": pool_id,
-        "user_input": user_input,
-        "description": description,
-    }
+    variables = {"pool_id": pool_id, "user_input": user_input, "description": description}
 
     if len(task["inputData"]["alternativeId"]) > 1 and alternative_id is not None:
-        alternative_id = alternative_id.replace("'", "\"")
+        alternative_id = alternative_id.replace("'", '"')
         alternative_id = json.loads(alternative_id)
         variables.update({"alternative_id": alternative_id})
         body = claim_resource_template.render(
@@ -174,20 +167,14 @@ def claim_resource(task, logs):
         )
     else:
         body = claim_resource_template.render(
-            {
-                "claim_resource": "ClaimResource",
-                "alternative_id_variable": "",
-                "alternative_id": "",
-            }
+            {"claim_resource": "ClaimResource", "alternative_id_variable": "", "alternative_id": ""}
         )
-
 
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
         return failed_response({"response_body": response["errors"][0]["message"]})
     return completed_response({"response_body": response["data"]})
-
 
 
 @logging_handler(log)
@@ -223,9 +210,7 @@ def query_claimed_resources(task, logs):
     """
     pool_id = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
     alternative_id = (
-        None
-        if "alternativeId" not in task["inputData"]
-        else task["inputData"]["alternativeId"]
+        None if "alternativeId" not in task["inputData"] else task["inputData"]["alternativeId"]
     )
     if pool_id is None:
         return failed_response(logs, "No pool id")
@@ -240,9 +225,7 @@ def query_claimed_resources(task, logs):
         )
         variables.update({"input": alternative_id})
     else:
-        body = query_claimed_resource_template.render(
-            {"query_resource": "QueryResources"}
-        )
+        body = query_claimed_resource_template.render({"query_resource": "QueryResources"})
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     data = execute(body, variables)
     return completed_response({"response_body": data})
@@ -252,13 +235,11 @@ def query_resource_id(resource):
     # Query resource type and resource allocation strategy id from uniresource
     body = query_resource_template.render()
     variables = {"resource": resource}
-    body = body.replace('\n', '').replace('\\', '')
+    body = body.replace("\n", "").replace("\\", "")
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     data = execute(body, variables)
     resource_type_id = (
-        data["data"]["QueryResourceTypes"][0]["id"]
-        if data["data"]["QueryResourceTypes"]
-        else None
+        data["data"]["QueryResourceTypes"][0]["id"] if data["data"]["QueryResourceTypes"] else None
     )
     resource_strategy_id = (
         data["data"]["QueryAllocationStrategies"][0]["id"]
@@ -333,15 +314,15 @@ def create_pool(task, logs):
             variables.update({key: pool_properties[key]})
 
     body = create_pool_template.render(
-    {
-        "create_pool": "CreateAllocatingPool",
-        "pool_properties_types": "poolPropertyTypes: {\n" + pool_types_string + "\n}",
-        "pool_properties": "poolProperties: {\n" + pool_string + "\n}",
-        "pool_properties_variables": pool_variables_string,
-    }
+        {
+            "create_pool": "CreateAllocatingPool",
+            "pool_properties_types": "poolPropertyTypes: {\n" + pool_types_string + "\n}",
+            "pool_properties": "poolProperties: {\n" + pool_string + "\n}",
+            "pool_properties_variables": pool_variables_string,
+        }
     )
-    body = body.replace('\n', '').replace('\\', '')
-    
+    body = body.replace("\n", "").replace("\\", "")
+
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
@@ -363,9 +344,7 @@ def create_vlan_pool(task, logs):
     from_range = task["inputData"]["from"] if "from" in task["inputData"] else None
     to_range = task["inputData"]["to"] if "to" in task["inputData"] else None
     parent_resource_id = (
-        task["inputData"]["parentResourceId"]
-        if "parentResourceId" in task["inputData"]
-        else None
+        task["inputData"]["parentResourceId"] if "parentResourceId" in task["inputData"] else None
     )
     if parent_resource_id == "":
         parent_resource_id = None
@@ -383,9 +362,7 @@ def create_vlan_pool(task, logs):
         body = create_pool_template.render(
             {
                 "create_pool": "CreateNestedAllocatingPool",
-                "parent_resource_id": 'parentResourceId: "'
-                + str(parent_resource_id)
-                + '"',
+                "parent_resource_id": 'parentResourceId: "' + str(parent_resource_id) + '"',
             }
         )
     else:
@@ -551,9 +528,7 @@ def query_unique_id_pool(task, logs):
     query_pool_result = query_pool(
         {"inputData": {"resource": "unique_id", "poolNames": pool_names}}
     )
-    return completed_response(
-        {"response_body": query_pool_result["output"]["response_body"]}
-    )
+    return completed_response({"response_body": query_pool_result["output"]["response_body"]})
 
 
 @logging_handler(log)
@@ -569,12 +544,9 @@ def query_vlan_pool(task, logs):
 
     """
     pool_names = task["inputData"]["poolNames"]
-    query_pool_result = query_pool(
-        {"inputData": {"resource": "vlan", "poolNames": pool_names}}
-    )
-    return completed_response(
-        {"response_body": query_pool_result["output"]["response_body"]}
-    )
+    query_pool_result = query_pool({"inputData": {"resource": "vlan", "poolNames": pool_names}})
+    return completed_response({"response_body": query_pool_result["output"]["response_body"]})
+
 
 @logging_handler(log)
 def query_pool_by_tag(task, logs):
@@ -597,18 +569,17 @@ def query_pool_by_tag(task, logs):
                         }
                     ]
                 }
-            } 
-    
+            }
+
     """
     pool_tag = task["inputData"]["poolTag"]
     body = query_pool_by_tag_template.render()
     variables = {"poolTag": pool_tag}
-    body = body.replace('\n', '').replace('\\', '')
+    body = body.replace("\n", "").replace("\\", "")
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response_data = execute(body, variables)
-    return completed_response(
-        {"response_body": response_data}
-    )
+    return completed_response({"response_body": response_data})
+
 
 @logging_handler(log)
 def query_vlan_range_pool(task, logs):
@@ -626,9 +597,7 @@ def query_vlan_range_pool(task, logs):
     query_pool_result = query_pool(
         {"inputData": {"resource": "vlan_range", "poolNames": pool_names}}
     )
-    return completed_response(
-        {"response_body": query_pool_result["output"]["response_body"]}
-    )
+    return completed_response({"response_body": query_pool_result["output"]["response_body"]})
 
 
 @logging_handler(log)
@@ -658,23 +627,15 @@ def update_alt_id_for_resource(task, logs):
     pool_id = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
     if pool_id is None:
         return failed_response(logs, "No pool id")
-    user_input = (
-        task["inputData"]["userInput"] if "userInput" in task["inputData"] else None
-    )
+    user_input = task["inputData"]["userInput"] if "userInput" in task["inputData"] else None
     if user_input is None:
         return failed_response(logs, "No user input")
     alternative_id = (
-        task["inputData"]["alternativeId"]
-        if "alternativeId" in task["inputData"]
-        else None
+        task["inputData"]["alternativeId"] if "alternativeId" in task["inputData"] else None
     )
     if alternative_id is None:
         return failed_response(logs, "No alternative id")
-    variables = {
-        "pool_id": pool_id,
-        "input": user_input,
-        "alternative_id": alternative_id,
-    }
+    variables = {"pool_id": pool_id, "input": user_input, "alternative_id": alternative_id}
     body = update_alternative_id_for_resource_template.render(
         {"update_alt_id": "UpdateResourceAltId"}
     )
@@ -833,7 +794,6 @@ def start(cc):
         },
         query_pool_by_tag,
     )
-
 
     cc.register(
         "RESOURCE_MANAGER_query_vlan_range_pool",

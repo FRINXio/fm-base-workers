@@ -18,6 +18,7 @@ Before PR is created, format python files
 
 ```bash
 python -m black .
+python -m isort .
 ```
 
 ##### ENV variables
