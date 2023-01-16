@@ -1,16 +1,18 @@
 import frinx_conductor_workers.frinx_rest
+
 frinx_rest.uniconfig_url_base = "http://localhost:8181/rests"
 import json
 import time
 
-from flask import Flask, request
-from flask_restful import Resource, Api
+from flask import Flask
+from flask import request
 from flask_basicauth import BasicAuth
-
+from flask_restful import Api
+from flask_restful import Resource
 from main import register_workers
 
-class StandaloneWorker:
 
+class StandaloneWorker:
     def __init__(self, api):
         pass
         self.api = api
@@ -19,12 +21,13 @@ class StandaloneWorker:
         pass
 
     def start(self, task_type, exec_function, wait, domain=None, task_definition=None):
-        print('Starting task %s' % task_type)
-        self.api.add_resource(TaskInvocation, "/" + task_type, endpoint=task_type, resource_class_args=[exec_function])
+        print("Starting task %s" % task_type)
+        self.api.add_resource(
+            TaskInvocation, "/" + task_type, endpoint=task_type, resource_class_args=[exec_function]
+        )
 
 
 class TaskInvocation(Resource):
-
     def __init__(self, func):
         pass
         self.func = func
@@ -43,7 +46,7 @@ class TaskInvocation(Resource):
             # TODO print logs from function invocation
             return self.func({"inputData": input_dict})
         except Exception as e:
-            print e
+            print(e)
             return {"error": "Invocation failed due to: %s" % str(e.message)}
 
     @staticmethod
@@ -61,24 +64,24 @@ class TaskInvocation(Resource):
         return input_dict
 
 
-DEFAULT_USERNAME = 'admin'
-DEFAULT_PASSWD = 'admin'
+DEFAULT_USERNAME = "admin"
+DEFAULT_PASSWD = "admin"
 
 
 def main():
-    print('Starting FRINX STANDALONE workers')
+    print("Starting FRINX STANDALONE workers")
     app = Flask(__name__)
 
-    app.config['BASIC_AUTH_USERNAME'] = DEFAULT_USERNAME
-    app.config['BASIC_AUTH_PASSWORD'] = DEFAULT_PASSWD
-    app.config['BASIC_AUTH_FORCE'] = True
+    app.config["BASIC_AUTH_USERNAME"] = DEFAULT_USERNAME
+    app.config["BASIC_AUTH_PASSWORD"] = DEFAULT_PASSWD
+    app.config["BASIC_AUTH_FORCE"] = True
 
     basic_auth = BasicAuth(app)
 
     api = Api(app)
     cc = StandaloneWorker(api)
     register_workers(cc)
-    print app.url_map
+    print(app.url_map)
     app.run("0.0.0.0", 6454, True)
 
     # block
@@ -86,5 +89,5 @@ def main():
         time.sleep(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

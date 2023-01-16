@@ -1,6 +1,6 @@
 import json
-from unittest.mock import patch
 import unittest
+from unittest.mock import patch
 
 import frinx_conductor_workers.cli_worker
 from frinx_conductor_workers.frinx_rest import uniconfig_url_base
@@ -16,7 +16,7 @@ exec_and_read_rpc_no_device = {
             {
                 "error-message": "Mount point does not exist.",
                 "error-tag": "data-missing",
-                "error-type": "protocol"
+                "error-type": "protocol",
             }
         ]
     }
@@ -32,10 +32,10 @@ cli_node_connecting = {
                     "(^|\\n)% (?i)Incomplete command(?-i).*",
                     "(^|\\n)\\s+\\^.*",
                     "(^|\\n)% (?i)Ambiguous command(?-i).*",
-                    "(^|\\n)% (?i)invalid input(?-i).*"
+                    "(^|\\n)% (?i)invalid input(?-i).*",
                 ]
             },
-            "cli-topology:connection-status": "connecting"
+            "cli-topology:connection-status": "connecting",
         }
     ]
 }
@@ -43,9 +43,7 @@ cli_node_connected = {
     "node": [
         {
             "cli-topology:default-commit-error-patterns": {
-                "commit-error-pattern": [
-                    "(^|\\n)% (?i)Failed(?-i).*"
-                ]
+                "commit-error-pattern": ["(^|\\n)% (?i)Failed(?-i).*"]
             },
             "cli-topology:host": "192.168.1.215",
             "cli-topology:default-error-patterns": {
@@ -53,12 +51,12 @@ cli_node_connected = {
                     "(^|\\n)% (?i)Incomplete command(?-i).*",
                     "(^|\\n)\\s+\\^.*",
                     "(^|\\n)% (?i)Ambiguous command(?-i).*",
-                    "(^|\\n)% (?i)invalid input(?-i).*"
-                    ]
-                },
+                    "(^|\\n)% (?i)invalid input(?-i).*",
+                ]
+            },
             "cli-topology:connection-status": "connected",
             "node-id": "xr5",
-            "cli-topology:connected-message": "Success"
+            "cli-topology:connected-message": "Success",
         }
     ]
 }
@@ -68,18 +66,12 @@ cli_node_non_exist = {
             {
                 "error-message": "Request could not be completed because the relevant data model content does not exist",
                 "error-tag": "data-missing",
-                "error-type": "protocol"
+                "error-type": "protocol",
             }
         ]
     }
 }
-cli_oper_without_device = {
-    "topology": [
-        {
-            "topology-id": "cli"
-        }
-    ]
-}
+cli_oper_without_device = {"topology": [{"topology-id": "cli"}]}
 cli_oper_with_device = {
     "topology": [
         {
@@ -93,15 +85,15 @@ cli_oper_with_device = {
                     "cli-topology:default-error-patterns": {},
                     "cli-topology:host": "192.168.1.215",
                     "cli-topology:port": 22,
-                    "cli-topology:available-capabilities": {}
+                    "cli-topology:available-capabilities": {},
                 }
-            ]
+            ],
         }
     ]
 }
 cli_read_journal = {
     "output": {
-        "journal": "2020-01-02T11:49:23.574: show configuration commit list | utility egrep \"^1 \"\n2020-01-02T11:49:23.981: show running-config\n2020-01-02T11:56:28.905: show running-config interface | include ^interface\n2020-01-02T11:56:29.465: configure terminal\n2020-01-02T11:56:32.178: interface Loopback66\nshutdown\nroot\n\n2020-01-02T11:56:32.674: commit\n2020-01-02T11:56:39.151: end\n2020-01-02T11:58:41.023: show running-config\n"
+        "journal": '2020-01-02T11:49:23.574: show configuration commit list | utility egrep "^1 "\n2020-01-02T11:49:23.981: show running-config\n2020-01-02T11:56:28.905: show running-config interface | include ^interface\n2020-01-02T11:56:29.465: configure terminal\n2020-01-02T11:56:32.178: interface Loopback66\nshutdown\nroot\n\n2020-01-02T11:56:32.674: commit\n2020-01-02T11:56:39.151: end\n2020-01-02T11:58:41.023: show running-config\n'
     }
 }
 
@@ -117,65 +109,104 @@ class MockResponse:
 
 class TestMount(unittest.TestCase):
     def test_mount_new_device(self):
-        with patch('frinx_conductor_workers.cli_worker.requests.post') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 201)
+        with patch("frinx_conductor_workers.cli_worker.requests.post") as mock:
+            mock.return_value = MockResponse(bytes(json.dumps({}), encoding="utf-8"), 201)
             request = frinx_conductor_workers.cli_worker.execute_mount_cli(
-                {"inputData": {"device_id": "xr5", "host": "192.168.1.1", "port": "22", "protocol": "ssh",
-                               "type": "ios xr", "version": "5.3.4", "username": "name", "password": "password",
-                               "parsing-engine": "one-line-parser"}})
+                {
+                    "inputData": {
+                        "device_id": "xr5",
+                        "host": "192.168.1.1",
+                        "port": "22",
+                        "protocol": "ssh",
+                        "type": "ios xr",
+                        "version": "5.3.4",
+                        "username": "name",
+                        "password": "password",
+                        "parsing-engine": "one-line-parser",
+                    }
+                }
+            )
             self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/operations/connection-manager:install-node")
+            self.assertEqual(
+                request["output"]["url"],
+                uniconfig_url_base + "/operations/connection-manager:install-node",
+            )
             self.assertEqual(request["output"]["response_code"], 201)
             self.assertEqual(request["output"]["response_body"], {})
 
     def test_mount_existing_device(self):
-        with patch('frinx_conductor_workers.cli_worker.requests.post') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 204)
+        with patch("frinx_conductor_workers.cli_worker.requests.post") as mock:
+            mock.return_value = MockResponse(bytes(json.dumps({}), encoding="utf-8"), 204)
             request = frinx_conductor_workers.cli_worker.execute_mount_cli(
-                {"inputData": {"device_id": "xr5", "host": "192.168.1.1", "port": "22", "protocol": "ssh",
-                               "type": "ios xr", "version": "5.3.4", "username": "name", "password": "password"}})
+                {
+                    "inputData": {
+                        "device_id": "xr5",
+                        "host": "192.168.1.1",
+                        "port": "22",
+                        "protocol": "ssh",
+                        "type": "ios xr",
+                        "version": "5.3.4",
+                        "username": "name",
+                        "password": "password",
+                    }
+                }
+            )
             self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/operations/connection-manager:install-node")
+            self.assertEqual(
+                request["output"]["url"],
+                uniconfig_url_base + "/operations/connection-manager:install-node",
+            )
             self.assertEqual(request["output"]["response_code"], 204)
             self.assertEqual(request["output"]["response_body"], {})
 
 
 class TestUnmount(unittest.TestCase):
     def test_unmount_existing_device(self):
-        with patch('frinx_conductor_workers.cli_worker.requests.post') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps({}), encoding='utf-8'), 204)
+        with patch("frinx_conductor_workers.cli_worker.requests.post") as mock:
+            mock.return_value = MockResponse(bytes(json.dumps({}), encoding="utf-8"), 204)
             request = frinx_conductor_workers.cli_worker.execute_unmount_cli(
-                {"inputData": {"device_id": "xr5"}})
+                {"inputData": {"device_id": "xr5"}}
+            )
             self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/operations/connection-manager:uninstall-node")
+            self.assertEqual(
+                request["output"]["url"],
+                uniconfig_url_base + "/operations/connection-manager:uninstall-node",
+            )
             self.assertEqual(request["output"]["response_code"], 204)
             self.assertEqual(request["output"]["response_body"], {})
 
 
 class TestExecuteAndReadRpcCli(unittest.TestCase):
     def test_execute_and_read_rpc_cli(self):
-        with patch('frinx_conductor_workers.cli_worker.requests.post') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(exec_and_read_rpc), encoding='utf-8'), 200)
+        with patch("frinx_conductor_workers.cli_worker.requests.post") as mock:
+            mock.return_value = MockResponse(
+                bytes(json.dumps(exec_and_read_rpc), encoding="utf-8"), 200
+            )
             request = frinx_conductor_workers.cli_worker.execute_and_read_rpc_cli(
-                {"inputData": {"device_id": "xr5", "template": "show running-config", "params": ""}})
+                {"inputData": {"device_id": "xr5", "template": "show running-config", "params": ""}}
+            )
             self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/operations/network-topology:network-topology/topology=cli/"
-                               "node=xr5/yang-ext:mount/cli-unit-generic:execute-and-read")
+            self.assertEqual(
+                request["output"]["url"],
+                uniconfig_url_base + "/operations/network-topology:network-topology/topology=cli/"
+                "node=xr5/yang-ext:mount/cli-unit-generic:execute-and-read",
+            )
             self.assertEqual(request["output"]["response_body"], exec_and_read_rpc)
 
     def test_execute_and_read_rpc_cli_non_existing_device(self):
-        with patch('frinx_conductor_workers.cli_worker.requests.post') as mock:
-            mock.return_value = MockResponse(bytes(json.dumps(exec_and_read_rpc_no_device), encoding='utf-8'), 404)
+        with patch("frinx_conductor_workers.cli_worker.requests.post") as mock:
+            mock.return_value = MockResponse(
+                bytes(json.dumps(exec_and_read_rpc_no_device), encoding="utf-8"), 404
+            )
             request = frinx_conductor_workers.cli_worker.execute_and_read_rpc_cli(
-                {"inputData": {"device_id": "xr5", "template": "show running-config", "params": ""}})
+                {"inputData": {"device_id": "xr5", "template": "show running-config", "params": ""}}
+            )
             self.assertEqual(request["status"], "FAILED")
-            self.assertEqual(request["output"]["url"], uniconfig_url_base
-                             + "/operations/network-topology:network-topology/topology=cli/"
-                               "node=xr5/yang-ext:mount/cli-unit-generic:execute-and-read")
+            self.assertEqual(
+                request["output"]["url"],
+                uniconfig_url_base + "/operations/network-topology:network-topology/topology=cli/"
+                "node=xr5/yang-ext:mount/cli-unit-generic:execute-and-read",
+            )
             self.assertEqual(request["output"]["response_body"], exec_and_read_rpc_no_device)
 
 

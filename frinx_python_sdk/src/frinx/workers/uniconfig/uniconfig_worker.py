@@ -5,25 +5,33 @@ import logging
 import re
 import urllib
 from collections import namedtuple
-
-import requests
-
 from string import Template
 
+import requests
 from frinx.services import task_response
-from frinx.services.frinx_rest import parse_response, \
-    additional_uniconfig_request_params, extract_uniconfig_cookies, \
-    extract_uniconfig_cookies_multizone, get_devices_by_uniconfig, get_uniconfig_cluster_from_task, \
-    conductor_url_base, conductor_headers
+from frinx.services.frinx_rest import additional_uniconfig_request_params
+from frinx.services.frinx_rest import conductor_headers
+from frinx.services.frinx_rest import conductor_url_base
+from frinx.services.frinx_rest import extract_uniconfig_cookies
+from frinx.services.frinx_rest import extract_uniconfig_cookies_multizone
+from frinx.services.frinx_rest import get_devices_by_uniconfig
+from frinx.services.frinx_rest import get_uniconfig_cluster_from_task
+from frinx.services.frinx_rest import parse_response
 
 local_logs = logging.getLogger(__name__)
 
-uniconfig_url_uniconfig_mount = "$base_url/data/network-topology:network-topology/topology=uniconfig/node=$id"
+uniconfig_url_uniconfig_mount = (
+    "$base_url/data/network-topology:network-topology/topology=uniconfig/node=$id"
+)
 uniconfig_url_uniconfig_commit = "$base_url/operations/uniconfig-manager:commit"
 uniconfig_url_uniconfig_dryrun_commit = "$base_url/operations/dryrun-manager:dryrun-commit"
 uniconfig_url_uniconfig_calculate_diff = "$base_url/operations/uniconfig-manager:calculate-diff"
-uniconfig_url_uniconfig_sync_from_network = "$base_url/operations/uniconfig-manager:sync-from-network"
-uniconfig_url_uniconfig_replace_config_with_operational = "$base_url/operations/uniconfig-manager:replace-config-with-operational"
+uniconfig_url_uniconfig_sync_from_network = (
+    "$base_url/operations/uniconfig-manager:sync-from-network"
+)
+uniconfig_url_uniconfig_replace_config_with_operational = (
+    "$base_url/operations/uniconfig-manager:replace-config-with-operational"
+)
 
 uniconfig_url_uniconfig_tx_create = "$base_url/operations/uniconfig-manager:create-transaction"
 uniconfig_url_uniconfig_tx_close = "$base_url/operations/uniconfig-manager:close-transaction"
@@ -32,11 +40,12 @@ uniconfig_url_uniconfig_tx_metadata = (
     "$base_url/data/transaction-log:transactions-metadata/transaction-metadata=$tx_id"
 )
 
+
 def apply_functions(uri):
     if not uri:
         return uri
     escape_regex = r"escape\(([^\)]*)\)"
-    uri = re.sub(escape_regex, lambda match: urllib.parse.quote(match.group(1), safe=''), uri)
+    uri = re.sub(escape_regex, lambda match: urllib.parse.quote(match.group(1), safe=""), uri)
     return uri
 
 
@@ -60,25 +69,39 @@ def read_structured_data(task):
 
     uniconfig_cookies = extract_uniconfig_cookies(task)
 
-    id_url = Template(uniconfig_url_uniconfig_mount).substitute(
-        {"id": device_id, "base_url": get_uniconfig_cluster_from_task(task)}
-    ) + "/frinx-uniconfig-topology:configuration" + (uri if uri else "")
+    id_url = (
+        Template(uniconfig_url_uniconfig_mount).substitute(
+            {"id": device_id, "base_url": get_uniconfig_cluster_from_task(task)}
+        )
+        + "/frinx-uniconfig-topology:configuration"
+        + (uri if uri else "")
+    )
 
-    response = requests.get(id_url,
-                            cookies=uniconfig_cookies,
-                            **additional_uniconfig_request_params)
+    response = requests.get(
+        id_url, cookies=uniconfig_cookies, **additional_uniconfig_request_params
+    )
     response_code, response_json = parse_response(response)
 
     if response_code == 500:
-        return {'status': 'FAILED', 'output': {'url': id_url,
-                                               'response_code': response_code,
-                                               'response_body': response_json},
-                'logs': ["Unable to read device with ID %s" % device_id]}
+        return {
+            "status": "FAILED",
+            "output": {
+                "url": id_url,
+                "response_code": response_code,
+                "response_body": response_json,
+            },
+            "logs": ["Unable to read device with ID %s" % device_id],
+        }
     else:
-        return {'status': 'COMPLETED', 'output': {'url': id_url,
-                                                  'response_code': response_code,
-                                                  'response_body': response_json},
-                'logs': ["Node with ID %s read successfully" % device_id]}
+        return {
+            "status": "COMPLETED",
+            "output": {
+                "url": id_url,
+                "response_code": response_code,
+                "response_body": response_json,
+            },
+            "logs": ["Node with ID %s read successfully" % device_id],
+        }
 
 
 def write_structured_data(task):
@@ -108,9 +131,13 @@ def write_structured_data(task):
     data_json = template if isinstance(template, str) else json.dumps(template if template else {})
     data_json = Template(data_json).substitute(params)
 
-    id_url = Template(uniconfig_url_uniconfig_mount).substitute(
-        {"id": device_id, "base_url": get_uniconfig_cluster_from_task(task)}
-    ) + "/frinx-uniconfig-topology:configuration" + (uri if uri else "")
+    id_url = (
+        Template(uniconfig_url_uniconfig_mount).substitute(
+            {"id": device_id, "base_url": get_uniconfig_cluster_from_task(task)}
+        )
+        + "/frinx-uniconfig-topology:configuration"
+        + (uri if uri else "")
+    )
     id_url = Template(id_url).substitute(params)
 
     response = requests.request(
@@ -118,49 +145,71 @@ def write_structured_data(task):
         method=method,
         data=data_json,
         cookies=uniconfig_cookies,
-        **additional_uniconfig_request_params
+        **additional_uniconfig_request_params,
     )
 
     response_code, response_json = parse_response(response)
 
     if response_code in [requests.codes.no_content, requests.codes.created, requests.codes.ok]:
-        return {'status': 'COMPLETED', 'output': {'url': id_url,
-                                                  'response_code': response_code,
-                                                  'response_body': response_json},
-                'logs': ["Node with ID %s updated successfully" % device_id]}
+        return {
+            "status": "COMPLETED",
+            "output": {
+                "url": id_url,
+                "response_code": response_code,
+                "response_body": response_json,
+            },
+            "logs": ["Node with ID %s updated successfully" % device_id],
+        }
     else:
-        return {'status': 'FAILED', 'output': {'url': id_url,
-                                               'response_code': response_code,
-                                               'response_body': response_json},
-                'logs': ["Unable to update device with ID %s" % device_id]}
+        return {
+            "status": "FAILED",
+            "output": {
+                "url": id_url,
+                "response_code": response_code,
+                "response_body": response_json,
+            },
+            "logs": ["Unable to update device with ID %s" % device_id],
+        }
 
 
 def delete_structured_data(task):
-    device_id = task['inputData']['device_id']
-    uri = task['inputData']['uri']
+    device_id = task["inputData"]["device_id"]
+    uri = task["inputData"]["uri"]
     uri = apply_functions(uri)
 
     uniconfig_cookies = extract_uniconfig_cookies(task)
 
-    id_url = Template(uniconfig_url_uniconfig_mount).substitute(
-        {"id": device_id, "base_url": get_uniconfig_cluster_from_task(task)}
-    ) + "/frinx-uniconfig-topology:configuration" + (uri if uri else "")
+    id_url = (
+        Template(uniconfig_url_uniconfig_mount).substitute(
+            {"id": device_id, "base_url": get_uniconfig_cluster_from_task(task)}
+        )
+        + "/frinx-uniconfig-topology:configuration"
+        + (uri if uri else "")
+    )
 
-    r = requests.delete(id_url,
-                        cookies=uniconfig_cookies,
-                        **additional_uniconfig_request_params)
+    r = requests.delete(id_url, cookies=uniconfig_cookies, **additional_uniconfig_request_params)
     response_code, response_json = parse_response(r)
 
     if response_code == requests.codes.no_content:
-        return {'status': 'COMPLETED', 'output': {'url': id_url,
-                                                  'response_code': response_code,
-                                                  'response_body': response_json},
-                'logs': ["Node with ID %s updated successfully" % device_id]}
+        return {
+            "status": "COMPLETED",
+            "output": {
+                "url": id_url,
+                "response_code": response_code,
+                "response_body": response_json,
+            },
+            "logs": ["Node with ID %s updated successfully" % device_id],
+        }
     else:
-        return {'status': 'FAILED', 'output': {'url': id_url,
-                                               'response_code': response_code,
-                                               'response_body': response_json},
-                'logs': ["Unable to update device with ID %s" % device_id]}
+        return {
+            "status": "FAILED",
+            "output": {
+                "url": id_url,
+                "response_code": response_code,
+                "response_body": response_json,
+            },
+            "logs": ["Unable to update device with ID %s" % device_id],
+        }
 
 
 def commit(task):
@@ -171,19 +220,19 @@ def commit(task):
     devices = parse_devices(task)
     devices_by_uniconfig = get_devices_by_uniconfig(devices, task, uniconfig_cookies)
 
-    return commit_uniconfig(
-        devices_by_uniconfig, uniconfig_url_uniconfig_commit, uniconfig_cookies)
+    return commit_uniconfig(devices_by_uniconfig, uniconfig_url_uniconfig_commit, uniconfig_cookies)
 
 
 def dryrun_commit(task):
-    """ Function for issuing a Uniconfig dry run commit request."""
+    """Function for issuing a Uniconfig dry run commit request."""
     # Parse the input
     uniconfig_cookies = extract_uniconfig_cookies_multizone(task)
     devices = parse_devices(task)
     devices_by_uniconfig = get_devices_by_uniconfig(devices, task, uniconfig_cookies)
 
     return commit_uniconfig(
-        devices_by_uniconfig, uniconfig_url_uniconfig_dryrun_commit, uniconfig_cookies)
+        devices_by_uniconfig, uniconfig_url_uniconfig_dryrun_commit, uniconfig_cookies
+    )
 
 
 def calc_diff(task):
@@ -212,8 +261,11 @@ def replace_config_with_oper(task):
     devices_by_uniconfig = get_devices_by_uniconfig(devices, task, uniconfig_cookies)
 
     return request_uniconfig(
-        devices_by_uniconfig, uniconfig_url_uniconfig_replace_config_with_operational, uniconfig_cookies
+        devices_by_uniconfig,
+        uniconfig_url_uniconfig_replace_config_with_operational,
+        uniconfig_cookies,
     )
+
 
 def create_commit_request(device_list):
     commit_body = {"input": {"target-nodes": {}}}
@@ -222,7 +274,7 @@ def create_commit_request(device_list):
 
 
 def parse_devices(task, fail_on_empty=True):
-    devices = task['inputData'].get('devices', [])
+    devices = task["inputData"].get("devices", [])
     if type(devices) is list:
         extracted_devices = []
 
@@ -233,12 +285,17 @@ def parse_devices(task, fail_on_empty=True):
                 if "name" in dev:
                     extracted_devices.append(dev.get("name"))
     else:
-        extracted_devices = [x.strip() for x in devices.split(",") if x is not ""] if devices else []
+        extracted_devices = (
+            [x.strip() for x in devices.split(",") if x is not ""] if devices else []
+        )
 
     if fail_on_empty and len(extracted_devices) is 0:
-        raise Exception("For Uniconfig RPCs, a list of devices needs to be specified. "
-                        "Global RPCs (involving all devices in topology) are not allowed for your own safety.")
+        raise Exception(
+            "For Uniconfig RPCs, a list of devices needs to be specified. "
+            "Global RPCs (involving all devices in topology) are not allowed for your own safety."
+        )
     return extracted_devices
+
 
 def request_uniconfig(devices, url, uniconfig_cookies_multizone={}):
     responses = []
@@ -272,6 +329,7 @@ def request_uniconfig(devices, url, uniconfig_cookies_multizone={}):
             return task_response.failed_response(response)
 
     return task_response.completed_response({"responses": responses})
+
 
 def commit_uniconfig(devices, url, uniconfig_cookies_multizone={}):
     responses = []
@@ -321,6 +379,7 @@ def commit_uniconfig(devices, url, uniconfig_cookies_multizone={}):
 
     return task_response.completed_response({"responses": responses})
 
+
 def create_tx_multizone(task):
     devices = parse_devices(task, fail_on_empty=False)
     devices_by_uniconfig = get_devices_by_uniconfig(devices, task)
@@ -341,17 +400,25 @@ def create_tx_multizone(task):
                 )
 
             # ... and return failed response
-            return {'status': 'FAILED',
-                    'output': {"failed_zone": d.uc_cluster, "response": response},
-                    "logs": [f"""Unable to create multizone transactions. Failed for: '{d.uc_cluster}'. 
-                                 Close sent to already opened transactions: '{uniconfig_cookies_multizone}'"""]
-                    }
+            return {
+                "status": "FAILED",
+                "output": {"failed_zone": d.uc_cluster, "response": response},
+                "logs": [
+                    f"""Unable to create multizone transactions. Failed for: '{d.uc_cluster}'. 
+                                 Close sent to already opened transactions: '{uniconfig_cookies_multizone}'"""
+                ],
+            }
         else:
             uniconfig_cookies_multizone[d.uc_cluster] = response["output"]["uniconfig_cookies"]
 
-    return {'status': 'COMPLETED', 'output': {"uniconfig_cookies_multizone": uniconfig_cookies_multizone},
-            "logs": [f"""Transactions created successfully for: '{devices_by_uniconfig}' with context: '{uniconfig_cookies_multizone}'"""]
-            }
+    return {
+        "status": "COMPLETED",
+        "output": {"uniconfig_cookies_multizone": uniconfig_cookies_multizone},
+        "logs": [
+            f"""Transactions created successfully for: '{devices_by_uniconfig}' with context: '{uniconfig_cookies_multizone}'"""
+        ],
+    }
+
 
 def create_tx_internal(uniconfig_cluster):
 
@@ -365,16 +432,16 @@ def create_tx_internal(uniconfig_cluster):
 
         context = {"uniconfig_cookies": {"UNICONFIGTXID": tx_id, "uniconfig_server_id": server_id}}
 
-        return {'status': 'COMPLETED',
-                'output': context
-                }
+        return {"status": "COMPLETED", "output": context}
 
     response_body = response.content.decode("utf8")
     response_code = response.status_code
 
-    return {'status': 'FAILED',
-            'output': {"response_body": response_body, "response_code": response_code}
-            }
+    return {
+        "status": "FAILED",
+        "output": {"response_body": response_body, "response_code": response_code},
+    }
+
 
 def close_tx_internal(uniconfig_cookies, uniconfig_cluster):
     tx_id = uniconfig_cookies["UNICONFIGTXID"]
@@ -385,23 +452,26 @@ def close_tx_internal(uniconfig_cookies, uniconfig_cluster):
     )
 
     if response.status_code == 200:
-        return {'status': 'COMPLETED',
-                'output': {"UNICONFIGTXID": tx_id}
-                }
+        return {"status": "COMPLETED", "output": {"UNICONFIGTXID": tx_id}}
 
     response_body = response.content.decode("utf8")
     response_code = response.status_code
 
-    return {'status': 'FAILED',
-            'output': {"UNICONFIGTXID": tx_id, "response_body": response_body, "response_code": response_code}
-            }
+    return {
+        "status": "FAILED",
+        "output": {
+            "UNICONFIGTXID": tx_id,
+            "response_body": response_body,
+            "response_code": response_code,
+        },
+    }
+
 
 def close_tx_multizone(task):
     uniconfig_cookies_multizone = extract_uniconfig_cookies_multizone(task)
     close_tx_response = close_tx_multizone_internal(uniconfig_cookies_multizone)
-    return {'status': 'COMPLETED',
-            'output': {"UNICONFIGTXID_multizone": close_tx_response}
-            }
+    return {"status": "COMPLETED", "output": {"UNICONFIGTXID_multizone": close_tx_response}}
+
 
 def close_tx_multizone_internal(uniconfig_cookies_multizone):
     close_tx_response = {}
@@ -413,9 +483,10 @@ def close_tx_multizone_internal(uniconfig_cookies_multizone):
 
         close_tx_response[uc_cluster] = {"UNICONFIGTXID": tx_id, "status": response["status"]}
         if response["status"] != task_response.COMPLETED_STATUS:
-            pass #todo:?
+            pass  # todo:?
 
     return close_tx_response
+
 
 def find_started_tx(task):
     failed_wf = task["inputData"]["failed_wf_id"]
@@ -424,13 +495,16 @@ def find_started_tx(task):
     response_code, response_json = parse_response(r)
 
     if response_code != requests.codes.ok:
-        return task_response.failed_response({"failed_wf_id": failed_wf, "message":"Unable to get workflow"})
+        return task_response.failed_response(
+            {"failed_wf_id": failed_wf, "message": "Unable to get workflow"}
+        )
 
     opened_contexts, committed_contexts = find_opened_contexts_in_wf(failed_wf, response_json)
 
     return task_response.completed_response(
         {"uniconfig_contexts": opened_contexts, "committed_contexts": committed_contexts}
     )
+
 
 def find_opened_contexts_in_wf(failed_wf, response_json):
     opened_contexts = []
@@ -466,6 +540,7 @@ def find_opened_contexts_in_wf(failed_wf, response_json):
 
     return opened_contexts, committed_contexts
 
+
 def rollback_all_tx(task):
     ctxs = task["inputData"].get("uniconfig_contexts", [])
     committed_ctxs = task["inputData"].get("committed_contexts", [])
@@ -500,6 +575,7 @@ def rollback_all_tx(task):
 
     return task_response.completed_response({"uniconfig_contexts": ctxs})
 
+
 def revert_tx_multizone(uniconfig_cookies_multizone):
     # return_logs.info("Reverting transactions in UCs on context: '%s'", uniconfig_cookies_multizone)
 
@@ -526,6 +602,7 @@ def revert_tx_multizone(uniconfig_cookies_multizone):
     #     [zone for zone in uniconfig_cookies_multizone],
     # )
     return task_response.completed_response({"UNICONFIGTXID_multizone": close_tx_response})
+
 
 def check_and_revert_tx(uniconfig_cookies, uniconfig_cluster):
     tx_id_to_revert = uniconfig_cookies["UNICONFIGTXID"]
@@ -579,7 +656,7 @@ def check_and_revert_tx(uniconfig_cookies, uniconfig_cluster):
         return task_response.completed_response({"UNICONFIGTXID": tx_id_to_revert})
     elif response.status_code == requests.codes.ok:
         # return_logs.info("Reverting '%s', step 2: Transaction log found", tx_id_to_revert)
-        pass #todo:?
+        pass  # todo:?
     else:
         # Transaction will still be attempted, even though we cannot find its log due to unexpected error
         # return_logs.warning(
@@ -589,7 +666,7 @@ def check_and_revert_tx(uniconfig_cookies, uniconfig_cluster):
         #     response.content.decode("utf8"),
         #     response.status_code,
         # )
-        pass #todo:?
+        pass  # todo:?
 
     # 2. Do the revert
     response = revert_tx_internal(uniconfig_cluster, tx_id_to_revert, uniconfig_cookies_for_revert)
@@ -621,12 +698,15 @@ def check_and_revert_tx(uniconfig_cookies, uniconfig_cluster):
         #     tx_id_to_revert,
         #     response,
         # )
-        return task_response.failed_response({"UNICONFIGTXID": tx_id_to_revert, "commit_response": response})
+        return task_response.failed_response(
+            {"UNICONFIGTXID": tx_id_to_revert, "commit_response": response}
+        )
 
     # return_logs.info("Reverting '%s', step 4: Commit RPC successful.", tx_id_to_revert)
 
     # return_logs.info("Transaction '%s' reverted successfully", tx_id_to_revert)
     return task_response.completed_response({"UNICONFIGTXID": tx_id_to_revert})
+
 
 def revert_tx_internal(uniconfig_cluster, tx_id, uniconfig_cookies):
     id_url = Template(uniconfig_url_uniconfig_tx_revert).substitute({"base_url": uniconfig_cluster})
@@ -665,120 +745,95 @@ def revert_tx_internal(uniconfig_cluster, tx_id, uniconfig_cookies):
 def start(cc):
     local_logs.info("Starting Uniconfig workers")
 
-    cc.register('UNICONFIG_read_structured_device_data', {
-        "description": '{"description": "Read device configuration or operational data in structured format e.g. openconfig", "labels": ["BASICS","UNICONFIG","OPENCONFIG"]}',
-        "inputKeys": [
-            "device_id",
-            "uri",
-            "uniconfig_context"
-        ],
-        "outputKeys": [
-            "url",
-            "response_code",
-            "response_body"
-        ]
-    }, read_structured_data)
+    cc.register(
+        "UNICONFIG_read_structured_device_data",
+        {
+            "description": '{"description": "Read device configuration or operational data in structured format e.g. openconfig", "labels": ["BASICS","UNICONFIG","OPENCONFIG"]}',
+            "inputKeys": ["device_id", "uri", "uniconfig_context"],
+            "outputKeys": ["url", "response_code", "response_body"],
+        },
+        read_structured_data,
+    )
 
-    cc.register('UNICONFIG_write_structured_device_data', {
-        "description": '{"description": "Write device configuration data in structured format e.g. openconfig", "labels": ["BASICS","UNICONFIG"]}',
-        "inputKeys": [
-            "device_id",
-            "uri",
-            "template",
-            "params",
-            "uniconfig_context"
-        ],
-        "outputKeys": [
-            "url",
-            "response_code",
-            "response_body"
-        ]
-    }, write_structured_data)
+    cc.register(
+        "UNICONFIG_write_structured_device_data",
+        {
+            "description": '{"description": "Write device configuration data in structured format e.g. openconfig", "labels": ["BASICS","UNICONFIG"]}',
+            "inputKeys": ["device_id", "uri", "template", "params", "uniconfig_context"],
+            "outputKeys": ["url", "response_code", "response_body"],
+        },
+        write_structured_data,
+    )
 
-    cc.register('UNICONFIG_delete_structured_device_data', {
-        "description": '{"description": "Delete device configuration data in structured format e.g. openconfig", "labels": ["BASICS","UNICONFIG","OPENCONFIG"]}',
-        "inputKeys": [
-            "device_id",
-            "uri",
-            "uniconfig_context"
-        ],
-        "outputKeys": [
-            "url",
-            "response_code",
-            "response_body"
-        ]
-    }, delete_structured_data)
+    cc.register(
+        "UNICONFIG_delete_structured_device_data",
+        {
+            "description": '{"description": "Delete device configuration data in structured format e.g. openconfig", "labels": ["BASICS","UNICONFIG","OPENCONFIG"]}',
+            "inputKeys": ["device_id", "uri", "uniconfig_context"],
+            "outputKeys": ["url", "response_code", "response_body"],
+        },
+        delete_structured_data,
+    )
 
-    cc.register('UNICONFIG_commit', {
-        "description": '{"description": "Commit uniconfig", "labels": ["BASICS","UNICONFIG"]}',
-        "inputKeys": [
-            "devices",
-            "uniconfig_context"
-        ],
-        "outputKeys": [
-            "url",
-            "response_code",
-            "response_body"
-        ],
-        "timeoutSeconds": 600,
-        "responseTimeoutSeconds": 600,
-    }, commit)
+    cc.register(
+        "UNICONFIG_commit",
+        {
+            "description": '{"description": "Commit uniconfig", "labels": ["BASICS","UNICONFIG"]}',
+            "inputKeys": ["devices", "uniconfig_context"],
+            "outputKeys": ["url", "response_code", "response_body"],
+            "timeoutSeconds": 600,
+            "responseTimeoutSeconds": 600,
+        },
+        commit,
+    )
 
-    cc.register('UNICONFIG_dryrun_commit', {
-        "description": '{"description": "Dryrun Commit uniconfig", "labels": ["BASICS","UNICONFIG"]}',
-        "inputKeys": [
-            "devices",
-            "uniconfig_context"
-        ],
-        "outputKeys": [
-            "url",
-            "response_code",
-            "response_body"
-        ],
-        "timeoutSeconds": 600,
-        "responseTimeoutSeconds": 600,
-    }, dryrun_commit)
+    cc.register(
+        "UNICONFIG_dryrun_commit",
+        {
+            "description": '{"description": "Dryrun Commit uniconfig", "labels": ["BASICS","UNICONFIG"]}',
+            "inputKeys": ["devices", "uniconfig_context"],
+            "outputKeys": ["url", "response_code", "response_body"],
+            "timeoutSeconds": 600,
+            "responseTimeoutSeconds": 600,
+        },
+        dryrun_commit,
+    )
 
-    cc.register('UNICONFIG_calculate_diff', {
-        "description": '{"description": "Calculate uniconfig diff", "labels": ["BASICS","UNICONFIG"]}',
-        "inputKeys": [
-            "devices",
-            "uniconfig_context"
-        ],
-        "outputKeys": [
-            "url",
-            "response_code",
-            "response_body"
-        ],
-        "timeoutSeconds": 600,
-        "responseTimeoutSeconds": 600,
-    }, calc_diff)
+    cc.register(
+        "UNICONFIG_calculate_diff",
+        {
+            "description": '{"description": "Calculate uniconfig diff", "labels": ["BASICS","UNICONFIG"]}',
+            "inputKeys": ["devices", "uniconfig_context"],
+            "outputKeys": ["url", "response_code", "response_body"],
+            "timeoutSeconds": 600,
+            "responseTimeoutSeconds": 600,
+        },
+        calc_diff,
+    )
 
-    cc.register('UNICONFIG_sync_from_network', {
-        "description": '{"description": "Sync uniconfig from network", "labels": ["BASICS","UNICONFIG"]}',
-        "inputKeys": [
-            "devices",
-            "uniconfig_context"
-        ],
-        "outputKeys": [
-            "responses",
-        ],
-        "timeoutSeconds": 600,
-        "responseTimeoutSeconds": 600,
-    }, sync_from_network)
+    cc.register(
+        "UNICONFIG_sync_from_network",
+        {
+            "description": '{"description": "Sync uniconfig from network", "labels": ["BASICS","UNICONFIG"]}',
+            "inputKeys": ["devices", "uniconfig_context"],
+            "outputKeys": ["responses"],
+            "timeoutSeconds": 600,
+            "responseTimeoutSeconds": 600,
+        },
+        sync_from_network,
+    )
 
-    cc.register('UNICONFIG_replace_config_with_oper', {
-        "description": '{"description": "Replace config with oper in uniconfig", "labels": ["BASICS","UNICONFIG"]}',
-        "inputKeys": [
-            "devices",
-            "uniconfig_context"
-        ],
-        "outputKeys": [
-            "responses"
-        ],
-        "timeoutSeconds": 600,
-        "responseTimeoutSeconds": 600,
-    }, replace_config_with_oper)
+    cc.register(
+        "UNICONFIG_replace_config_with_oper",
+        {
+            "description": '{"description": "Replace config with oper in uniconfig", "labels": ["BASICS","UNICONFIG"]}',
+            "inputKeys": ["devices", "uniconfig_context"],
+            "outputKeys": ["responses"],
+            "timeoutSeconds": 600,
+            "responseTimeoutSeconds": 600,
+        },
+        replace_config_with_oper,
+    )
 
     cc.register(
         "UNICONFIG_tx_find_started",
@@ -787,7 +842,7 @@ def start(cc):
             "inputKeys": ["failed_wf_id"],
             "outputKeys": ["uniconfig_contexts"],
         },
-        find_started_tx
+        find_started_tx,
     )
 
     cc.register(
@@ -797,9 +852,8 @@ def start(cc):
             "inputKeys": ["uniconfig_contexts"],
             "outputKeys": [],
         },
-        rollback_all_tx
+        rollback_all_tx,
     )
-
 
     cc.register(
         "UNICONFIG_tx_create_multizone",
@@ -808,7 +862,7 @@ def start(cc):
             "inputKeys": ["devices"],
             "outputKeys": ["uniconfig_cookies_multizone"],
         },
-        create_tx_multizone
+        create_tx_multizone,
     )
 
     cc.register(
@@ -818,5 +872,5 @@ def start(cc):
             "inputKeys": ["uniconfig_context"],
             "outputKeys": ["UNICONFIGTXID_multizone"],
         },
-        close_tx_multizone
+        close_tx_multizone,
     )
