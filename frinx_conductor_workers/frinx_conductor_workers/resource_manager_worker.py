@@ -97,6 +97,7 @@ query_claimed_resource_template = Template(
             node {
                 id
                 Properties
+                AlternativeId
                 }
             }
         }
@@ -140,6 +141,9 @@ def claim_resource(task, logs):
                   "id": "<id>",
                   "Properties": {
                     <properties>
+                  }
+                  "AlternativeId": {
+                    <alternative id>
                   }
                 }
               }
@@ -203,6 +207,9 @@ def query_claimed_resources(task, logs):
                           "Properties": {
                             <properties>
                           }
+                          "AlternativeId": {
+                            <alternative id>
+                          }
                         }
                     }
                 }
@@ -217,7 +224,10 @@ def query_claimed_resources(task, logs):
     if pool_id is None:
         return failed_response_with_logs(logs, "No pool id")
     variables = {"pool_id": pool_id}
-    if alternative_id is not None:
+    if alternative_id is not None and len(alternative_id) > 0:
+        alternative_id = alternative_id.replace("'", '"')
+        alternative_id = json.loads(alternative_id)
+        variables.update({"alternative_id": alternative_id})
         body = query_claimed_resource_template.render(
             {
                 "query_resource": "QueryResourcesByAltId",
