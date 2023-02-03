@@ -143,7 +143,7 @@ def claim_resource(task, logs):
                     <properties>
                   }
                   "AlternativeId": {
-                    <alternative id>
+                    <alternativeId>
                   }
                 }
               }
@@ -208,7 +208,7 @@ def query_claimed_resources(task, logs):
                             <properties>
                           }
                           "AlternativeId": {
-                            <alternative id>
+                            <alternativeId>
                           }
                         }
                     }
@@ -625,7 +625,7 @@ def update_alt_id_for_resource(task, logs):
 
          Args:
 
-             task (dict): dictionary with input data ["poolId", "userInput", "alternativeId"]
+             task (dict): dictionary with input data ["poolId", "resourceProperties", "alternativeId"]
 
              logs: stream of log messages
 
@@ -645,15 +645,25 @@ def update_alt_id_for_resource(task, logs):
     pool_id = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
     if pool_id is None:
         return failed_response_with_logs(logs, "No pool id")
-    user_input = task["inputData"]["userInput"] if "userInput" in task["inputData"] else None
-    if user_input is None:
+    resource_properties = (
+        task["inputData"]["resourceProperties"]
+        if "resourceProperties" in task["inputData"]
+        else None
+    )
+    if resource_properties is None:
         return failed_response_with_logs(logs, "No user input")
     alternative_id = (
         task["inputData"]["alternativeId"] if "alternativeId" in task["inputData"] else None
     )
     if alternative_id is None:
         return failed_response_with_logs(logs, "No alternative id")
-    variables = {"pool_id": pool_id, "input": user_input, "alternative_id": alternative_id}
+    variables = {"pool_id": pool_id, "input": resource_properties, "alternative_id": alternative_id}
+    if alternative_id is not None and len(alternative_id) > 0:
+        alternative_id = alternative_id.replace("'", '"')
+        alternative_id = json.loads(alternative_id)
+        variables.update({"alternative_id": alternative_id})
+    if resource_properties is not None and len(resource_properties) > 0:
+        variables.update({"input": resource_properties})
     body = update_alternative_id_for_resource_template.render(
         {"update_alt_id": "UpdateResourceAltId"}
     )
@@ -982,4 +992,19 @@ def start(cc):
             "outputKeys": [],
         },
         calculate_available_prefixes_for_address_pool,
+    )
+
+    cc.register(
+        "RESOURCE_MANAGER_update_alt_id_for_resource",
+        {
+            "name": "RESOURCE_MANAGER_update_alt_id_for_resource",
+            "description": '{"description": "": [""]}',
+            "retryCount": 0,
+            "timeoutPolicy": "TIME_OUT_WF",
+            "retryLogic": "FIXED",
+            "retryDelaySeconds": 0,
+            "inputKeys": [""],
+            "outputKeys": [],
+        },
+        update_alt_id_for_resource,
     )
