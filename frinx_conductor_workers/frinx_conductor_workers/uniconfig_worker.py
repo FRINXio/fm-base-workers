@@ -389,7 +389,6 @@ def create_tx_multizone(task):
     for d in devices_by_uniconfig:
         response = create_tx_internal(uniconfig_cluster=d.uc_cluster)
         if response["status"] != util.COMPLETED_STATUS:
-
             # Failed to create some transaction, close already opened transactions
             for already_opened_tx_uc_cluster in uniconfig_cookies_multizone:
                 # Best effort closing opened transactions
@@ -421,7 +420,6 @@ def create_tx_multizone(task):
 
 
 def create_tx_internal(uniconfig_cluster):
-
     id_url = Template(uniconfig_url_uniconfig_tx_create).substitute({"base_url": uniconfig_cluster})
 
     response = requests.post(id_url, **additional_uniconfig_request_params)
@@ -476,7 +474,6 @@ def close_tx_multizone(task):
 def close_tx_multizone_internal(uniconfig_cookies_multizone):
     close_tx_response = {}
     for uc_cluster in uniconfig_cookies_multizone:
-
         uniconfig_cookies = uniconfig_cookies_multizone[uc_cluster]
         tx_id = uniconfig_cookies["UNICONFIGTXID"]
         response = close_tx_internal(uniconfig_cookies, uc_cluster)
@@ -549,7 +546,6 @@ def rollback_all_tx(task):
     ctxs.reverse()
 
     for ctx_multizone in ctxs:
-
         if ctx_multizone in committed_ctxs:
             # Reverting committed
             # return_logs.info("Reverting committed transactions in context: %s", ctx_multizone)

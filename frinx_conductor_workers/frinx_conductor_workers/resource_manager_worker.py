@@ -149,22 +149,12 @@ def claim_resource(task, logs):
     pool_id = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
     if pool_id is None:
         return failed_response_with_logs(logs, "No pool id")
-    user_input = (
-        task["inputData"]["userInput"] if "userInput" in task["inputData"] else {}
-    )
-    description = (
-        task["inputData"]["description"] if "description" in task["inputData"] else ""
-    )
+    user_input = task["inputData"]["userInput"] if "userInput" in task["inputData"] else {}
+    description = task["inputData"]["description"] if "description" in task["inputData"] else ""
     alternative_id = (
-        None
-        if "alternativeId" not in task["inputData"]
-        else task["inputData"]["alternativeId"]
+        None if "alternativeId" not in task["inputData"] else task["inputData"]["alternativeId"]
     )
-    variables = {
-        "pool_id": pool_id,
-        "user_input": user_input,
-        "description": description,
-    }
+    variables = {"pool_id": pool_id, "user_input": user_input, "description": description}
 
     if alternative_id is not None and len(alternative_id) > 0:
         alternative_id = alternative_id.replace("'", '"')
@@ -179,19 +169,13 @@ def claim_resource(task, logs):
         )
     else:
         body = claim_resource_template.render(
-            {
-                "claim_resource": "ClaimResource",
-                "alternative_id_variable": "",
-                "alternative_id": "",
-            }
+            {"claim_resource": "ClaimResource", "alternative_id_variable": "", "alternative_id": ""}
         )
 
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(
-            logs, {"response_body": response["errors"][0]["message"]}
-        )
+        return failed_response_with_logs(logs, {"response_body": response["errors"][0]["message"]})
     return completed_response_with_logs(logs, {"response_body": response["data"]})
 
 
@@ -228,9 +212,7 @@ def query_claimed_resources(task, logs):
     """
     pool_id = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
     alternative_id = (
-        None
-        if "alternativeId" not in task["inputData"]
-        else task["inputData"]["alternativeId"]
+        None if "alternativeId" not in task["inputData"] else task["inputData"]["alternativeId"]
     )
     if pool_id is None:
         return failed_response_with_logs(logs, "No pool id")
@@ -245,9 +227,7 @@ def query_claimed_resources(task, logs):
         )
         variables.update({"input": alternative_id})
     else:
-        body = query_claimed_resource_template.render(
-            {"query_resource": "QueryResources"}
-        )
+        body = query_claimed_resource_template.render({"query_resource": "QueryResources"})
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     data = execute(body, variables)
     return completed_response_with_logs(logs, {"response_body": data})
@@ -261,9 +241,7 @@ def query_resource_id(resource):
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     data = execute(body, variables)
     resource_type_id = (
-        data["data"]["QueryResourceTypes"][0]["id"]
-        if data["data"]["QueryResourceTypes"]
-        else None
+        data["data"]["QueryResourceTypes"][0]["id"] if data["data"]["QueryResourceTypes"] else None
     )
     resource_strategy_id = (
         data["data"]["QueryAllocationStrategies"][0]["id"]
@@ -340,9 +318,7 @@ def create_pool(task, logs):
     body = create_pool_template.render(
         {
             "create_pool": "CreateAllocatingPool",
-            "pool_properties_types": "poolPropertyTypes: {\n"
-            + pool_types_string
-            + "\n}",
+            "pool_properties_types": "poolPropertyTypes: {\n" + pool_types_string + "\n}",
             "pool_properties": "poolProperties: {\n" + pool_string + "\n}",
             "pool_properties_variables": pool_variables_string,
         }
@@ -352,9 +328,7 @@ def create_pool(task, logs):
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(
-            logs, {"response_body": response["errors"][0]["message"]}
-        )
+        return failed_response_with_logs(logs, {"response_body": response["errors"][0]["message"]})
     return completed_response_with_logs(logs, {"response_body": response["data"]})
 
 
@@ -372,9 +346,7 @@ def create_vlan_pool(task, logs):
     from_range = task["inputData"]["from"] if "from" in task["inputData"] else None
     to_range = task["inputData"]["to"] if "to" in task["inputData"] else None
     parent_resource_id = (
-        task["inputData"]["parentResourceId"]
-        if "parentResourceId" in task["inputData"]
-        else None
+        task["inputData"]["parentResourceId"] if "parentResourceId" in task["inputData"] else None
     )
     if parent_resource_id == "":
         parent_resource_id = None
@@ -392,9 +364,7 @@ def create_vlan_pool(task, logs):
         body = create_pool_template.render(
             {
                 "create_pool": "CreateNestedAllocatingPool",
-                "parent_resource_id": 'parentResourceId: "'
-                + str(parent_resource_id)
-                + '"',
+                "parent_resource_id": 'parentResourceId: "' + str(parent_resource_id) + '"',
             }
         )
     else:
@@ -578,9 +548,7 @@ def query_vlan_pool(task, logs):
 
     """
     pool_names = task["inputData"]["poolNames"]
-    query_pool_result = query_pool(
-        {"inputData": {"resource": "vlan", "poolNames": pool_names}}
-    )
+    query_pool_result = query_pool({"inputData": {"resource": "vlan", "poolNames": pool_names}})
     return completed_response_with_logs(
         logs, {"response_body": query_pool_result["output"]["response_body"]}
     )
@@ -667,23 +635,15 @@ def update_alt_id_for_resource(task, logs):
     pool_id = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
     if pool_id is None:
         return failed_response_with_logs(logs, "No pool id")
-    user_input = (
-        task["inputData"]["userInput"] if "userInput" in task["inputData"] else None
-    )
+    user_input = task["inputData"]["userInput"] if "userInput" in task["inputData"] else None
     if user_input is None:
         return failed_response_with_logs(logs, "No user input")
     alternative_id = (
-        task["inputData"]["alternativeId"]
-        if "alternativeId" in task["inputData"]
-        else None
+        task["inputData"]["alternativeId"] if "alternativeId" in task["inputData"] else None
     )
     if alternative_id is None:
         return failed_response_with_logs(logs, "No alternative id")
-    variables = {
-        "pool_id": pool_id,
-        "input": user_input,
-        "alternative_id": alternative_id,
-    }
+    variables = {"pool_id": pool_id, "input": user_input, "alternative_id": alternative_id}
     body = update_alternative_id_for_resource_template.render(
         {"update_alt_id": "UpdateResourceAltId"}
     )
@@ -710,7 +670,9 @@ def read_resource_manager_url_base(task, logs):
     Read resource_manager_base variable and return as a string.
     """
 
-    return completed_response_with_logs(logs, {"RESOURCE_MANAGER_URL_BASE": resource_manager_url_base})
+    return completed_response_with_logs(
+        logs, {"RESOURCE_MANAGER_URL_BASE": resource_manager_url_base}
+    )
 
 
 @logging_handler(log)

@@ -1,6 +1,6 @@
 """This module contains helper functions and objects for logging."""
-import logging
 import io
+import logging
 
 log_stream = io.StringIO()
 
