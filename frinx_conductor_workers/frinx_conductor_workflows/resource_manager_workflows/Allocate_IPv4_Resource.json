@@ -1,0 +1,127 @@
+{
+  "name": "Allocate_IPv4_Resource",
+  "description": "{\"description\": \"Claim IPv4 resource.\", \"labels\": [\"UNIRESOURCE\"]}",
+  "workflowStatusListenerEnabled": true,
+  "version": 1,
+  "tasks": [
+    {
+      "name": "RESOURCE_MANAGER_query_pool_by_tag",
+      "taskReferenceName": "query_pool_by_tag",
+      "type": "SIMPLE",
+      "inputParameters": {
+          "poolTag": "${workflow.input.pool_name}"
+      }
+    },
+    {
+      "label": "decision",
+      "name": "decisionTask",
+      "taskReferenceName": "pool_exists",
+      "inputParameters": {
+        "pool_exists": "${query_pool_by_tag.output.response_body.data.SearchPoolsByTags}"
+      },
+      "type": "DECISION",
+      "caseExpression": "$.pool_exists.length > 0 ? 'True' : 'False'",
+      "decisionCases": {
+        "False": [
+          {
+            "name": "terminate",
+            "taskReferenceName": "terminate_cleanup_pool",
+            "inputParameters": {
+              "terminationStatus": "FAILED",
+              "workflowOutput": {
+                "status": "Pool with name \"${workflow.input.pool_name}\" do not exists."
+              }
+            },
+            "type": "TERMINATE",
+            "startDelay": 0,
+            "optional": false
+          }
+        ]
+      },
+      "defaultCase": [],
+      "startDelay": 0,
+      "optional": false
+    },
+    {
+      "name": "LAMBDA_TASK",
+      "taskReferenceName": "lambda_print_alt_id",
+      "inputParameters": {
+        "address": "${query_pool_by_tag.output.response_body.data.SearchPoolsByTags[0].PoolProperties.address}",
+        "prefix": "${query_pool_by_tag.output.response_body.data.SearchPoolsByTags[0].PoolProperties.prefix}",
+        "scriptExpression": "return {'subnetAddress': $.address, 'subnetPrefix': $.prefix}"
+      },
+      "type": "LAMBDA",
+      "decisionCases": {},
+      "defaultCase": [],
+      "forkTasks": [],
+      "startDelay": 0,
+      "joinOn": [],
+      "optional": false,
+      "defaultExclusiveJoinTask": [],
+      "asyncComplete": false,
+      "loopOver": []
+    },
+    {
+      "label": "decision",
+      "name": "decisionTask",
+      "taskReferenceName": "desired_value_not_null",
+      "inputParameters": {
+      "desiredValue": "${workflow.input.desired_value}"
+      },
+      "type": "DECISION",
+      "caseExpression": "$.desiredValue.length > 0 ? 'True' : 'False'",
+      "decisionCases": {
+      "True": [
+          {
+              "name": "RESOURCE_MANAGER_claim_resource",
+              "taskReferenceName": "claim_resource_with_desired_value",
+              "type": "SIMPLE",
+              "inputParameters": {
+              "poolId": "${query_pool_by_tag.output.response_body.data.SearchPoolsByTags[0].id}",
+              "userInput": {"desiredValue": "${workflow.input.desired_value}"},
+              "description": "${workflow.input.description}",
+              "alternativeId": "${lambda_print_alt_id.output.result}"
+              }
+          }
+      ],
+      "False": [
+          {
+              "name": "RESOURCE_MANAGER_claim_resource",
+              "taskReferenceName": "claim_resource_without_desired_value",
+              "type": "SIMPLE",
+              "inputParameters": {
+              "poolId": "${query_pool_by_tag.output.response_body.data.SearchPoolsByTags[0].id}",
+              "description": "${workflow.input.description}",
+              "alternativeId": "${lambda_print_alt_id.output.result}"
+              }
+          }
+      ]
+      }
+    },
+    {
+      "name": "LAMBDA_TASK",
+      "taskReferenceName": "lambda_print_result",
+      "inputParameters": {
+        "lambdaValue": "${desired_value_not_null.output.caseOutput}",
+        "claim_resource_with_desired_value": "${claim_resource_with_desired_value.output.response_body}",
+        "claim_resource_without_desired_value": "${claim_resource_without_desired_value.output.response_body}",
+        "scriptExpression": "if ($.lambdaValue.contains(\"True\")){return $.claim_resource_with_desired_value.ClaimResourceWithAltId} else{return $.claim_resource_without_desired_value.ClaimResourceWithAltId}"
+      },
+      "type": "LAMBDA",
+      "decisionCases": {},
+      "defaultCase": [],
+      "forkTasks": [],
+      "startDelay": 0,
+      "joinOn": [],
+      "optional": false,
+      "defaultExclusiveJoinTask": [],
+      "asyncComplete": false,
+      "loopOver": []
+   }
+  ],
+  "inputParameters": [
+      "{\"pool_name\":{\"value\":\"\",\"description\":\"Pool name\",\"type\":\"string\"}, \"description\":{\"value\":\"\",\"description\":\"[OPTIONAL] Description for resource\",\"type\":\"string\"}, \"desired_value\":{\"value\":\"\",\"description\":\"[OPTIONAL] Desired value ip address (for example 192.168.0.0)\",\"type\":\"string\"}}"
+  ],
+  "outputParameters": {"result": "${lambda_print_result.output.result}"},
+  "schemaVersion": 2
+}

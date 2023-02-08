@@ -1,0 +1,63 @@
+{
+    "name": "Create_IPv6_Prefix_Pool",
+    "description": "{\"description\": \"Create one IPv6 prefix pool.\", \"labels\": [\"UNIRESOURCE\"]}",
+    "workflowStatusListenerEnabled": true,
+    "version": 1,
+    "tasks": [
+      {
+        "name": "RESOURCE_MANAGER_query_pool_by_tag",
+        "taskReferenceName": "query_pool_by_tag",
+        "type": "SIMPLE",
+        "inputParameters": {
+            "poolTag": "${workflow.input.pool_name}"
+        }
+      },
+      {
+        "label": "decision",
+        "name": "decisionTask",
+        "taskReferenceName": "pool_exists",
+        "inputParameters": {
+          "pool_exists": "${query_pool_by_tag.output.response_body.data.SearchPoolsByTags}"
+        },
+        "type": "DECISION",
+        "caseExpression": "$.pool_exists.length > 0 ? 'True' : 'False'",
+        "decisionCases": {
+          "True": [
+            {
+              "name": "terminate",
+              "taskReferenceName": "terminate_cleanup_pool",
+              "inputParameters": {
+                "terminationStatus": "FAILED",
+                "workflowOutput": {
+                  "status": "Pool with name \"${workflow.input.pool_name}\" already exists. If you want to create new pool, type new name."
+                }
+              },
+              "type": "TERMINATE",
+              "startDelay": 0,
+              "optional": false
+            }
+          ]
+        },
+        "defaultCase": [],
+        "startDelay": 0,
+        "optional": false
+      },
+      {
+        "name": "RESOURCE_MANAGER_create_pool",
+        "taskReferenceName": "create_pool",
+        "type": "SIMPLE",
+        "inputParameters": {
+          "poolName": "${workflow.input.pool_name}",
+          "poolProperties": {"address": "${workflow.input.address}", "subnet": "${workflow.input.subnet}", "prefix": "${workflow.input.prefix}"},
+          "resourceType": "ipv6_prefix"
+        }
+      }
+    ],
+    "inputParameters": [
+      "{\"pool_name\":{\"value\":\"name\",\"description\":\"Pool name. Must be unique.\",\"type\":\"string\"}, \"address\":{\"value\":\"2001:db8:1::\",\"description\":\"IPv6 prefix initial address\",\"type\":\"string\"}, \"subnet\":{\"value\": false,\"description\":\"Is it subnet pool ?\",\"type\":\"boolean\"}, \"prefix\":{\"value\":64,\"description\":\"Pool ipv6 prefix\",\"type\":\"int\"}}"
+    ],
+    "outputParameters": {
+      "response_body": "${create_pool.output.response_body.data.CreateAllocating}"
+    },
+    "schemaVersion": 2
+}
