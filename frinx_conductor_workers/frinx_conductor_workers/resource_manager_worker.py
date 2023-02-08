@@ -82,6 +82,7 @@ query_pool_by_tag_template = Template(
     SearchPoolsByTags(tags: { matchesAny: [{matchesAll: [$poolTag]}]}) {
         id
         Name
+        PoolProperties
     }
     } """
 )
@@ -161,8 +162,8 @@ def claim_resource(task, logs):
     variables = {"pool_id": pool_id, "user_input": user_input, "description": description}
 
     if alternative_id is not None and len(alternative_id) > 0:
-        alternative_id = alternative_id.replace("'", '"')
-        alternative_id = json.loads(alternative_id)
+        if "status" not in alternative_id:
+            alternative_id.update({"status": "active"})
         variables.update({"alternative_id": alternative_id})
         body = claim_resource_template.render(
             {

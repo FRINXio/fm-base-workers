@@ -42,12 +42,14 @@ def _register_workers(conductor) -> None:
     from frinx_conductor_workers import http_worker
     from frinx_conductor_workers import netconf_worker
     from frinx_conductor_workers import uniconfig_worker
+    from frinx_conductor_workers import resource_manager_worker
 
     cli_worker.start(conductor)
     netconf_worker.start(conductor)
     uniconfig_worker.start(conductor)
     common_worker.start(conductor)
     http_worker.start(conductor)
+    resource_manager_worker.start(conductor)
 
 
 def _import_workflows(workflows_dir: Path = WORKFLOWS_DIR) -> None:
