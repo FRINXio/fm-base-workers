@@ -1,4 +1,4 @@
-from logging_helpers import serialize_logs
+from frinx_conductor_workers.logging_helpers import serialize_logs
 
 FAILED_STATUS = "FAILED"
 COMPLETED_STATUS = "COMPLETED"
