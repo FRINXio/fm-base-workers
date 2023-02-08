@@ -41,8 +41,8 @@ def _register_workers(conductor) -> None:
     from frinx_conductor_workers import common_worker
     from frinx_conductor_workers import http_worker
     from frinx_conductor_workers import netconf_worker
-    from frinx_conductor_workers import uniconfig_worker
     from frinx_conductor_workers import resource_manager_worker
+    from frinx_conductor_workers import uniconfig_worker
 
     cli_worker.start(conductor)
     netconf_worker.start(conductor)
