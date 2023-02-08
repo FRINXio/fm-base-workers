@@ -1,9 +1,15 @@
 import os
 
 from setuptools import setup
+from typing import AnyStr
 
 
-def __read__(file_name):
+def __read__(file_name: str) -> AnyStr:
+    """ Insert README.md from repository to python package
+
+    Args:
+        file_name (object): Path to README.md
+    """
     return open(os.path.join(os.path.dirname(__file__), file_name)).read()
 
 
