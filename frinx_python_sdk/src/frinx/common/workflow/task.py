@@ -74,7 +74,7 @@ class WorkflowTaskImpl(BaseModel):
 
     # OPTIONAL
     description: str = Field(default=None)
-    input_parameters: InputData|dict[str, Any] = Field(default={})
+    input_parameters: InputData | dict[str, Any] = Field(default={})
     dynamic_task_name_param: str = Field(default=None)
     case_value_param: str = Field(default=None)
     case_expression: str = Field(default=None)
@@ -138,7 +138,7 @@ class DynamicForkTask(WorkflowTaskImpl):
     input_parameters: InputData
 
     @root_validator(pre=True)
-    def check_input_values(cls, values:Dict[str, Any]) -> Dict[str, Any]:
+    def check_input_values(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         workflow_input = (
             values["input_parameters"]
             if isinstance(values["input_parameters"], dict)
@@ -177,7 +177,7 @@ class DynamicForkArrayTask(WorkflowTaskImpl):
     input_parameters: InputData | dict[str, Any]
 
     @root_validator(pre=True)
-    def check_input_values(cls, values:Dict[str, Any]) -> Dict[str, Any]:
+    def check_input_values(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         workflow_input = (
             values["input_parameters"]
             if isinstance(values["input_parameters"], dict)
@@ -220,7 +220,7 @@ class HumanTask(WorkflowTaskImpl):
 
     # Inner classes must be defined before inner parameters
     type = TaskType.HUMAN
-    input_parameters: InputData  | dict[str, Any]
+    input_parameters: InputData | dict[str, Any]
 
 
 class InlineTask(WorkflowTaskImpl):
@@ -239,7 +239,7 @@ class WaitDurationTask(WorkflowTaskImpl):
 
     # Inner classes must be defined before inner parameters
     type = TaskType.WAIT
-    input_parameters: InputData  | dict[str, Any]
+    input_parameters: InputData | dict[str, Any]
 
 
 class WaitUntilTask(WorkflowTaskImpl):
@@ -248,7 +248,7 @@ class WaitUntilTask(WorkflowTaskImpl):
 
     # Inner classes must be defined before inner parameters
     type = TaskType.WAIT
-    input_parameters: InputData  | dict[str, Any]
+    input_parameters: InputData | dict[str, Any]
 
 
 class TerminateTask(WorkflowTaskImpl):
@@ -267,7 +267,7 @@ class TerminateTask(WorkflowTaskImpl):
 
     # Inner classes must be defined before inner parameters
     type = TaskType.TERMINATE
-    input_parameters: InputData  | dict[str, Any]
+    input_parameters: InputData | dict[str, Any]
 
 
 class StartTask(WorkflowTaskImpl):
@@ -279,7 +279,7 @@ class StartTask(WorkflowTaskImpl):
 
     # Inner classes must be defined before inner parameters
     type = TaskType.START_WORKFLOW
-    input_parameters: InputData  | Dict[str, Any]
+    input_parameters: InputData | Dict[str, Any]
 
 
 # TODO SWITCH TASK
@@ -305,7 +305,7 @@ class SwitchTask(WorkflowTaskImpl):
     case_expression: str
 
     @root_validator(pre=True)
-    def check_input_values(cls, values:Dict[str, Any]) -> Dict[str, Any]:
+    def check_input_values(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         match values.get("evaluator_type"):
             case SwitchEvaluatorType.VALUE_PARAM:
                 SwitchTask.InputDataValueParam(**values.get("input_parameters", {}))
@@ -329,7 +329,7 @@ class SubWorkflowTask(WorkflowTaskImpl):
             validate_all = True
 
     @root_validator(pre=True)
-    def check_input_values(cls, values:Dict[str, Any]) -> Dict[str, Any]:
+    def check_input_values(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         worker = values["worker"]
         if isinstance(worker, type) and issubclass(worker, WorkerImpl):
             # TODO IMPORT WORKFLOW INSTEAD OF TASK
@@ -367,10 +367,10 @@ class SimpleTask(WorkflowTaskImpl):
     # Inner classes must be defined before inner parameters
     name: Any
     type = TaskType.SIMPLE
-    input_parameters: InputData  | Dict[str, Any]
+    input_parameters: InputData | Dict[str, Any]
 
     @root_validator(pre=True)
-    def check_input_values(cls, values:Dict[str, Any]) -> Dict[str, Any]:
+    def check_input_values(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         worker_def = values["name"]
 
         if isinstance(worker_def, type) and issubclass(worker_def, WorkerImpl):
@@ -417,7 +417,7 @@ class SetVariableTask(WorkflowTaskImpl):
 
     # Inner classes must be defined before inner parameters
     type = TaskType.SET_VARIABLE
-    input_parameters: InputData  | Dict[str, Any]
+    input_parameters: InputData | Dict[str, Any]
 
 
 class KafkaRequest(BaseModel):

@@ -70,7 +70,6 @@ class TaskSource:
 
     def get_next_task(self, last_task_type):
         with self.lock:
-
             if last_task_type:
                 self.actual_task_types_running[last_task_type] -= 1
 
@@ -266,7 +265,7 @@ class FrinxConductorWrapper:
             )
 
     def updateWorkflow(self, workflow):
-    	# TODO fix registration of workflows
+        # TODO fix registration of workflows
         print(json.dumps([workflow]))
         res = requests.put(
             "http://127.0.0.1/api/workflow/metadata/workflow",
@@ -274,4 +273,3 @@ class FrinxConductorWrapper:
             headers=self.headers,
         )
         print(res.text)
-

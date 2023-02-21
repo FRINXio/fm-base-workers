@@ -199,7 +199,7 @@ class Inventory(ServiceWorkersImpl):
             name = "INVENTORY_get_pages_cursors"
             description = "Get a list of pages cursors from device inventory"
             labels = ["BASIC", "INVENTORY"]
-            retry_timeout= 3600
+            retry_timeout = 3600
             responseTimeoutSeconds = 3600
 
         class WorkerInput(TaskInput):

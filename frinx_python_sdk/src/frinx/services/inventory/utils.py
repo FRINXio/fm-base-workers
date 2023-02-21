@@ -49,7 +49,7 @@ def execute_inventory(body: str, variables: Any) -> InventoryOutput:
         case None:
             pass
         case dict():
-            variables=json.dumps(variables)
+            variables = json.dumps(variables)
         case _:
             variables = json.loads(str(variables))
 

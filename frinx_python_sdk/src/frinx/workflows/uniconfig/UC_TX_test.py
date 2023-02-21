@@ -26,7 +26,6 @@ class UcTxTest(WorkflowImpl):
         response_body: dict[str, typing.Any]
 
     def workflow_builder(self) -> WorkflowImpl:
-
         self.tasks.append(
             SimpleTask(
                 name=Uniconfig.UniconfigTxCreateMultizone,

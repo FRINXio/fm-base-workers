@@ -10,7 +10,6 @@ from frinx.common.util import snake_to_camel_case
 
 
 class Task(BaseModel):
-
     input_data: dict[str, object] = Field(default={})
     workflow_task: Any = Field(default=None)
     task_definition: Any = Field(default=None)

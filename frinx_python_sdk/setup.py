@@ -1,11 +1,11 @@
 import os
+from typing import AnyStr
 
 from setuptools import setup
-from typing import AnyStr
 
 
 def __read__(file_name: str) -> AnyStr:
-    """ Insert README.md from repository to python package
+    """Insert README.md from repository to python package
 
     Args:
         file_name (object): Path to README.md
