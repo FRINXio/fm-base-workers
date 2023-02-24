@@ -1,6 +1,7 @@
 import json
 from typing import Any
 
+import requests
 from pydantic import BaseModel
 
 
@@ -22,3 +23,24 @@ def jsonify_description(
         desc_representation["rbac"] = rbac
     output = json.dumps(desc_representation)
     return output
+
+
+def parse_response(r: requests.Response) -> tuple[int, str]:
+    decode = r.content.decode("utf8")
+    try:
+        response_json = json.loads(decode if decode else "{}")
+    except ValueError as e:
+        response_json = json.loads("{}")
+
+    response_code = r.status_code
+    return response_code, response_json
+
+
+def snake_to_camel_case(StrictString: str) -> str:
+    """Returns camelCase version of provided snake_case StrictString."""
+    if not StrictString:
+        return ""
+
+    words = StrictString.split("_")
+    result = words[0].lower() + "".join(n.capitalize() for n in words[1:])
+    return result

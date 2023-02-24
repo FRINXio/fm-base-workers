@@ -28,7 +28,7 @@ class AddDeviceVariable(InventoryVariable):
     mountParameters: str
     vendor: Optional[str] = None
     model: Optional[str] = None
-    size: Optional[str] = None
+    deviceSize: Optional[str] = None
     labelIds: Optional[str] = None
 
 

@@ -1,12 +1,10 @@
 import copy
 import dataclasses
 import json
-import logging
 from enum import Enum
 from typing import Any
 
-from frinx.services.frinx_rest import inventory_url_base
-from frinx.services.frinx_rest import x_tenant_id
+from frinx.common.frinx_rest import x_tenant_id
 from frinx.services.inventory import templates
 from python_graphql_client import GraphqlClient
 
@@ -34,6 +32,24 @@ class ServiceState(str, Enum):
     def has_value(cls, value):
         return value in cls._value2member_map_
 
+    @classmethod
+    def list(cls):
+        return list(map(lambda c: c.value, cls))
+
+
+class DeviceSize(str, Enum):
+    SMALL = "SMALL"
+    MEDIUM = "MEDIUM"
+    LARGE = "LARGE"
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda c: c.value, cls))
+
 
 @dataclasses.dataclass
 class InventoryOutput:
@@ -45,9 +61,13 @@ class InventoryOutput:
 def execute_inventory(body: str, variables: Any) -> InventoryOutput:
     print("Inventory worker", body, variables)
 
-    print(type(variables))
-    if variables is not dict and variables is not None:
-        variables = json.loads(str(variables))
+    match variables:
+        case None:
+            pass
+        case dict():
+            variables = json.dumps(variables)
+        case _:
+            variables = json.loads(str(variables))
 
     response = client.execute(query=body, variables=variables)
 

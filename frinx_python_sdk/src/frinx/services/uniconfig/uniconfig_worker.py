@@ -2,8 +2,8 @@ import json
 from string import Template
 
 import requests
-from frinx.services.frinx_rest import conductor_headers
-from frinx.services.frinx_rest import conductor_url_base
+from frinx.common.frinx_rest import conductor_headers
+from frinx.common.frinx_rest import conductor_url_base
 from frinx.services.uniconfig import templates
 from frinx.services.uniconfig import utils as uniconfig_utils
 from frinx.services.uniconfig.models import UniconfigContext

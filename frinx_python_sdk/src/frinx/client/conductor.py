@@ -14,12 +14,13 @@
 #  limitations under the License.
 #
 from __future__ import print_function
-import requests
+
 import json
-import sys
 import socket
+import sys
 import warnings
 
+import requests
 
 hostname = socket.gethostname()
 

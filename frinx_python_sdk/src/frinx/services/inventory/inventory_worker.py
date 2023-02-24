@@ -1,14 +1,9 @@
 import copy
 import json
-import logging
-from dataclasses import asdict
 from math import ceil
 
-from frinx.services.frinx_rest import inventory_url_base
-from frinx.services.frinx_rest import x_tenant_id
 from frinx.services.inventory import templates
 from frinx.services.inventory import utils as inventory_utils
-from python_graphql_client import GraphqlClient
 
 # def validate_output:
 
@@ -115,20 +110,22 @@ def add_device(
     mount_body: dict,
     vendor=None,
     model=None,
-    size=None,
+    device_size=None,
     labels=None,
 ) -> inventory_utils.InventoryOutput:
     try:
-        if len(device_name) == 0:
+        if type(device_name) is None or len(device_name) == 0:
             raise Exception("Missing input device_name")
-        if len(zone) == 0:
+        if type(zone) is None or len(zone) == 0:
             raise Exception("Missing input zone")
         if not inventory_utils.ServiceState.has_value(service_state):
             raise Exception("Missing input service state")
-        if len(mount_body) == 0:
+        if type(mount_body) is None or len(mount_body) == 0:
             raise Exception("Missing input mount_body")
         if type(labels) is not None:
             labels = list(labels.replace(" ", "").split(","))
+        if type(device_size) is not None and not inventory_utils.DeviceSize.has_value(device_size):
+            raise Exception("Bad input size")
 
         label_ids = []
 
@@ -156,7 +153,9 @@ def add_device(
                 labelIds=label_ids if type(label_ids) is not None else None,
                 vendor=vendor if type(vendor) is not None and len(vendor) > 0 else None,
                 model=model if type(model) is not None and len(model) > 0 else None,
-                size=size if type(size) is not None and len(size) > 0 else None,
+                deviceSize=str(device_size)
+                if type(device_size) is not None and len(device_size) > 0
+                else None,
             )
         )
 

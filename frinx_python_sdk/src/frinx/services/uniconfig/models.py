@@ -1,5 +1,6 @@
 import typing
 from typing import Any
+from typing import List
 from typing import Optional
 
 from pydantic import BaseModel
@@ -84,3 +85,50 @@ class UniconfigRequest(BaseModel):
 
     class Config:
         min_anystr_length = 1
+
+
+class UniconfigConfigBlacklist(BaseModel):
+    extension: List[str]  # TODO add default?
+
+
+class Netconf(BaseModel):
+    netconf_node_topology_host: str = Field(..., alias="netconf-node-topology:host")
+    netconf_node_topology_port: int = Field(alias="netconf-node-topology:port", default=2022)
+    netconf_node_topology_keepalive_delay: int = Field(
+        alias="netconf-node-topology:keepalive-delay", default=5
+    )
+    netconf_node_topology_max_connection_attempts: int = Field(
+        alias="netconf-node-topology:max-connection-attempts", default=1
+    )
+    netconf_node_topology_connection_timeout_millis: int = Field(
+        alias="netconf-node-topology:connection-timeout-millis", default=60000
+    )
+    netconf_node_topology_default_request_timeout_millis: int = Field(
+        alias="netconf-node-topology:default-request-timeout-millis", default=60000
+    )
+    netconf_node_topology_tcp_only: bool = Field(
+        alias="netconf-node-topology:tcp-only", default=True
+    )
+    netconf_node_topology_username: str = Field(..., alias="netconf-node-topology:username")
+    netconf_node_topology_password: str = Field(..., alias="netconf-node-topology:password")
+    netconf_node_topology_sleep_factor: Optional[float] = Field(
+        alias="netconf-node-topology:sleep-factor", default=1.0
+    )
+    uniconfig_config_uniconfig_native_enabled: Optional[bool] = Field(
+        ..., alias="uniconfig-config:uniconfig-native-enabled"
+    )
+    netconf_node_topology_edit_config_test_option: Optional[str] = Field(
+        alias="netconf-node-topology:edit-config-test-option", default="set"
+    )
+    uniconfig_config_blacklist: Optional[UniconfigConfigBlacklist] = Field(
+        ..., alias="uniconfig-config:blacklist"
+    )
+
+
+class NetconfInputBody(BaseModel):
+    node_id: str = Field(..., alias="node-id")
+    netconf: Netconf
+
+
+class NetconfMountBody(BaseModel):
+    input: NetconfInputBody
