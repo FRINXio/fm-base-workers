@@ -1,5 +1,5 @@
 from frinx.client.FrinxConductorWrapper import FrinxConductorWrapper
-from frinx.common.worker_impl import WorkerImpl
+from frinx.common.worker.worker import WorkerImpl
 from pydantic import dataclasses
 
 

@@ -1,6 +1,7 @@
 import copy
 import json
 import logging
+import socket
 import threading
 import time
 import traceback
@@ -8,9 +9,8 @@ import uuid
 from collections import defaultdict
 from dataclasses import dataclass
 from threading import Thread
-import requests
-import socket
 
+import requests
 from frinx.client.conductor import WFClientMgr
 
 logger = logging.getLogger(__name__)
@@ -70,7 +70,6 @@ class TaskSource:
 
     def get_next_task(self, last_task_type):
         with self.lock:
-
             if last_task_type:
                 self.actual_task_types_running[last_task_type] -= 1
 

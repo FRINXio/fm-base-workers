@@ -2,14 +2,14 @@ from typing import Any
 from typing import Optional
 
 import frinx.services.inventory.inventory_worker as inventory
-from frinx.common.models.task_py import Task
-from frinx.common.models.task_result import TaskResult
-from frinx.common.models.task_result_status import TaskResultStatus
-from frinx.common.service_worker_impl import ServiceWorkersImpl
-from frinx.common.task_def_impl import TaskDefinition
-from frinx.common.task_def_impl import TaskInput
-from frinx.common.task_def_impl import TaskOutput
-from frinx.common.worker_impl import WorkerImpl
+from frinx.common.conductor_enums import TaskResultStatus
+from frinx.common.worker.service import ServiceWorkersImpl
+from frinx.common.worker.task import Task
+from frinx.common.worker.task_def import TaskDefinition
+from frinx.common.worker.task_def import TaskInput
+from frinx.common.worker.task_def import TaskOutput
+from frinx.common.worker.task_result import TaskResult
+from frinx.common.worker.worker import WorkerImpl
 from frinx.services.inventory.utils import InventoryOutput
 
 
@@ -30,7 +30,7 @@ class Inventory(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = inventory.get_device_status(**task["inputData"])
+            response = inventory.get_device_status(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -52,7 +52,7 @@ class Inventory(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = inventory.install_device_by_id(**task["inputData"])
+            response = inventory.install_device_by_id(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -74,7 +74,7 @@ class Inventory(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = inventory.uninstall_device_by_id(**task["inputData"])
+            response = inventory.uninstall_device_by_id(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -87,7 +87,7 @@ class Inventory(ServiceWorkersImpl):
             responseTimeoutSeconds = 3600
 
         class WorkerInput(TaskInput):
-            device_name: Optional[str]
+            device_name: str
 
         class WorkerOutput(TaskOutput):
             url: str
@@ -95,7 +95,7 @@ class Inventory(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = inventory.install_device_by_name(**task["inputData"])
+            response = inventory.install_device_by_name(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -117,7 +117,7 @@ class Inventory(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = inventory.uninstall_device_by_name(**task["inputData"])
+            response = inventory.uninstall_device_by_name(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -139,7 +139,7 @@ class Inventory(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = inventory.get_labels(**task["inputData"])
+            response = inventory.get_labels()
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -161,7 +161,7 @@ class Inventory(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = inventory.create_label(**task["inputData"])
+            response = inventory.create_label(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -181,7 +181,7 @@ class Inventory(ServiceWorkersImpl):
             mount_body: str
             vendor: Optional[str]
             model: Optional[str]
-            size: Optional[str]
+            device_size: Optional[str]
             labels: Optional[str]
 
         class WorkerOutput(TaskOutput):
@@ -190,7 +190,7 @@ class Inventory(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = inventory.add_device(**task["inputData"])
+            response = inventory.add_device(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -199,7 +199,7 @@ class Inventory(ServiceWorkersImpl):
             name = "INVENTORY_get_pages_cursors"
             description = "Get a list of pages cursors from device inventory"
             labels = ["BASIC", "INVENTORY"]
-            timeoutSeconds = 3600
+            retry_timeout = 3600
             responseTimeoutSeconds = 3600
 
         class WorkerInput(TaskInput):
@@ -214,7 +214,7 @@ class Inventory(ServiceWorkersImpl):
             page_ids: str
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = inventory.get_device_pages_cursors(**task["inputData"])
+            response = inventory.get_device_pages_cursors(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -237,7 +237,7 @@ class Inventory(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = inventory.all_devices_fork_tasks(**task["inputData"])
+            response = inventory.all_devices_fork_tasks(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -260,7 +260,7 @@ class Inventory(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = inventory.page_device_dynamic_fork_tasks(**task["inputData"])
+            response = inventory.page_device_dynamic_fork_tasks(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -284,7 +284,7 @@ class Inventory(ServiceWorkersImpl):
             dynamic_tasks: str
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = inventory.install_in_batch(**task["inputData"])
+            response = inventory.install_in_batch(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -308,7 +308,7 @@ class Inventory(ServiceWorkersImpl):
             dynamic_tasks: str
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = inventory.uninstall_in_batch(**task["inputData"])
+            response = inventory.uninstall_in_batch(**task.input_data)
             return response_handler(response, task_result)
 
 

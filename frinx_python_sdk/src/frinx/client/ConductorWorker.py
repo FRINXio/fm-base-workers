@@ -12,13 +12,16 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from __future__ import print_function, absolute_import
+from __future__ import absolute_import
+from __future__ import print_function
+
+import socket
 import sys
 import time
-from conductor.conductor import WFClientMgr
-from threading import Thread
-import socket
 from enum import Enum
+from threading import Thread
+
+from conductor.conductor import WFClientMgr
 
 hostname = socket.gethostname()
 
@@ -47,7 +50,7 @@ class ConductorWorker:
     `log` keys. If these keys are not present, the worker will raise an
     Exception after completion of the task.
 
-    The start method is used to begin continous polling and execution
+    The start method is used to begin continuous polling and execution
     of the tasks that the conductor server makes available. The same
     script can run multiple workers using the wait argument. For more
     details, view the start method

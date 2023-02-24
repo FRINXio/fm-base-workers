@@ -1,15 +1,16 @@
+import time
 from typing import Any
 from typing import Optional
 
 import frinx.services.uniconfig.uniconfig_worker as uniconfig
-from frinx.common.models.task_py import Task
-from frinx.common.models.task_result import TaskResult
-from frinx.common.models.task_result_status import TaskResultStatus
-from frinx.common.service_worker_impl import ServiceWorkersImpl
-from frinx.common.task_def_impl import TaskDefinition
-from frinx.common.task_def_impl import TaskInput
-from frinx.common.task_def_impl import TaskOutput
-from frinx.common.worker_impl import WorkerImpl
+from frinx.common.conductor_enums import TaskResultStatus
+from frinx.common.worker.service import ServiceWorkersImpl
+from frinx.common.worker.task import Task
+from frinx.common.worker.task_def import TaskDefinition
+from frinx.common.worker.task_def import TaskInput
+from frinx.common.worker.task_def import TaskOutput
+from frinx.common.worker.task_result import TaskResult
+from frinx.common.worker.worker import WorkerImpl
 from frinx.services.uniconfig.models import UniconfigContext
 from frinx.services.uniconfig.utils import UniconfigOutput
 
@@ -36,7 +37,7 @@ class Uniconfig(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = uniconfig.read_structured_data(**task["inputData"])
+            response = uniconfig.read_structured_data(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -60,7 +61,7 @@ class Uniconfig(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = uniconfig.write_structured_data(**task["inputData"])
+            response = uniconfig.write_structured_data(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -82,7 +83,7 @@ class Uniconfig(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = uniconfig.delete_structured_data(**task["inputData"])
+            response = uniconfig.delete_structured_data(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -105,7 +106,9 @@ class Uniconfig(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = uniconfig.commit(**task["inputData"])
+            print(task)
+            time.sleep(5)
+            response = uniconfig.commit(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -128,7 +131,7 @@ class Uniconfig(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = uniconfig.dryrun_commit(**task["inputData"])
+            response = uniconfig.dryrun_commit(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -151,7 +154,7 @@ class Uniconfig(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = uniconfig.calc_diff(**task["inputData"])
+            response = uniconfig.calc_diff(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -174,7 +177,7 @@ class Uniconfig(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = uniconfig.sync_from_network(**task["inputData"])
+            response = uniconfig.sync_from_network(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -197,7 +200,7 @@ class Uniconfig(ServiceWorkersImpl):
             response_body: Any
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = uniconfig.replace_config_with_oper(**task["inputData"])
+            response = uniconfig.replace_config_with_oper(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -215,7 +218,7 @@ class Uniconfig(ServiceWorkersImpl):
             uniconfig_contexts: dict
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = uniconfig.find_started_tx(**task["inputData"])
+            response = uniconfig.find_started_tx(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -233,7 +236,7 @@ class Uniconfig(ServiceWorkersImpl):
             ...
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = uniconfig.rollback_all_tx(**task["inputData"])
+            response = uniconfig.rollback_all_tx(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -252,7 +255,7 @@ class Uniconfig(ServiceWorkersImpl):
             uniconfig_cookies_multizone: dict
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = uniconfig.create_tx_multizone(**task["inputData"])
+            response = uniconfig.create_tx_multizone(**task.input_data)
 
             match response.code:
                 case 200 | 201:
@@ -284,7 +287,7 @@ class Uniconfig(ServiceWorkersImpl):
             UNICONFIGTXID_multizone: dict
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = uniconfig.close_tx_multizone(**task["inputData"])
+            response = uniconfig.close_tx_multizone(**task.input_data)
             return response_handler(response, task_result)
 
 

@@ -1,36 +1,34 @@
-import logging
 from abc import ABC
 from abc import abstractmethod
 from typing import Any
-from typing import Callable
 from typing import TypeAlias
 
 from frinx.client.FrinxConductorWrapper import FrinxConductorWrapper
-from frinx.common.models.task_def import TaskDef
-from frinx.common.models.task_exec_log import TaskExecLog
-from frinx.common.models.task_py import Task
-from frinx.common.models.task_result import TaskResult
-from frinx.common.models.task_result_status import TaskResultStatus
-from frinx.common.task_def_impl import DefaultTaskDefinition
-from frinx.common.task_def_impl import InvalidTaskInputError
-from frinx.common.task_def_impl import TaskDefinition
-from frinx.common.task_def_impl import TaskInput
-from frinx.common.task_def_impl import TaskOutput
+from frinx.common.conductor_enums import TaskResultStatus
 from frinx.common.util import jsonify_description
+from frinx.common.util import snake_to_camel_case
+from frinx.common.worker.task import Task
+from frinx.common.worker.task_def import DefaultTaskDefinition
+from frinx.common.worker.task_def import TaskDefinition
+from frinx.common.worker.task_def import TaskInput
+from frinx.common.worker.task_def import TaskOutput
+from frinx.common.worker.task_result import TaskResult
 from pydantic import ValidationError
 from pydantic.dataclasses import dataclass
 
 RawTaskIO: TypeAlias = dict[str, Any]
+TaskExecLog: TypeAlias = str
 
 
 class Config:
     arbitrary_types_allowed = True
+    alias_generator = snake_to_camel_case
+    allow_population_by_field_name = True
 
 
 @dataclass(config=Config)
 class WorkerImpl(ABC):
-
-    task_def: TaskDef = None
+    task_def: TaskDefinition = None
 
     class WorkerDefinition(TaskDefinition):
         ...
@@ -45,8 +43,7 @@ class WorkerImpl(ABC):
         self.task_def = self.task_definition_builder()
 
     @classmethod
-    def task_definition_builder(cls) -> TaskDef:
-
+    def task_definition_builder(cls) -> TaskDefinition:
         cls.validate()
 
         params = {}
@@ -63,43 +60,42 @@ class WorkerImpl(ABC):
         params["description"] = jsonify_description(
             params["description"], params["labels"], params["rbac"]
         )
-        params.pop("labels")
-        params.pop("rbac")
+        # params.pop("labels")
+        # params.pop("rbac")
 
         # Transform dict to TaskDefinition object use default values in necessary
-        task_def = TaskDef(**params)
+        task_def = TaskDefinition(**params)
         for k, v in DefaultTaskDefinition.__fields__.items():
             if v.default is not None and task_def.__getattribute__(k) is None:
                 task_def.__setattr__(k, v.default)
-
+        print(task_def)
         return task_def
 
     def register(self, cc: FrinxConductorWrapper) -> None:
         cc.register(
             task_type=self.task_def.name,
-            task_definition=self.task_def.to_dict(),
+            task_definition=self.task_def.dict(by_alias=True, exclude_none=True),
             exec_function=self._execute_wrapper,
         )
 
     @abstractmethod
-    def execute(self, task: Task, task_result: TaskResult) -> dict[Any, Any]:
+    def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
         pass
 
     @classmethod
     def _execute_wrapper(cls, task: RawTaskIO) -> Any:
-
         try:
-            task_data = cls.WorkerInput.parse_obj(task["inputData"])
+            cls.WorkerInput.parse_obj(task["inputData"])
         except ValidationError as e:
-            return TaskResult(status=TaskResultStatus.FAILED, logs=[TaskExecLog(str(e))]).to_dict()
+            return TaskResult(status=TaskResultStatus.FAILED, logs=[TaskExecLog(str(e))]).dict()
 
         try:
-            task_result = cls.execute(cls, task, TaskResult()).to_dict()
-            logging.debug(task_result)
+            # TODO check if ok
+            task_result = cls.execute(cls, Task(**task), TaskResult()).dict()
             return task_result
 
         except Exception as e:
-            return TaskResult(status=TaskResultStatus.FAILED, logs=[TaskExecLog(str(e))]).to_dict()
+            return TaskResult(status=TaskResultStatus.FAILED, logs=[TaskExecLog(str(e))]).dict()
 
     @classmethod
     def validate(cls) -> None:

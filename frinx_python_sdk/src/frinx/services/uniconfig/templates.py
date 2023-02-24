@@ -32,3 +32,24 @@ uniconfig_url_uniconfig_tx_revert = Template("$base_url/operations/transaction-l
 uniconfig_url_uniconfig_tx_metadata = Template(
     "$base_url/data/transaction-log:transactions-metadata/transaction-metadata=$tx_id"
 )
+
+
+uniconfig_url_cli_mount_sync = Template("$base_url/operations/connection-manager:install-node")
+uniconfig_url_cli_unmount_sync = Template("$base_url/operations/connection-manager:uninstall-node")
+uniconfig_url_cli_mount_rpc = Template(
+    "$base_url/operations/network-topology:network-topology/topology=cli/node=$id"
+)
+uniconfig_url_cli_read_journal = Template(
+    "$base_url/operations/network-topology:network-topology/topology=cli/node=$id/yang-ext:mount/journal:read-journal?content=nonconfig"
+)
+
+uniconfig_url_netconf_mount = Template(
+    "$base_url/data/network-topology:network-topology/topology=topology-netconf/node=$id"
+)
+uniconfig_url_netconf_mount_sync = Template("$base_url/operations/connection-manager:install-node")
+uniconfig_url_netconf_unmount_sync = Template(
+    "$base_url/operations/connection-manager:uninstall-node"
+)
+uniconfig_url_netconf_mount_oper = Template(
+    "$base_url/data/network-topology:network-topology/topology=topology-netconf/node=$id?content=nonconfig"
+)
