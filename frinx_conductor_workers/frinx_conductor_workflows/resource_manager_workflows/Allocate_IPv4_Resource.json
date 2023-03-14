@@ -1,6 +1,6 @@
 {
   "name": "Allocate_IPv4_Resource",
-  "description": "{\"description\": \"Claim IPv4 resource.\", \"labels\": [\"UNIRESOURCE\"]}",
+  "description": "{\"description\": \"Claim IPv4 resource\", \"labels\": [\"RESOURCE_MANAGER\"]}",
   "workflowStatusListenerEnabled": true,
   "version": 1,
   "tasks": [
@@ -17,7 +17,7 @@
       "name": "decisionTask",
       "taskReferenceName": "pool_exists",
       "inputParameters": {
-        "pool_exists": "${query_pool_by_tag.output.response_body.data.SearchPoolsByTags}"
+        "pool_exists": "${query_pool_by_tag.output.result.data.SearchPoolsByTags}"
       },
       "type": "DECISION",
       "caseExpression": "$.pool_exists.length > 0 ? 'True' : 'False'",
@@ -29,7 +29,9 @@
             "inputParameters": {
               "terminationStatus": "FAILED",
               "workflowOutput": {
-                "status": "Pool with name \"${workflow.input.pool_name}\" do not exists."
+                "result": {
+                  "error": "Pool with name \"${workflow.input.pool_name}\" do not exists."
+                }
               }
             },
             "type": "TERMINATE",
@@ -46,8 +48,8 @@
       "name": "LAMBDA_TASK",
       "taskReferenceName": "lambda_print_alt_id",
       "inputParameters": {
-        "address": "${query_pool_by_tag.output.response_body.data.SearchPoolsByTags[0].PoolProperties.address}",
-        "prefix": "${query_pool_by_tag.output.response_body.data.SearchPoolsByTags[0].PoolProperties.prefix}",
+        "address": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].PoolProperties.address}",
+        "prefix": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].PoolProperties.prefix}",
         "scriptExpression": "return {'subnetAddress': $.address, 'subnetPrefix': $.prefix}"
       },
       "type": "LAMBDA",
@@ -77,7 +79,7 @@
               "taskReferenceName": "claim_resource_with_desired_value",
               "type": "SIMPLE",
               "inputParameters": {
-              "poolId": "${query_pool_by_tag.output.response_body.data.SearchPoolsByTags[0].id}",
+              "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].id}",
               "userInput": {"desiredValue": "${workflow.input.desired_value}"},
               "description": "${workflow.input.description}",
               "alternativeId": "${lambda_print_alt_id.output.result}"
@@ -90,7 +92,7 @@
               "taskReferenceName": "claim_resource_without_desired_value",
               "type": "SIMPLE",
               "inputParameters": {
-              "poolId": "${query_pool_by_tag.output.response_body.data.SearchPoolsByTags[0].id}",
+              "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].id}",
               "description": "${workflow.input.description}",
               "alternativeId": "${lambda_print_alt_id.output.result}"
               }
@@ -103,8 +105,8 @@
       "taskReferenceName": "lambda_print_result",
       "inputParameters": {
         "lambdaValue": "${desired_value_not_null.output.caseOutput}",
-        "claim_resource_with_desired_value": "${claim_resource_with_desired_value.output.response_body}",
-        "claim_resource_without_desired_value": "${claim_resource_without_desired_value.output.response_body}",
+        "claim_resource_with_desired_value": "${claim_resource_with_desired_value.output.result.data}",
+        "claim_resource_without_desired_value": "${claim_resource_without_desired_value.output.result.data}",
         "scriptExpression": "if ($.lambdaValue.contains(\"True\")){return $.claim_resource_with_desired_value.ClaimResourceWithAltId} else{return $.claim_resource_without_desired_value.ClaimResourceWithAltId}"
       },
       "type": "LAMBDA",
@@ -122,6 +124,6 @@
   "inputParameters": [
       "{\"pool_name\":{\"value\":\"\",\"description\":\"Pool name\",\"type\":\"string\"}, \"description\":{\"value\":\"\",\"description\":\"[OPTIONAL] Description for resource\",\"type\":\"string\"}, \"desired_value\":{\"value\":\"\",\"description\":\"[OPTIONAL] Desired value ip address (for example 192.168.0.0)\",\"type\":\"string\"}}"
   ],
-  "outputParameters": {"result": "${lambda_print_result.output.result}"},
+  "outputParameters": {"result": {"data": "${lambda_print_result.output.result}"}},
   "schemaVersion": 2
 }

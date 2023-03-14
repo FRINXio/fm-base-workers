@@ -1,0 +1,30 @@
+{
+    "name": "Deallocate_Resource",
+    "description": "{\"description\": \"Deallocate resource in pool\", \"labels\": [\"RESOURCE_MANAGER\"]}",
+    "workflowStatusListenerEnabled": true,
+    "version": 1,
+    "tasks": [
+      {
+        "name": "RESOURCE_MANAGER_query_pool_by_tag",
+        "taskReferenceName": "query_pool_by_tag",
+        "type": "SIMPLE",
+        "inputParameters": {
+            "poolTag": "${workflow.input.pool_name}"
+        }
+      },
+      {
+        "name": "RESOURCE_MANAGER_deallocate_resource",
+        "taskReferenceName": "deallocate_resource",
+        "type": "SIMPLE",
+        "inputParameters": {
+            "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].id}",
+            "userInput": {"address": "${workflow.input.ip_address}"}
+        }
+      }
+    ],
+    "inputParameters": [
+        "{\"pool_name\":{\"value\":\"\",\"description\":\"Pool name\",\"type\":\"string\"}, \"ip_address\":{\"value\":\"\",\"description\":\"IP address of the resource which you want to delete\",\"type\":\"string\"}}"
+    ],
+    "outputParameters": {},
+    "schemaVersion": 2
+}

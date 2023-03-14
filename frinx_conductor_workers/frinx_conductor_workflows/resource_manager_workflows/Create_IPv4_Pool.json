@@ -1,6 +1,6 @@
 {
   "name": "Create_IPv4_Pool",
-  "description": "{\"description\": \"Create one IPv4 pool.\", \"labels\": [\"UNIRESOURCE\"]}",
+  "description": "{\"description\": \"Create one IPv4 pool\", \"labels\": [\"RESOURCE_MANAGER\"]}",
   "workflowStatusListenerEnabled": true,
   "version": 1,
   "tasks": [
@@ -17,7 +17,7 @@
       "name": "decisionTask",
       "taskReferenceName": "pool_exists",
       "inputParameters": {
-        "pool_exists": "${query_pool_by_tag.output.response_body.data.SearchPoolsByTags}"
+        "pool_exists": "${query_pool_by_tag.output.result.data.SearchPoolsByTags}"
       },
       "type": "DECISION",
       "caseExpression": "$.pool_exists.length > 0 ? 'True' : 'False'",
@@ -29,7 +29,9 @@
             "inputParameters": {
               "terminationStatus": "FAILED",
               "workflowOutput": {
-                "status": "Pool with name \"${workflow.input.pool_name}\" already exists. If you want to create new pool, type new name."
+                "result": {
+                  "error": "Pool with name \"${workflow.input.pool_name}\" already exists. If you want to create new pool, type new name."
+                }
               }
             },
             "type": "TERMINATE",
@@ -54,10 +56,8 @@
     }
   ],
   "inputParameters": [
-    "{\"pool_name\":{\"value\":\"\",\"description\":\"Pool name. Must be unique.\",\"type\":\"string\"}, \"address\":{\"value\":\"192.168.0.0\",\"description\":\"IPv4 initial address\",\"type\":\"string\"}, \"subnet\":{\"value\": false,\"description\":\"Is it subnet pool ?\",\"type\":\"bool\"}, \"prefix\":{\"value\":24,\"description\":\"Pool ipv4 prefix\",\"type\":\"int\"}}"
+    "{\"pool_name\":{\"value\":\"\",\"description\":\"Pool name. Must be unique\",\"type\":\"string\"}, \"address\":{\"value\":\"192.168.0.0\",\"description\":\"IPv4 initial address\",\"type\":\"string\"}, \"subnet\":{\"value\": false,\"description\":\"Is it subnet pool ? true/false\",\"type\":\"bool\"}, \"prefix\":{\"value\":24,\"description\":\"Pool prefix\",\"type\":\"int\"}}"
   ],
-  "outputParameters": {
-    "response_body": "${create_pool.output.response_body.CreateAllocatingPool}"
-  },
+  "outputParameters": {},
   "schemaVersion": 2
 }

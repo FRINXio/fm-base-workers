@@ -63,7 +63,7 @@ def failed_response_with_logs(logs, response_body=None):
             response dictionary: {"status": "FAILED", "output": <response_body>, "logs": <logs>}
 
     """
-    return finalize_response_with_logs(FAILED_STATUS, {"error_message": response_body}, logs)
+    return finalize_response_with_logs(FAILED_STATUS, response_body, logs)
 
 
 def finalize_response_with_logs(status, response_body, logs):
