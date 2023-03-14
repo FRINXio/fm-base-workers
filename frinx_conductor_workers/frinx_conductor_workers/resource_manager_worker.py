@@ -198,6 +198,7 @@ delete_pool_template = Template(
     }"""
 )
 
+
 def execute(body, variables):
     return client.execute(query=body, variables=variables)
 
@@ -234,7 +235,7 @@ def claim_resource(task, logs):
     """
     pool_id = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
     if pool_id is None:
-        return failed_response_with_logs(logs, {"result" : {"error": "No pool id"}})
+        return failed_response_with_logs(logs, {"result": {"error": "No pool id"}})
     user_input = task["inputData"]["userInput"] if "userInput" in task["inputData"] else {}
     description = task["inputData"]["description"] if "description" in task["inputData"] else ""
     alternative_id = (
@@ -261,7 +262,9 @@ def claim_resource(task, logs):
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(logs, {"result" : {"error": response["errors"][0]["message"]}})
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
     return completed_response_with_logs(logs, {"result": response})
 
 
@@ -318,7 +321,7 @@ def query_claimed_resources(task, logs):
         None if "alternativeId" not in task["inputData"] else task["inputData"]["alternativeId"]
     )
     if pool_id is None:
-        return failed_response_with_logs(logs, {"result" : {"error": "No pool id"}})
+        return failed_response_with_logs(logs, {"result": {"error": "No pool id"}})
     variables = {"pool_id": pool_id}
     if alternative_id is not None and len(alternative_id) > 0:
         variables.update({"alternative_id": alternative_id})
@@ -335,7 +338,9 @@ def query_claimed_resources(task, logs):
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(logs, {"result" : {"error": response["errors"][0]["message"]}})
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
     return completed_response_with_logs(logs, {"result": response})
 
 
@@ -387,7 +392,7 @@ def create_pool(task, logs):
     resource_type_id, resource_strategy_id = query_resource_id(resource_type)
     if resource_type_id is None or resource_strategy_id is None:
         log.warning("Unknown resource: %s", resource_type)
-        return failed_response_with_logs(logs, {"result" : {"error": "Unknown resource"}})
+        return failed_response_with_logs(logs, {"result": {"error": "Unknown resource"}})
 
     variables = {
         "resource_type_id": resource_type_id,
@@ -434,7 +439,9 @@ def create_pool(task, logs):
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(logs, {"result" : {"error": response["errors"][0]["message"]}})
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
     return completed_response_with_logs(logs, {"result": response})
 
 
@@ -485,7 +492,9 @@ def create_vlan_pool(task, logs):
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(logs, {"result" : {"error": response["errors"][0]["message"]}})
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
     return completed_response_with_logs(logs, {"result": response})
 
 
@@ -523,7 +532,9 @@ def create_vlan_range_pool(task, logs):
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(logs, {"result" : {"error": response["errors"][0]["message"]}})
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
     return completed_response_with_logs(logs, {"result": response})
 
 
@@ -578,7 +589,9 @@ def create_unique_id_pool(task, logs):
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(logs, {"result" : {"error": response["errors"][0]["message"]}})
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
     return completed_response_with_logs(logs, {"result": response})
 
 
@@ -613,7 +626,7 @@ def query_pool(task, logs):
     resource_type_id, resource_strategy_id = query_resource_id(resource)
     if resource_type_id is None or resource_strategy_id is None:
         log.warning("Unknown resource: %s", resource)
-        return failed_response_with_logs(logs, {"result" : {"error": "Unknown resource"}})
+        return failed_response_with_logs(logs, {"result": {"error": "Unknown resource"}})
     pool_names_string = ""
     for index, pool_name in enumerate(pool_names):
         pool_names_string += '"' + pool_name + '"'
@@ -624,7 +637,9 @@ def query_pool(task, logs):
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(logs, {"result" : {"error": response["errors"][0]["message"]}})
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
     return completed_response_with_logs(logs, {"result": response})
 
 
@@ -644,9 +659,7 @@ def query_unique_id_pool(task, logs):
     query_pool_result = query_pool(
         {"inputData": {"resource": "unique_id", "poolNames": pool_names}}
     )
-    return completed_response_with_logs(
-        logs, {"result": query_pool_result["output"]["result"]}
-    )
+    return completed_response_with_logs(logs, {"result": query_pool_result["output"]["result"]})
 
 
 @logging_handler(log)
@@ -663,9 +676,7 @@ def query_vlan_pool(task, logs):
     """
     pool_names = task["inputData"]["poolNames"]
     query_pool_result = query_pool({"inputData": {"resource": "vlan", "poolNames": pool_names}})
-    return completed_response_with_logs(
-        logs, {"result": query_pool_result["output"]["result"]}
-    )
+    return completed_response_with_logs(logs, {"result": query_pool_result["output"]["result"]})
 
 
 @logging_handler(log)
@@ -701,7 +712,9 @@ def query_pool_by_tag(task, logs):
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(logs, {"result" : {"error": response["errors"][0]["message"]}})
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
     return completed_response_with_logs(logs, {"result": response})
 
 
@@ -721,9 +734,7 @@ def query_vlan_range_pool(task, logs):
     query_pool_result = query_pool(
         {"inputData": {"resource": "vlan_range", "poolNames": pool_names}}
     )
-    return completed_response_with_logs(
-        logs, {"result": query_pool_result["output"]["result"]}
-    )
+    return completed_response_with_logs(logs, {"result": query_pool_result["output"]["result"]})
 
 
 @logging_handler(log)
@@ -752,19 +763,19 @@ def update_alt_id_for_resource(task, logs):
     """
     pool_id = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
     if pool_id is None:
-        return failed_response_with_logs(logs, {"result" : {"error": "No pool id"}})
+        return failed_response_with_logs(logs, {"result": {"error": "No pool id"}})
     resource_properties = (
         task["inputData"]["resourceProperties"]
         if "resourceProperties" in task["inputData"]
         else None
     )
     if resource_properties is None:
-        return failed_response_with_logs(logs, {"result" : {"error": "No user input"}})
+        return failed_response_with_logs(logs, {"result": {"error": "No user input"}})
     alternative_id = (
         task["inputData"]["alternativeId"] if "alternativeId" in task["inputData"] else None
     )
     if alternative_id is None:
-        return failed_response_with_logs(logs, {"result" : {"error": "No alternative id"}})
+        return failed_response_with_logs(logs, {"result": {"error": "No alternative id"}})
     variables = {"pool_id": pool_id, "input": resource_properties, "alternative_id": alternative_id}
     if alternative_id is not None and len(alternative_id) > 0:
         alternative_id = alternative_id.replace("'", '"')
@@ -778,7 +789,9 @@ def update_alt_id_for_resource(task, logs):
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(logs, {"result" : {"error": response["errors"][0]["message"]}})
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
     return completed_response_with_logs(logs, {"result": response})
 
 
@@ -790,8 +803,12 @@ def read_x_tenant(task, logs):
     """
 
     if "X_TENANT_ID" not in os.environ:
-        return failed_response_with_logs(logs, {"result" : {"error": "X_TENANT_ID not found in the environment"}})
-    return completed_response_with_logs(logs, {"result" : {"data": {"X_TENANT_ID": os.environ["X_TENANT_ID"]}}})
+        return failed_response_with_logs(
+            logs, {"result": {"error": "X_TENANT_ID not found in the environment"}}
+        )
+    return completed_response_with_logs(
+        logs, {"result": {"data": {"X_TENANT_ID": os.environ["X_TENANT_ID"]}}}
+    )
 
 
 @logging_handler(log)
@@ -911,7 +928,7 @@ def create_nested_pool(task, logs):
     resource_type_id, resource_strategy_id = query_resource_id(resource_type)
     if resource_type_id is None or resource_strategy_id is None:
         log.warning("Unknown resource: %s", resource_type)
-        return failed_response_with_logs(logs, {"result" : {"error": "Unknown resource"}})
+        return failed_response_with_logs(logs, {"result": {"error": "Unknown resource"}})
 
     variables = {
         "resource_type_id": resource_type_id,
@@ -920,13 +937,15 @@ def create_nested_pool(task, logs):
         "parentResourceId": parent_resource_id,
     }
 
-    body = create_nested_pool_template.render( )
+    body = create_nested_pool_template.render()
     body = body.replace("\n", "").replace("\\", "")
 
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(logs, {"result" : {"error": response["errors"][0]["message"]}})
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
     return completed_response_with_logs(logs, {"result": response})
 
 
@@ -983,7 +1002,9 @@ def query_resource_by_alt_id(task, logs):
     log.info("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(logs, {"result" : {"error": response["errors"][0]["message"]}})
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
     return completed_response_with_logs(logs, {"result": response})
 
 
@@ -1010,22 +1031,19 @@ def deallocate_resource(task, logs):
     """
     pool_id = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
     if pool_id is None:
-        return failed_response_with_logs(logs, {"result" : {"error": "No pool id"}})
-    user_input = (
-        task["inputData"]["userInput"] if "userInput" in task["inputData"] else None
-    )
+        return failed_response_with_logs(logs, {"result": {"error": "No pool id"}})
+    user_input = task["inputData"]["userInput"] if "userInput" in task["inputData"] else None
     if user_input is None:
-        return failed_response_with_logs(logs, {"result" : {"error": "No user input"}})
-    variables = {
-        "pool_id": pool_id,
-        "input": user_input
-    }
+        return failed_response_with_logs(logs, {"result": {"error": "No user input"}})
+    variables = {"pool_id": pool_id, "input": user_input}
     body = deallocate_resource_template.render()
 
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(logs, {"result" : {"error": response["errors"][0]["message"]}})
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
     return completed_response_with_logs(logs, {"result": response})
 
 
@@ -1053,16 +1071,16 @@ def delete_pool(task, logs):
     """
     pool_id = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
     if pool_id is None:
-        return failed_response_with_logs(logs, {"result" : {"error": "No pool id"}})
-    variables = {
-        "pool_id": pool_id
-    }
+        return failed_response_with_logs(logs, {"result": {"error": "No pool id"}})
+    variables = {"pool_id": pool_id}
     body = delete_pool_template.render()
 
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(logs, {"result" : {"error": response["errors"][0]["message"]}})
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
     return completed_response_with_logs(logs, {"result": response})
 
 
@@ -1090,45 +1108,94 @@ def calculate_host_and_broadcast_address(task, logs):
     """
     desired_size = task["inputData"]["desiredSize"]
     resource_type = str(task["inputData"]["resourceType"])
-    customer_ip_address = str(task["inputData"]["customerAddress"]) if "customerAddress" in task["inputData"] else None
-    provider_ip_address = str(task["inputData"]["providerAddress"]) if "providerAddress" in task["inputData"] else None
-    network_ip_address = str(task["inputData"]["networkAddress"]) if "networkAddress" in task["inputData"] else None
+    customer_ip_address = (
+        str(task["inputData"]["customerAddress"])
+        if "customerAddress" in task["inputData"]
+        else None
+    )
+    provider_ip_address = (
+        str(task["inputData"]["providerAddress"])
+        if "providerAddress" in task["inputData"]
+        else None
+    )
+    network_ip_address = (
+        str(task["inputData"]["networkAddress"]) if "networkAddress" in task["inputData"] else None
+    )
 
-
-    if network_ip_address is not None and (customer_ip_address is None or provider_ip_address is None):
-        provider_ip_address, customer_ip_address =  calculate_provider_and_customer_address (network_ip_address, resource_type)
+    if network_ip_address is not None and (
+        customer_ip_address is None or provider_ip_address is None
+    ):
+        provider_ip_address, customer_ip_address = calculate_provider_and_customer_address(
+            network_ip_address, resource_type
+        )
     if resource_type.startswith("ipv4"):
         customer_converted_ip_address = int(ipaddress.IPv4Address(customer_ip_address))
         provider_converted_ip_address = int(ipaddress.IPv4Address(provider_ip_address))
-        if customer_converted_ip_address < provider_converted_ip_address :
-            response = calculate_network_address_from_lower_address("Customer", "Provider", customer_ip_address, customer_converted_ip_address, int(desired_size))
+        if customer_converted_ip_address < provider_converted_ip_address:
+            response = calculate_network_address_from_lower_address(
+                "Customer",
+                "Provider",
+                customer_ip_address,
+                customer_converted_ip_address,
+                int(desired_size),
+            )
         else:
-            response = calculate_network_address_from_lower_address("Provider", "Customer", provider_ip_address, provider_converted_ip_address, int(desired_size))
+            response = calculate_network_address_from_lower_address(
+                "Provider",
+                "Customer",
+                provider_ip_address,
+                provider_converted_ip_address,
+                int(desired_size),
+            )
     elif resource_type.startswith("ipv6"):
         customer_converted_ip_address = int(ipaddress.IPv6Address(customer_ip_address))
         provider_converted_ip_address = int(ipaddress.IPv6Address(provider_ip_address))
-        if customer_converted_ip_address < provider_converted_ip_address :
-            response = calculate_network_address_from_lower_address("Customer", "Provider", customer_ip_address, customer_converted_ip_address, int(desired_size))
+        if customer_converted_ip_address < provider_converted_ip_address:
+            response = calculate_network_address_from_lower_address(
+                "Customer",
+                "Provider",
+                customer_ip_address,
+                customer_converted_ip_address,
+                int(desired_size),
+            )
         else:
-            response = calculate_network_address_from_lower_address("Provider", "Customer", provider_ip_address, provider_converted_ip_address, int(desired_size))
+            response = calculate_network_address_from_lower_address(
+                "Provider",
+                "Customer",
+                provider_ip_address,
+                provider_converted_ip_address,
+                int(desired_size),
+            )
 
     return completed_response_with_logs(logs, {"result": {"data": response}})
 
 
-def calculate_network_address_from_lower_address(owner_of_lower_address, owner_of_higher_address, first_availiable_ip_address, first_availiable_hexa_ip_address, desired_size):
-
+def calculate_network_address_from_lower_address(
+    owner_of_lower_address,
+    owner_of_higher_address,
+    first_availiable_ip_address,
+    first_availiable_hexa_ip_address,
+    desired_size,
+):
     lower_address = first_availiable_ip_address
     network_address = int(first_availiable_hexa_ip_address) - 1
     broadcast_address = int(network_address) + desired_size - 1
     network_address = ipaddress.ip_address(network_address).__str__()
     broadcast_address = ipaddress.ip_address(broadcast_address).__str__()
 
-    return {"network_address": network_address, "broadcast_address": str(broadcast_address), "owner_of_lower_address": owner_of_lower_address, "owner_of_higher_address": owner_of_higher_address, "first_availiable_ip_address": lower_address}
+    return {
+        "network_address": network_address,
+        "broadcast_address": str(broadcast_address),
+        "owner_of_lower_address": owner_of_lower_address,
+        "owner_of_higher_address": owner_of_higher_address,
+        "first_availiable_ip_address": lower_address,
+    }
+
 
 def calculate_provider_and_customer_address(network_address, resource_type):
     if str(resource_type).startswith("ipv4"):
         network_address = int(ipaddress.IPv4Address(network_address))
-    else: 
+    else:
         str(resource_type).startswith("ipv6")
         network_address = int(ipaddress.IPv6Address(network_address))
     provider_address = int(network_address) + 1
@@ -1137,6 +1204,7 @@ def calculate_provider_and_customer_address(network_address, resource_type):
     customer_address = ipaddress.ip_address(customer_address).__str__()
 
     return provider_address, customer_address
+
 
 @logging_handler(log)
 def calculate_desired_size_from_prefix(task, logs):
@@ -1155,19 +1223,23 @@ def calculate_desired_size_from_prefix(task, logs):
     """
     prefix = task["inputData"]["prefix"] if "prefix" in task["inputData"] else None
     if prefix is None:
-        return failed_response_with_logs(logs, {"result" : {"error": "No prefix"}})
+        return failed_response_with_logs(logs, {"result": {"error": "No prefix"}})
     resource_type = str(task["inputData"]["resourceType"])
 
     if resource_type.startswith("ipv4"):
         if 0 < int(prefix) < 33:
             desired_size = 2 ** (32 - int(prefix))
         else:
-            return failed_response_with_logs(logs, {"result" : {"error": "Prefix must be between 1 and 32 for ipv4"}})
+            return failed_response_with_logs(
+                logs, {"result": {"error": "Prefix must be between 1 and 32 for ipv4"}}
+            )
     elif resource_type.startswith("ipv6"):
         if 0 < int(prefix) < 129:
             desired_size = 2 ** (128 - int(prefix))
         else:
-            return failed_response_with_logs(logs, {"result" : {"error": "Prefix must be between 1 and 128 for ipv6"}})
+            return failed_response_with_logs(
+                logs, {"result": {"error": "Prefix must be between 1 and 128 for ipv6"}}
+            )
 
     return completed_response_with_logs(logs, {"result": {"data": str(desired_size)}})
 
@@ -1473,7 +1545,6 @@ def start(cc):
         delete_pool,
     )
 
-
     cc.register(
         "RESOURCE_MANAGER_calculate_host_and_broadcast_address",
         {
@@ -1488,8 +1559,6 @@ def start(cc):
         },
         calculate_host_and_broadcast_address,
     )
-
-
 
     cc.register(
         "RESOURCE_MANAGER_calculate_desired_size_from_prefix",
