@@ -1023,7 +1023,7 @@ def deallocate_resource(task, logs):
             Response from Uniresource. Worker output format:
             "result": {
               "data": {
-                "FreeResorce": "Resource freed successfuly"
+                "FreeResorce": "Resource freed successfully"
                 }
               }
             }
