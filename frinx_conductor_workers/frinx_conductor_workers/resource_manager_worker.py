@@ -1,3 +1,4 @@
+import ipaddress
 import json
 import logging
 import os
@@ -81,6 +82,7 @@ query_pool_by_tag_template = Template(
     query SearchPools($poolTag: String!) {
     SearchPoolsByTags(tags: { matchesAny: [{matchesAll: [$poolTag]}]}) {
         id
+        AllocationStrategy {Name}
         Name
         PoolProperties
     }
@@ -95,9 +97,23 @@ query_claimed_resource_template = Template(
         {{ input }})
     {
         edges {
+            cursor {
+                ID
+            }
             node {
                 id
                 Properties
+                ParentPool {
+                    id
+                    Name
+                }
+                NestedPool {
+                    id
+                    Name
+                    Tags{
+                        Tag
+                    }
+                }
                 AlternativeId
                 }
             }
@@ -114,6 +130,72 @@ update_alternative_id_for_resource_template = Template(
         }
     }
     """
+)
+
+create_nested_pool_template = Template(
+    """
+    mutation CreateNestedAllocPool($pool_name: String!, $resource_type_id: ID!, $resource_type_strat_id: ID!, $parentResourceId: ID!) {
+        CreateNestedAllocatingPool(
+            input: {
+                resourceTypeId: $resource_type_id,
+                poolName: $pool_name,
+                allocationStrategyId: $resource_type_strat_id,
+                poolDealocationSafetyPeriod: 0
+                parentResourceId: $parentResourceId,
+                tags: [$pool_name]
+           }
+    ) {
+        pool { id , PoolProperties }
+    }
+    }"""
+)
+
+query_capacity_template = Template(
+    """
+    query QueryPoolCapacity($pool_id: ID!) {
+    QueryPoolCapacity(poolId: $pool_id) {
+        freeCapacity
+        utilizedCapacity
+    }
+    }"""
+)
+
+query_resource_by_alt_id_template = Template(
+    """
+    query QueryResourcesByAltId($poolId: ID, $input: Map!, $first: Int) {
+    QueryResourcesByAltId(input: $input, poolId: $poolId, first: $first) {
+        edges {
+                node{
+                    id
+                    Properties
+                    Description
+                }
+        }
+    }
+    } """
+)
+
+deallocate_resource_template = Template(
+    """
+    mutation freeResource($pool_id: ID!, $input: Map!) {
+    FreeResource(
+        poolId: $pool_id,
+        input: $input
+    )
+    }"""
+)
+
+delete_pool_template = Template(
+    """
+    mutation deleteResourcePool ($pool_id: ID!) {
+    DeleteResourcePool(
+        input: {
+            resourcePoolId: $pool_id
+        }
+    ) {
+        resourcePoolId
+    }
+    }"""
 )
 
 
@@ -136,7 +218,7 @@ def claim_resource(task, logs):
 
         Returns:
             Response from uniresource. Worker output format::
-            response_body: {
+            "result": {
               "data": {
                 "<claim_operation>": {
                   "id": "<id>",
@@ -153,7 +235,7 @@ def claim_resource(task, logs):
     """
     pool_id = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
     if pool_id is None:
-        return failed_response_with_logs(logs, "No pool id")
+        return failed_response_with_logs(logs, {"result": {"error": "No pool id"}})
     user_input = task["inputData"]["userInput"] if "userInput" in task["inputData"] else {}
     description = task["inputData"]["description"] if "description" in task["inputData"] else ""
     alternative_id = (
@@ -180,8 +262,10 @@ def claim_resource(task, logs):
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(logs, {"response_body": response["errors"][0]["message"]})
-    return completed_response_with_logs(logs, {"response_body": response["data"]})
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
+    return completed_response_with_logs(logs, {"result": response})
 
 
 @logging_handler(log)
@@ -199,20 +283,34 @@ def query_claimed_resources(task, logs):
 
         Returns:
             Response from uniresource. Worker output format::
-            response_body: {
+            "result": {
               "data": {
                 "<query_type>": {
-                    edges {
+                    edges [
+                        cursor {
+                            <ID>
+                        }
                         node {
                           "id": "<id>",
                           "Properties": {
                             <properties>
                           }
+                          ParentPool {
+                            <id>
+                            <Name>
+                          }
+                          NestedPool {
+                            <id>
+                            <Name>
+                            Tags {
+                                <Tag>
+                            }
+                          }
                           "AlternativeId": {
                             <alternativeId>
                           }
                         }
-                    }
+                    ]
                 }
               }
             }
@@ -223,11 +321,9 @@ def query_claimed_resources(task, logs):
         None if "alternativeId" not in task["inputData"] else task["inputData"]["alternativeId"]
     )
     if pool_id is None:
-        return failed_response_with_logs(logs, "No pool id")
+        return failed_response_with_logs(logs, {"result": {"error": "No pool id"}})
     variables = {"pool_id": pool_id}
     if alternative_id is not None and len(alternative_id) > 0:
-        alternative_id = alternative_id.replace("'", '"')
-        alternative_id = json.loads(alternative_id)
         variables.update({"alternative_id": alternative_id})
         body = query_claimed_resource_template.render(
             {
@@ -240,8 +336,12 @@ def query_claimed_resources(task, logs):
     else:
         body = query_claimed_resource_template.render({"query_resource": "QueryResources"})
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
-    data = execute(body, variables)
-    return completed_response_with_logs(logs, {"response_body": data})
+    response = execute(body, variables)
+    if "errors" in response:
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
+    return completed_response_with_logs(logs, {"result": response})
 
 
 def query_resource_id(resource):
@@ -275,7 +375,7 @@ def create_pool(task, logs):
 
         Returns:
             Response from uniresource. Worker output format::
-            response_body: {
+            "result": {
               "data": {
                 "CreateAllocatingPool": {
                   "pool": {
@@ -292,7 +392,7 @@ def create_pool(task, logs):
     resource_type_id, resource_strategy_id = query_resource_id(resource_type)
     if resource_type_id is None or resource_strategy_id is None:
         log.warning("Unknown resource: %s", resource_type)
-        return failed_response_with_logs(logs, "Unknown resource")
+        return failed_response_with_logs(logs, {"result": {"error": "Unknown resource"}})
 
     variables = {
         "resource_type_id": resource_type_id,
@@ -339,8 +439,10 @@ def create_pool(task, logs):
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
     if "errors" in response:
-        return failed_response_with_logs(logs, {"response_body": response["errors"][0]["message"]})
-    return completed_response_with_logs(logs, {"response_body": response["data"]})
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
+    return completed_response_with_logs(logs, {"result": response})
 
 
 @logging_handler(log)
@@ -388,8 +490,12 @@ def create_vlan_pool(task, logs):
             }
         )
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
-    data = execute(body, variables)
-    return completed_response_with_logs(logs, {"response_body": data})
+    response = execute(body, variables)
+    if "errors" in response:
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
+    return completed_response_with_logs(logs, {"result": response})
 
 
 @logging_handler(log)
@@ -424,8 +530,12 @@ def create_vlan_range_pool(task, logs):
         }
     )
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
-    data = execute(body, variables)
-    return completed_response_with_logs(logs, {"response_body": data})
+    response = execute(body, variables)
+    if "errors" in response:
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
+    return completed_response_with_logs(logs, {"result": response})
 
 
 @logging_handler(log)
@@ -477,8 +587,12 @@ def create_unique_id_pool(task, logs):
         }
     )
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
-    data = execute(body, variables)
-    return completed_response_with_logs(logs, {"response_body": data})
+    response = execute(body, variables)
+    if "errors" in response:
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
+    return completed_response_with_logs(logs, {"result": response})
 
 
 @logging_handler(log)
@@ -494,7 +608,7 @@ def query_pool(task, logs):
 
         Returns:
             Response from uniresource. Worker output format::
-            response_body:{
+            "result":{
               "data": {
                 "QueryResourcePools": [
                   {
@@ -512,7 +626,7 @@ def query_pool(task, logs):
     resource_type_id, resource_strategy_id = query_resource_id(resource)
     if resource_type_id is None or resource_strategy_id is None:
         log.warning("Unknown resource: %s", resource)
-        return failed_response_with_logs(logs, "Unknown resource")
+        return failed_response_with_logs(logs, {"result": {"error": "Unknown resource"}})
     pool_names_string = ""
     for index, pool_name in enumerate(pool_names):
         pool_names_string += '"' + pool_name + '"'
@@ -521,8 +635,12 @@ def query_pool(task, logs):
     variables = {"resource_type_id": resource_type_id}
     body = query_pool_template.render({"pool_names": pool_names_string})
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
-    data = execute(body, variables)
-    return completed_response_with_logs(logs, {"response_body": data})
+    response = execute(body, variables)
+    if "errors" in response:
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
+    return completed_response_with_logs(logs, {"result": response})
 
 
 @logging_handler(log)
@@ -541,9 +659,7 @@ def query_unique_id_pool(task, logs):
     query_pool_result = query_pool(
         {"inputData": {"resource": "unique_id", "poolNames": pool_names}}
     )
-    return completed_response_with_logs(
-        logs, {"response_body": query_pool_result["output"]["response_body"]}
-    )
+    return completed_response_with_logs(logs, {"result": query_pool_result["output"]["result"]})
 
 
 @logging_handler(log)
@@ -560,9 +676,7 @@ def query_vlan_pool(task, logs):
     """
     pool_names = task["inputData"]["poolNames"]
     query_pool_result = query_pool({"inputData": {"resource": "vlan", "poolNames": pool_names}})
-    return completed_response_with_logs(
-        logs, {"response_body": query_pool_result["output"]["response_body"]}
-    )
+    return completed_response_with_logs(logs, {"result": query_pool_result["output"]["result"]})
 
 
 @logging_handler(log)
@@ -577,12 +691,14 @@ def query_pool_by_tag(task, logs):
 
          Returns:
             Response from uniresource. Worker output format::
-            "response_body": {
+            "result": {
                 "data": {
                     "SearchPoolsByTags": [
                         {
                             "id": "<id>",
+                            "AllocationStrategy": <Name>
                             "Name": "<name>"
+                            "PoolProperties": <PoolProperties>
                         }
                     ]
                 }
@@ -594,8 +710,12 @@ def query_pool_by_tag(task, logs):
     variables = {"poolTag": pool_tag}
     body = body.replace("\n", "").replace("\\", "")
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
-    response_data = execute(body, variables)
-    return completed_response_with_logs(logs, {"response_body": response_data})
+    response = execute(body, variables)
+    if "errors" in response:
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
+    return completed_response_with_logs(logs, {"result": response})
 
 
 @logging_handler(log)
@@ -614,9 +734,7 @@ def query_vlan_range_pool(task, logs):
     query_pool_result = query_pool(
         {"inputData": {"resource": "vlan_range", "poolNames": pool_names}}
     )
-    return completed_response_with_logs(
-        logs, {"response_body": query_pool_result["output"]["response_body"]}
-    )
+    return completed_response_with_logs(logs, {"result": query_pool_result["output"]["result"]})
 
 
 @logging_handler(log)
@@ -632,7 +750,7 @@ def update_alt_id_for_resource(task, logs):
 
         Returns:
             Response from Uniresource. Worker output format::
-            response_body: {
+            "result": {
               "data": {
                 "UpdateResourceAltId": {
                   "AlternativeId": {
@@ -645,19 +763,19 @@ def update_alt_id_for_resource(task, logs):
     """
     pool_id = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
     if pool_id is None:
-        return failed_response_with_logs(logs, "No pool id")
+        return failed_response_with_logs(logs, {"result": {"error": "No pool id"}})
     resource_properties = (
         task["inputData"]["resourceProperties"]
         if "resourceProperties" in task["inputData"]
         else None
     )
     if resource_properties is None:
-        return failed_response_with_logs(logs, "No user input")
+        return failed_response_with_logs(logs, {"result": {"error": "No user input"}})
     alternative_id = (
         task["inputData"]["alternativeId"] if "alternativeId" in task["inputData"] else None
     )
     if alternative_id is None:
-        return failed_response_with_logs(logs, "No alternative id")
+        return failed_response_with_logs(logs, {"result": {"error": "No alternative id"}})
     variables = {"pool_id": pool_id, "input": resource_properties, "alternative_id": alternative_id}
     if alternative_id is not None and len(alternative_id) > 0:
         alternative_id = alternative_id.replace("'", '"')
@@ -669,8 +787,12 @@ def update_alt_id_for_resource(task, logs):
         {"update_alt_id": "UpdateResourceAltId"}
     )
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
-    data = execute(body, variables)
-    return completed_response_with_logs(logs, {"response_body": data})
+    response = execute(body, variables)
+    if "errors" in response:
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
+    return completed_response_with_logs(logs, {"result": response})
 
 
 @logging_handler(log)
@@ -681,8 +803,12 @@ def read_x_tenant(task, logs):
     """
 
     if "X_TENANT_ID" not in os.environ:
-        return failed_response_with_logs(logs, "X_TENANT_ID not found in the environment")
-    return completed_response_with_logs(logs, {"X_TENANT_ID": os.environ["X_TENANT_ID"]})
+        return failed_response_with_logs(
+            logs, {"result": {"error": "X_TENANT_ID not found in the environment"}}
+        )
+    return completed_response_with_logs(
+        logs, {"result": {"data": {"X_TENANT_ID": os.environ["X_TENANT_ID"]}}}
+    )
 
 
 @logging_handler(log)
@@ -692,7 +818,7 @@ def read_resource_manager_url_base(task, logs):
     """
 
     return completed_response_with_logs(
-        logs, {"RESOURCE_MANAGER_URL_BASE": resource_manager_url_base}
+        logs, {"result": {"data": {"RESOURCE_MANAGER_URL_BASE": resource_manager_url_base}}}
     )
 
 
@@ -709,10 +835,10 @@ def accumulate_report(task, logs):
 
         Returns:
             Accumulated subnets from 2 input reports:
-            "response_body":{"/24":"2","/25":"4","/26":"8","/27":"16","/28":"32","/29":"64","/30":"128","/31":"256","/32":"512"}
+            "result":{"data": "/24":"2","/25":"4","/26":"8","/27":"16","/28":"32","/29":"64","/30":"128","/31":"256","/32":"512"}}
     """
-    first_report = dict(task["inputData"]["first_report"])
-    last_report = dict(task["inputData"]["last_report"])
+    first_report = task["inputData"]["firstReport"]
+    last_report = task["inputData"]["lastReport"]
     global_report = dict()
 
     if first_report:
@@ -732,7 +858,7 @@ def accumulate_report(task, logs):
                     global_report.update({key: str(values)})
     else:
         global_report = last_report
-    return completed_response_with_logs(logs, {"response_body": global_report})
+    return completed_response_with_logs(logs, {"result": {"data": global_report}})
 
 
 @logging_handler(log)
@@ -746,27 +872,376 @@ def calculate_available_prefixes_for_address_pool(task, logs):
 
              logs: stream of log messages
         Returns:
-            "result":{"/24":"1","/25":"2","/26":"4","/27":"8","/28":"16","/29":"32","/30":"64","/31":"128","/32":"256"}
+            "result":{"data": "/24":"1","/25":"2","/26":"4","/27":"8","/28":"16","/29":"32","/30":"64","/31":"128","/32":"256"}}
     """
-    free_capacity = task["inputData"]["free_capacity"]
-    resource_type = str(task["inputData"]["resource_type"])
+    pool_id = task["inputData"]["poolId"]
+    resource_type = str(task["inputData"]["resourceType"])
 
     available_prefixes = {}
+    free_capacity = query_capacity(pool_id)
 
     if resource_type.startswith("ipv4"):
         for prefix in range(1, 33):
             prefix_capacity = 2 ** (32 - prefix)
-            if prefix_capacity <= int(free_capacity):
-                result = int(free_capacity) // prefix_capacity
+            if prefix_capacity <= int(free_capacity[0]):
+                result = int(free_capacity[0]) // prefix_capacity
                 available_prefixes["/" + str(prefix)] = str(result)
     elif resource_type.startswith("ipv6"):
         for prefix in range(1, 129):
             prefix_capacity = 2 ** (128 - prefix)
-            if prefix_capacity <= int(free_capacity):
-                result = int(free_capacity) // prefix_capacity
+            if prefix_capacity <= int(free_capacity[0]):
+                result = int(free_capacity[0]) // prefix_capacity
                 available_prefixes["/" + str(prefix)] = str(result)
 
-    return completed_response_with_logs(logs, {"result": available_prefixes})
+    return completed_response_with_logs(logs, {"result": {"data": available_prefixes}})
+
+
+@logging_handler(log)
+def create_nested_pool(task, logs):
+    """
+    Create nested pool
+
+         Args:
+
+             task (dict): dictionary with input data ["poolName", "resourceType", "parentResourceId"]
+
+             logs: stream of log messages
+
+        Returns:
+            Response from uniresource. Worker output format::
+            "result": {
+              "data": {
+                "CreateNestedAllocatingPool": {
+                  "pool": {
+                    "id": "<id>"
+                    "PoolProperties": <PoolProperties>
+                  }
+                }
+              }
+            }
+
+    """
+
+    pool_name = task["inputData"]["poolName"]
+    resource_type = task["inputData"]["resourceType"]
+    parent_resource_id = task["inputData"]["parentResourceId"]
+    resource_type_id, resource_strategy_id = query_resource_id(resource_type)
+    if resource_type_id is None or resource_strategy_id is None:
+        log.warning("Unknown resource: %s", resource_type)
+        return failed_response_with_logs(logs, {"result": {"error": "Unknown resource"}})
+
+    variables = {
+        "resource_type_id": resource_type_id,
+        "resource_type_strat_id": resource_strategy_id,
+        "pool_name": pool_name,
+        "parentResourceId": parent_resource_id,
+    }
+
+    body = create_nested_pool_template.render()
+    body = body.replace("\n", "").replace("\\", "")
+
+    log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
+    response = execute(body, variables)
+    if "errors" in response:
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
+    return completed_response_with_logs(logs, {"result": response})
+
+
+def query_capacity(pool_id):
+    # Query free capacity and utilized capacity from pool
+    body = query_capacity_template.render()
+    variables = {"pool_id": pool_id}
+    log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
+    data = execute(body, variables)
+    log.info(data)
+    freeCapacity = (
+        data["data"]["QueryPoolCapacity"]["freeCapacity"]
+        if data["data"]["QueryPoolCapacity"]
+        else None
+    )
+    utilizedCapacity = (
+        data["data"]["QueryPoolCapacity"]["utilizedCapacity"]
+        if data["data"]["QueryPoolCapacity"]
+        else None
+    )
+    return freeCapacity, utilizedCapacity
+
+
+@logging_handler(log)
+def query_resource_by_alt_id(task, logs):
+    """
+    Query resource by alternative id in Uniresource
+         Args:
+             task (dict): dictionary with input data ["alternativeId"] and optional data ["poolId", "first"]
+         Returns:
+            Response from uniresource. Worker output format::
+            "result": {
+                "data": {
+                    "QueryResourcesByAltId": {
+                        "edges": [
+                        {
+                            "id": "<id>",
+                            "Properties": <Properties>,
+                            "Description": "<description>"
+                        }
+                        ]
+                    }
+                }
+            }
+
+    """
+    alternative_id = task["inputData"]["alternativeId"]
+    poolId = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
+    first = task["inputData"]["first"] if "first" in task["inputData"] else None
+    body = query_resource_by_alt_id_template.render()
+    alternative_id = json.loads(alternative_id)
+    variables = {"input": alternative_id}
+    body = body.replace("\n", "").replace("\\", "")
+    log.info("Sending graphql variables: %s\n with query: %s" % (variables, body))
+    response = execute(body, variables)
+    if "errors" in response:
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
+    return completed_response_with_logs(logs, {"result": response})
+
+
+@logging_handler(log)
+def deallocate_resource(task, logs):
+    """
+    Deallocate resource from pool
+
+         Args:
+
+             task (dict): dictionary with input data ["poolId", "userInput", "alternativeId"]
+
+             logs: stream of log messages
+
+        Returns:
+            Response from Uniresource. Worker output format:
+            "result": {
+              "data": {
+                "FreeResorce": "Resource freed successfully"
+                }
+              }
+            }
+
+    """
+    pool_id = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
+    if pool_id is None:
+        return failed_response_with_logs(logs, {"result": {"error": "No pool id"}})
+    user_input = task["inputData"]["userInput"] if "userInput" in task["inputData"] else None
+    if user_input is None:
+        return failed_response_with_logs(logs, {"result": {"error": "No user input"}})
+    variables = {"pool_id": pool_id, "input": user_input}
+    body = deallocate_resource_template.render()
+
+    log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
+    response = execute(body, variables)
+    if "errors" in response:
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
+    return completed_response_with_logs(logs, {"result": response})
+
+
+@logging_handler(log)
+def delete_pool(task, logs):
+    """
+    Delete pool
+
+         Args:
+
+             task (dict): dictionary with input data ["poolId"]
+
+             logs: stream of log messages
+
+        Returns:
+            Response from Uniresource. Worker output format::
+            "result": {
+              "data": {
+                "DeleteResourcePool": {
+                  "resourcePoolId: "<id>"
+                }
+              }
+            }
+
+    """
+    pool_id = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
+    if pool_id is None:
+        return failed_response_with_logs(logs, {"result": {"error": "No pool id"}})
+    variables = {"pool_id": pool_id}
+    body = delete_pool_template.render()
+
+    log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
+    response = execute(body, variables)
+    if "errors" in response:
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
+    return completed_response_with_logs(logs, {"result": response})
+
+
+@logging_handler(log)
+def calculate_host_and_broadcast_address(task, logs):
+    """
+    Calculate host and broadcast address from customer and provider ip address, if those ip addresses are not defined, it will calculate even these
+
+         Args:
+
+             task (dict): dictionary with input data ["desired_size", "resource_type"] and optional ["customer_address", "provider_address"]
+
+             logs: stream of log messages
+        Returns:
+            "result":{
+                "data": {
+                    "network_address": <network_address>
+                    "broadcast_address": <broadcast_address>
+                    "address_capacity_in_subnet": <desiredSize>
+                    "owner_of_lower_address": <print_lower_address>
+                    "owner_of_higher_address": <print_higher_address>
+                    "lower_address": <lower_address>
+                }
+            }
+    """
+    desired_size = task["inputData"]["desiredSize"]
+    resource_type = str(task["inputData"]["resourceType"])
+    customer_ip_address = (
+        str(task["inputData"]["customerAddress"])
+        if "customerAddress" in task["inputData"]
+        else None
+    )
+    provider_ip_address = (
+        str(task["inputData"]["providerAddress"])
+        if "providerAddress" in task["inputData"]
+        else None
+    )
+    network_ip_address = (
+        str(task["inputData"]["networkAddress"]) if "networkAddress" in task["inputData"] else None
+    )
+
+    if network_ip_address is not None and (
+        customer_ip_address is None or provider_ip_address is None
+    ):
+        provider_ip_address, customer_ip_address = calculate_provider_and_customer_address(
+            network_ip_address, resource_type
+        )
+    if resource_type.startswith("ipv4"):
+        customer_converted_ip_address = int(ipaddress.IPv4Address(customer_ip_address))
+        provider_converted_ip_address = int(ipaddress.IPv4Address(provider_ip_address))
+        if customer_converted_ip_address < provider_converted_ip_address:
+            response = calculate_network_address_from_lower_address(
+                "Customer",
+                "Provider",
+                customer_ip_address,
+                customer_converted_ip_address,
+                int(desired_size),
+            )
+        else:
+            response = calculate_network_address_from_lower_address(
+                "Provider",
+                "Customer",
+                provider_ip_address,
+                provider_converted_ip_address,
+                int(desired_size),
+            )
+    elif resource_type.startswith("ipv6"):
+        customer_converted_ip_address = int(ipaddress.IPv6Address(customer_ip_address))
+        provider_converted_ip_address = int(ipaddress.IPv6Address(provider_ip_address))
+        if customer_converted_ip_address < provider_converted_ip_address:
+            response = calculate_network_address_from_lower_address(
+                "Customer",
+                "Provider",
+                customer_ip_address,
+                customer_converted_ip_address,
+                int(desired_size),
+            )
+        else:
+            response = calculate_network_address_from_lower_address(
+                "Provider",
+                "Customer",
+                provider_ip_address,
+                provider_converted_ip_address,
+                int(desired_size),
+            )
+
+    return completed_response_with_logs(logs, {"result": {"data": response}})
+
+
+def calculate_network_address_from_lower_address(
+    owner_of_lower_address,
+    owner_of_higher_address,
+    first_availiable_ip_address,
+    first_availiable_hexa_ip_address,
+    desired_size,
+):
+    lower_address = first_availiable_ip_address
+    network_address = int(first_availiable_hexa_ip_address) - 1
+    broadcast_address = int(network_address) + desired_size - 1
+    network_address = ipaddress.ip_address(network_address).__str__()
+    broadcast_address = ipaddress.ip_address(broadcast_address).__str__()
+
+    return {
+        "network_address": network_address,
+        "broadcast_address": str(broadcast_address),
+        "owner_of_lower_address": owner_of_lower_address,
+        "owner_of_higher_address": owner_of_higher_address,
+        "first_availiable_ip_address": lower_address,
+    }
+
+
+def calculate_provider_and_customer_address(network_address, resource_type):
+    if str(resource_type).startswith("ipv4"):
+        network_address = int(ipaddress.IPv4Address(network_address))
+    else:
+        str(resource_type).startswith("ipv6")
+        network_address = int(ipaddress.IPv6Address(network_address))
+    provider_address = int(network_address) + 1
+    customer_address = int(network_address) + 2
+    provider_address = ipaddress.ip_address(provider_address).__str__()
+    customer_address = ipaddress.ip_address(customer_address).__str__()
+
+    return provider_address, customer_address
+
+
+@logging_handler(log)
+def calculate_desired_size_from_prefix(task, logs):
+    """
+    Calculate desired size from prefix
+
+         Args:
+
+             task (dict): dictionary with input data ["prefix", "resource_type"]
+
+             logs: stream of log messages
+        Returns:
+            "result": {
+                "data": <desired_size>
+            }
+    """
+    prefix = task["inputData"]["prefix"] if "prefix" in task["inputData"] else None
+    if prefix is None:
+        return failed_response_with_logs(logs, {"result": {"error": "No prefix"}})
+    resource_type = str(task["inputData"]["resourceType"])
+
+    if resource_type.startswith("ipv4"):
+        if 0 < int(prefix) < 33:
+            desired_size = 2 ** (32 - int(prefix))
+        else:
+            return failed_response_with_logs(
+                logs, {"result": {"error": "Prefix must be between 1 and 32 for ipv4"}}
+            )
+    elif resource_type.startswith("ipv6"):
+        if 0 < int(prefix) < 129:
+            desired_size = 2 ** (128 - int(prefix))
+        else:
+            return failed_response_with_logs(
+                logs, {"result": {"error": "Prefix must be between 1 and 128 for ipv6"}}
+            )
+
+    return completed_response_with_logs(logs, {"result": {"data": str(desired_size)}})
 
 
 def start(cc):
@@ -1008,4 +1483,94 @@ def start(cc):
             "outputKeys": [],
         },
         update_alt_id_for_resource,
+    )
+
+    cc.register(
+        "RESOURCE_MANAGER_query_resource_by_alt_id",
+        {
+            "name": "RESOURCE_MANAGER_query_resource_by_alt_id",
+            "description": '{"description": "": [""]}',
+            "retryCount": 0,
+            "timeoutPolicy": "TIME_OUT_WF",
+            "retryLogic": "FIXED",
+            "retryDelaySeconds": 0,
+            "inputKeys": [""],
+            "outputKeys": [],
+        },
+        query_resource_by_alt_id,
+    )
+
+    cc.register(
+        "RESOURCE_MANAGER_create_nested_pool",
+        {
+            "name": "RESOURCE_MANAGER_create_nested_pool",
+            "description": '{"description": "": [""]}',
+            "retryCount": 0,
+            "timeoutPolicy": "TIME_OUT_WF",
+            "retryLogic": "FIXED",
+            "retryDelaySeconds": 0,
+            "inputKeys": [""],
+            "outputKeys": [],
+        },
+        create_nested_pool,
+    )
+
+    cc.register(
+        "RESOURCE_MANAGER_deallocate_resource",
+        {
+            "name": "RESOURCE_MANAGER_deallocate_resource",
+            "description": '{"description": "": [""]}',
+            "retryCount": 0,
+            "timeoutPolicy": "TIME_OUT_WF",
+            "retryLogic": "FIXED",
+            "retryDelaySeconds": 0,
+            "inputKeys": [""],
+            "outputKeys": [],
+        },
+        deallocate_resource,
+    )
+
+    cc.register(
+        "RESOURCE_MANAGER_delete_pool",
+        {
+            "name": "RESOURCE_MANAGER_delete_pool",
+            "description": '{"description": "": [""]}',
+            "retryCount": 0,
+            "timeoutPolicy": "TIME_OUT_WF",
+            "retryLogic": "FIXED",
+            "retryDelaySeconds": 0,
+            "inputKeys": [""],
+            "outputKeys": [],
+        },
+        delete_pool,
+    )
+
+    cc.register(
+        "RESOURCE_MANAGER_calculate_host_and_broadcast_address",
+        {
+            "name": "RESOURCE_MANAGER_calculate_host_and_broadcast_address",
+            "description": '{"description": "": [""]}',
+            "retryCount": 0,
+            "timeoutPolicy": "TIME_OUT_WF",
+            "retryLogic": "FIXED",
+            "retryDelaySeconds": 0,
+            "inputKeys": [""],
+            "outputKeys": [],
+        },
+        calculate_host_and_broadcast_address,
+    )
+
+    cc.register(
+        "RESOURCE_MANAGER_calculate_desired_size_from_prefix",
+        {
+            "name": "RESOURCE_MANAGER_calculate_desired_size_from_prefix",
+            "description": '{"description": "": [""]}',
+            "retryCount": 0,
+            "timeoutPolicy": "TIME_OUT_WF",
+            "retryLogic": "FIXED",
+            "retryDelaySeconds": 0,
+            "inputKeys": [""],
+            "outputKeys": [],
+        },
+        calculate_desired_size_from_prefix,
     )

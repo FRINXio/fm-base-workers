@@ -1,0 +1,29 @@
+{
+    "name": "Delete_Pool_IPv6",
+    "description": "{\"description\": \"Delete ipv6 or ipv6_prefix pool\", \"labels\": [\"RESOURCE_MANAGER\"]}",
+    "workflowStatusListenerEnabled": true,
+    "version": 1,
+    "tasks": [
+      {
+        "name": "RESOURCE_MANAGER_query_pool_by_tag",
+        "taskReferenceName": "query_pool_by_tag",
+        "type": "SIMPLE",
+        "inputParameters": {
+            "poolTag": "${workflow.input.pool_name}"
+        }
+      },
+      {
+        "name": "RESOURCE_MANAGER_delete_pool",
+        "taskReferenceName": "delete_pool",
+        "type": "SIMPLE",
+        "inputParameters": {
+            "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].id}"
+        }
+      }
+    ],
+    "inputParameters": [
+        "{\"pool_name\":{\"value\":\"\",\"description\":\"Pool name\",\"type\":\"string\"}}"
+    ],
+    "outputParameters": {},
+    "schemaVersion": 2
+}
