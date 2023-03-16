@@ -25,7 +25,12 @@ setup(
     keywords=["frinx-machine", "conductor"],
     include_package_data=True,
     license="Apache 2.0",
-    install_requires=["influxdb_client", "requests", "python_graphql_client", "pydantic"],
+    install_requires=[
+        "influxdb_client",
+        "requests",
+        "python_graphql_client",
+        "pydantic"
+    ],
     long_description=__read__("README.md"),
     long_description_content_type="text/markdown",
 )
