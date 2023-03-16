@@ -1,3 +1,5 @@
+from typing import Any
+
 from frinx.common.conductor_enums import TaskResultStatus
 from frinx.common.worker.service import ServiceWorkersImpl
 from frinx.common.worker.task import Task
@@ -41,8 +43,8 @@ class NETCONF(ServiceWorkersImpl):
 
         class WorkerOutput(TaskOutput):
             url: str
-            request_body: dict
-            response_body: dict
+            request_body: dict[str, Any]
+            response_body: dict[str, Any]
             response_code: int
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
@@ -63,8 +65,8 @@ class NETCONF(ServiceWorkersImpl):
 
         class WorkerOutput(TaskOutput):
             url: str
-            request_body: dict
-            response_body: dict
+            request_body: dict[str, Any]
+            response_body: dict[str, Any]
             response_code: int
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
@@ -84,7 +86,7 @@ class NETCONF(ServiceWorkersImpl):
 
         class WorkerOutput(TaskOutput):
             url: str
-            response_body: dict
+            response_body: dict[str, Any]
             response_code: int
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
@@ -108,7 +110,7 @@ class NETCONF(ServiceWorkersImpl):
 
         class WorkerOutput(TaskOutput):
             url: str
-            response_body: dict
+            response_body: dict[str, Any]
             response_code: int
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:

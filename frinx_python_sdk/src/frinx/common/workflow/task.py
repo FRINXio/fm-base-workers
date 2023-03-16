@@ -293,7 +293,7 @@ class StartWorkflowTaskFromDefInputParameters(BaseModel):
     correlationId: Optional[str] = Field(alias="correlationId")
 
     @root_validator(pre=True)
-    def check_input_values(cls, values) -> Dict[str, Any]:
+    def check_input_values(cls, values: dict[str, Any]) -> Dict[str, Any]:
         wf_def_input = list(values["workflow"].WorkflowInput.__fields__.keys())
         wf_input = list(values["input"].keys())
         if not bool(set(wf_input) & set(wf_def_input)):
@@ -477,8 +477,8 @@ class SimpleTask(WorkflowTaskImpl):
             case type():
                 if not issubclass(task_def, WorkerImpl):
                     raise ValueError("Bad input for name")
-                values["name"] = task_def.WorkerDefinition.__fields__["name"].default
-                task_input = task_def.WorkerInput.__fields__.items()
+                values["name"] = task_def.WorkerDefinition.__fields__["name"].default  # type: ignore[attr-defined]
+                task_input = task_def.WorkerInput.__fields__.items()  # type: ignore[attr-defined]
                 for k, v in task_input:
                     if k not in worker_inputs:
                         if v.required is False:

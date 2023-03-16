@@ -3,7 +3,9 @@ import os
 from collections import namedtuple
 from http.cookies import SimpleCookie
 from typing import Any
-from typing import Final
+from typing import Tuple
+
+from requests import Response
 
 uniconfig_url_base = os.getenv("UNICONFIG_URL_BASE", "http://uniconfig:8181/rests")
 elastic_url_base = os.getenv("ELASTICSEACRH_URL_BASE", "http://elasticsearch:9200")
@@ -31,7 +33,7 @@ conductor_headers = {
 additional_uniconfig_request_params = {"verify": False, "headers": uniconfig_headers}
 
 
-def parse_response(r):
+def parse_response(r: Response) -> Tuple[int, dict[Any, Any]]:
     decode = r.content.decode("utf8")
     try:
         response_json = json.loads(decode if decode else "{}")
@@ -42,44 +44,44 @@ def parse_response(r):
     return response_code, response_json
 
 
-def extract_uniconfig_cookies(task):
-    uniconfig_cookies_multizone = extract_uniconfig_cookies_multizone(task)
+# def extract_uniconfig_cookies(task: ):
+#     uniconfig_cookies_multizone = extract_uniconfig_cookies_multizone(task)
+#
+#     cluster_for_device = get_uniconfig_cluster_from_task(task)
+#
+#     return uniconfig_cookies_multizone.get(cluster_for_device, {}) or {}
+#
+#
+# def extract_uniconfig_cookies_multizone(task):
+#     uniconfig_context = task.get("inputData", {}).get("uniconfig_context", {}) or {}
+#     uniconfig_cookies_multizone = uniconfig_context.get("uniconfig_cookies_multizone", {}) or {}
+#
+#     return uniconfig_cookies_multizone
 
-    cluster_for_device = get_uniconfig_cluster_from_task(task)
-
-    return uniconfig_cookies_multizone.get(cluster_for_device, {}) or {}
-
-
-def extract_uniconfig_cookies_multizone(task):
-    uniconfig_context = task.get("inputData", {}).get("uniconfig_context", {}) or {}
-    uniconfig_cookies_multizone = uniconfig_context.get("uniconfig_cookies_multizone", {}) or {}
-
-    return uniconfig_cookies_multizone
+#
+# def get_devices_by_uniconfig(devices, task, existing_uniconfig_cookies_multizone=None):
+#     device_with_cluster = namedtuple("devices", ["uc_cluster", "device_names"])
+#
+#     return [device_with_cluster(uc_cluster=uniconfig_url_base, device_names=devices)]
 
 
-def get_devices_by_uniconfig(devices, task, existing_uniconfig_cookies_multizone=None):
-    device_with_cluster = namedtuple("devices", ["uc_cluster", "device_names"])
-
-    return [device_with_cluster(uc_cluster=uniconfig_url_base, device_names=devices)]
-
-
-def get_uniconfig_cluster_from_task(task):
-    return uniconfig_url_base
+# def get_uniconfig_cluster_from_task(task):
+#     return uniconfig_url_base
 
 
 # these could be removed>>>
-def parse_header(r):
-    cookie = SimpleCookie()
-    cookie.load(r.cookies)
-    cookies = {}
-    for key, val in cookie.items():
-        if key == "UNICONFIGTXID":
-            cookies[key] = val.value
-    return cookies
+# def parse_header(r):
+#     cookie = SimpleCookie()
+#     cookie.load(r.cookies)
+#     cookies = {}
+#     for key, val in cookie.items():
+#         if key == "UNICONFIGTXID":
+#             cookies[key] = val.value
+#     return cookies
 
 
-def add_uniconfig_tx_cookie(uniconfig_tx_id):
-    header = uniconfig_headers
-    if uniconfig_tx_id and uniconfig_tx_id != "":
-        header["Cookie"] = "UNICONFIGTXID=" + uniconfig_tx_id
-    return header
+# def add_uniconfig_tx_cookie(uniconfig_tx_id):
+#     header = uniconfig_headers
+#     if uniconfig_tx_id and uniconfig_tx_id != "":
+#         header["Cookie"] = "UNICONFIGTXID=" + uniconfig_tx_id
+#     return header

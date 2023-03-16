@@ -29,7 +29,7 @@ class Uniconfig(ServiceWorkersImpl):
         class WorkerInput(TaskInput):
             device_id: str
             uri: str
-            uniconfig_context: Optional[dict]
+            uniconfig_context: Optional[dict[str, Any]]
 
         class WorkerOutput(TaskOutput):
             url: str
@@ -97,7 +97,7 @@ class Uniconfig(ServiceWorkersImpl):
             timeoutSeconds = 600
 
         class WorkerInput(TaskInput):
-            devices: str | list
+            devices: str | list[str]
             uniconfig_context: Optional[UniconfigContext] | str
 
         class WorkerOutput(TaskOutput):
@@ -146,7 +146,7 @@ class Uniconfig(ServiceWorkersImpl):
 
         class WorkerInput(TaskInput):
             devices: str
-            uniconfig_context: Optional[dict]
+            uniconfig_context: Optional[dict[str, Any]]
 
         class WorkerOutput(TaskOutput):
             url: str
@@ -169,7 +169,7 @@ class Uniconfig(ServiceWorkersImpl):
 
         class WorkerInput(TaskInput):
             devices: str
-            uniconfig_context: Optional[dict]
+            uniconfig_context: Optional[dict[str, Any]]
 
         class WorkerOutput(TaskOutput):
             url: str
@@ -192,7 +192,7 @@ class Uniconfig(ServiceWorkersImpl):
 
         class WorkerInput(TaskInput):
             devices: str
-            uniconfig_context: Optional[dict]
+            uniconfig_context: Optional[dict[str, Any]]
 
         class WorkerOutput(TaskOutput):
             url: str
@@ -215,7 +215,7 @@ class Uniconfig(ServiceWorkersImpl):
             failed_wf_id: str
 
         class WorkerOutput(TaskOutput):
-            uniconfig_contexts: dict
+            uniconfig_contexts: dict[str, Any]
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
             response = uniconfig.find_started_tx(**task.input_data)
@@ -252,7 +252,7 @@ class Uniconfig(ServiceWorkersImpl):
             oam_domain: Optional[str]
 
         class WorkerOutput(TaskOutput):
-            uniconfig_cookies_multizone: dict
+            uniconfig_cookies_multizone: dict[str, Any]
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
             response = uniconfig.create_tx_multizone(**task.input_data)
@@ -261,7 +261,7 @@ class Uniconfig(ServiceWorkersImpl):
                 case 200 | 201:
                     task_result.status = TaskResultStatus.COMPLETED
                     if response.data:
-                        task_result.add_output_data_dict(response.data)
+                        task_result.add_output_data_dict[str, Any](response.data)
                     if response.logs:
                         task_result.logs = response.logs
                     return task_result
@@ -269,7 +269,7 @@ class Uniconfig(ServiceWorkersImpl):
                     task_result.status = TaskResultStatus.FAILED
                     task_result.logs = task_result.logs or str(response)
                     if response.data:
-                        task_result.add_output_data_dict(response.data)
+                        task_result.add_output_data_dict[str, Any](response.data)
                     return task_result
 
     ###############################################################################
@@ -284,7 +284,7 @@ class Uniconfig(ServiceWorkersImpl):
             uniconfig_context: Optional[UniconfigContext] | Optional[str]
 
         class WorkerOutput(TaskOutput):
-            UNICONFIGTXID_multizone: dict
+            UNICONFIGTXID_multizone: dict[str, Any]
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
             response = uniconfig.close_tx_multizone(**task.input_data)

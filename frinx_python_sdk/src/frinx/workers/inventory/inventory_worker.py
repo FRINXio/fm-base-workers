@@ -228,7 +228,7 @@ class Inventory(ServiceWorkersImpl):
         class WorkerInput(TaskInput):
             labels: Optional[str]
             task: str
-            task_params: dict
+            task_params: dict[str, Any]
             optional: bool = False
 
         class WorkerOutput(TaskOutput):
