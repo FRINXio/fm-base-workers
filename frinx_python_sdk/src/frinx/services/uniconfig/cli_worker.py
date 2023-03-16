@@ -2,6 +2,7 @@ import copy
 import json
 import logging
 from string import Template
+from typing import Any
 
 from aiohttp import ClientSession
 from frinx.common.frinx_rest import uniconfig_headers
@@ -14,31 +15,32 @@ URL_CLI_MOUNT_RPC = (
 )
 
 
-# async def execute_and_read_rpc_cli(
-#     device_name: str, command: str, session: ClientSession, output_timer=None
-# ):
-#     execute_and_read_template = {"input": {"command": ""}}
-#     exec_body = copy.deepcopy(execute_and_read_template)
-#     exec_body["input"]["command"] = command
-#
-#     if output_timer:
-#         exec_body["input"]["wait-for-output-timer"] = output_timer
-#
-#     id_url = (
-#         Template(URL_CLI_MOUNT_RPC).substitute({"id": device_name})
-#         + "/yang-ext:mount/cli-unit-generic:execute-and-read"
-#     )
-#     try:
-#         async with session.post(
-#             id_url, data=json.dumps(exec_body), ssl=False, headers=uniconfig_headers
-#         ) as r:
-#             res = await r.json()
-#             logger.info("LLDP raw data: %s", res["output"]["output"])
-#             return res["output"]["output"]
-#     except Exception:
-#         logger.error("Reading rpc from Uniconfig has failed")
-#         raise
-#
+async def execute_and_read_rpc_cli(
+    device_name: str, command: str, session: ClientSession, output_timer=None
+):
+    execute_and_read_template = {"input": {"command": ""}}
+    exec_body = copy.deepcopy(execute_and_read_template)
+    exec_body["input"]["command"] = command
+
+    if output_timer:
+        exec_body["input"]["wait-for-output-timer"] = output_timer
+
+    id_url = (
+        Template(URL_CLI_MOUNT_RPC).substitute({"id": device_name})
+        + "/yang-ext:mount/cli-unit-generic:execute-and-read"
+    )
+    try:
+        async with session.post(
+            id_url, data=json.dumps(exec_body), ssl=False, headers=uniconfig_headers
+        ) as r:
+            res = await r.json()
+            logger.info("LLDP raw data: %s", res["output"]["output"])
+            return res["output"]["output"]
+    except Exception:
+        logger.error("Reading rpc from Uniconfig has failed")
+        raise
+
+
 # ###############################################################################
 
 from frinx.services.uniconfig import templates
@@ -123,44 +125,45 @@ def execute_mount_cli(
 
     # TODO finish
 
-    response = uniconfig_utils.request("POST", id_url, data=json.dumps(mount_body), timeout=600)
-    match response.code:
-        case 200:
-            logs = f"Mount point with ID {device_id} configured"
-        case _:
-            logs = f"Unable to configure device with ID {device_id}"
-
-    return UniconfigOutput(code=response.code, data=response.data, url=id_url, logs=logs)
-
-    error_message_for_already_installed = "Node has already been installed using CLI protocol"
-
-    failed = response_json.get("output", {}).get("status") == "fail"
-    already_installed = (
-        response_json.get("output", {}).get("error-message") == error_message_for_already_installed
-    )
-
-    if not failed or already_installed:
-        return {
-            "status": "COMPLETED",
-            "output": {
-                "url": id_url,
-                "request_body": mount_body,
-                "response_code": response_code,
-                "response_body": response_json,
-            },
-            "logs": ["Mountpoint with ID %s registered" % device_id],
-        }
-    else:
-        return {
-            "status": "FAILED",
-            "output": {
-                "url": id_url,
-                "request_body": mount_body,
-                "response_code": response_code,
-                "response_body": response_json,
-            },
-            "logs": ["Unable to register device with ID %s" % device_id],
-        }
+    # response = uniconfig_utils.request("POST", id_url, data=json.dumps(mount_body), timeout=600)
+    # match response.code:
+    #     case 200:
+    #         logs = f"Mount point with ID {device_id} configured"
+    #     case _:
+    #         logs = f"Unable to configure device with ID {device_id}"
+    #
+    # return UniconfigOutput(code=response.code, data=response.data, url=id_url, logs=logs)
+    #
+    # error_message_for_already_installed = "Node has already been installed using CLI protocol"
+    #
+    # failed = response_json.get("output", {}).get("status") == "fail"
+    # already_installed = (
+    #     response_json.get("output", {}).get("error-message") == error_message_for_already_installed
+    # )
+    #
+    # if not failed or already_installed:
+    #     return {
+    #         "status": "COMPLETED",
+    #         "output": {
+    #             "url": id_url,
+    #             "request_body": mount_body,
+    #             "response_code": response_code,
+    #             "response_body": response_json,
+    #         },
+    #         "logs": ["Mountpoint with ID %s registered" % device_id],
+    #     }
+    # else:
+    #     return {
+    #         "status": "FAILED",
+    #         "output": {
+    #             "url": id_url,
+    #             "request_body": mount_body,
+    #             "response_code": response_code,
+    #             "response_body": response_json,
+    #         },
+    #         "logs": ["Unable to register device with ID %s" % device_id],
+    #     }
+    #
 
 
 def execute_unmount_cli(device_id: str) -> UniconfigOutput:
@@ -189,7 +192,7 @@ def execute_unmount_cli(device_id: str) -> UniconfigOutput:
 def execute_and_read_rpc_cli(
     device_id: str,
     template: str,
-    params: dict,
+    params: dict[Any, Any],
     uniconfig_context: UniconfigContext,
     output_timer: str,
 ) -> UniconfigOutput:
@@ -248,7 +251,7 @@ execute_template = {"input": {"command": "", "wait-for-output-timer": "5"}}
 
 
 def execute_cli(
-    device_id: str, template: str, params: dict, uniconfig_context: UniconfigContext
+    device_id: str, template: str, params: dict[Any, Any], uniconfig_context: UniconfigContext
 ) -> UniconfigOutput:
     params = params if params else {}
     # params = params if isinstance(params, dict) else eval(params) ???
@@ -282,7 +285,7 @@ def execute_cli(
 
 
 def execute_and_expect_cli(
-    device_id: str, template: str, params: dict, uniconfig_context: UniconfigContext
+    device_id: str, template: str, params: dict[Any, Any], uniconfig_context: UniconfigContext
 ) -> UniconfigOutput:
     params = params if params else {}
     # params = params if isinstance(params, dict) else eval(params) ???

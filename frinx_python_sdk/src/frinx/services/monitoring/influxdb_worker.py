@@ -8,7 +8,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 
 
 def influxQueryData(
-    org: str, token: str, query: str, format_data: list | str = None
+    org: str, token: str, query: str, format_data: list[str] | str | None = None
 ) -> InfluxOutput:
     if org is None or len(org) == 0:
         raise ValueError("Bad input org %s:", org)

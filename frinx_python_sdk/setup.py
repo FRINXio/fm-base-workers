@@ -18,19 +18,14 @@ setup(
     package_dir={"": "src"},
     version="0.0.3",
     description="Python SDK for Frinx Machine Workflow Manager",
-    data_files=[('logging', ['src/frinx/common/logging/logging-config.json'])],
+    data_files=[("logging", ["src/frinx/common/logging/logging-config.json"])],
     author="FRINXio",
     author_email="",
     url="https://github.com/FRINXio/fm-base-workers",
     keywords=["frinx-machine", "conductor"],
     include_package_data=True,
     license="Apache 2.0",
-    install_requires=[
-        "influxdb_client",
-        "requests",
-        "python_graphql_client",
-        "pydantic"
-    ],
+    install_requires=["influxdb_client", "requests", "python_graphql_client", "pydantic"],
     long_description=__read__("README.md"),
     long_description_content_type="text/markdown",
 )

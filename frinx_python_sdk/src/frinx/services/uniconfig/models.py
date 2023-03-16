@@ -14,9 +14,9 @@ class TransactionMeta(BaseModel):
 
 class UniconfigOutput(BaseModel):
     code: int
-    data: dict
-    logs: Optional[list] | Optional[str] = None
-    url: Optional[str] = None
+    data: dict[str, Any]
+    logs: Optional[list[str]] | Optional[str] | None = None
+    url: Optional[str] | None = None
 
     class Config:
         min_anystr_length = 1
@@ -24,8 +24,8 @@ class UniconfigOutput(BaseModel):
 
 class UniconfigRpcResponse(BaseModel):
     code: int
-    data: Optional[dict] = None
-    cookies: Optional[TransactionMeta] = None
+    data: Optional[dict[str, Any]] | None = None
+    cookies: Optional[TransactionMeta] | None = None
 
 
 class UniconfigCookies(BaseModel):
@@ -48,7 +48,7 @@ UniconfigCookiesMultizone: typing.TypeAlias = dict[str, ClusterWithDevices]
 
 class UniconfigContext(BaseModel):
     started_by_wf: str | None = None
-    uniconfig_cookies_multizone: TransactionMeta = None
+    uniconfig_cookies_multizone: TransactionMeta | None = None
 
     class Config:
         min_anystr_length = 1
@@ -62,7 +62,7 @@ class UniconfigTransactionList(BaseModel):
 
 
 class UniconfigCommittedContext(BaseModel):
-    committed_contexts: list | None = None
+    committed_contexts: list[Any] | None = None
 
     class Config:
         min_anystr_length = 1
