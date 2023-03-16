@@ -1403,7 +1403,7 @@ def query_recently_active_resources(task, logs):
             logs, {"result": {"error": response["errors"][0]["message"]}}
         )
     return completed_response_with_logs(logs, {"result": response})
-    
+
 
 def start(cc):
     cc.register(
