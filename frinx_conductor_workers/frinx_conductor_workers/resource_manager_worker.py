@@ -377,8 +377,6 @@ def query_claimed_resources(task, logs):
     alternative_id = (
         None if "alternativeId" not in task["inputData"] else task["inputData"]["alternativeId"]
     )
-    if pool_id is None:
-        return failed_response_with_logs(logs, {"result": {"error": "No pool id"}})
     variables = {"pool_id": pool_id}
     if alternative_id is not None and len(alternative_id) > 0:
         variables.update({"alternative_id": alternative_id})
