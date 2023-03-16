@@ -162,14 +162,28 @@ query_capacity_template = Template(
 
 query_resource_by_alt_id_template = Template(
     """
-    query QueryResourcesByAltId($poolId: ID, $input: Map!, $first: Int) {
-    QueryResourcesByAltId(input: $input, poolId: $poolId, first: $first) {
+    query QueryResourcesByAltId($poolId: ID, $input: Map!, $first: Int, $last: Int, $after: String) {
+    QueryResourcesByAltId(input: $input, poolId: $poolId, first: $first, last: $last, after: $after) {
         edges {
-                node{
+            cursor {
+                ID
+            }
+            node {
+                id
+                Properties
+                ParentPool {
                     id
-                    Properties
-                    Description
+                    Name
                 }
+                NestedPool {
+                    id
+                    Name
+                    Tags{
+                        Tag
+                    }
+                }
+                AlternativeId
+            }
         }
     }
     } """
@@ -196,6 +210,49 @@ delete_pool_template = Template(
         resourcePoolId
     }
     }"""
+)
+
+query_search_empty_pools_template = Template(
+    """
+    query getEmptyPools($resourceTypeId: ID) {
+    QueryEmptyResourcePools(resourceTypeId: $resourceTypeId) {
+        id
+        Name
+        Tags {
+            Tag
+        }
+        AllocationStrategy {
+            Name        
+        }    
+    }
+    }"""
+)
+
+query_recently_active_resources_template = Template(
+    """
+    query QueryRecentlyActiveResources($fromDatetime: String!, $toDatetime: String, $first: Int, $last: Int, $before: String, $after: String) {
+    QueryRecentlyActiveResources(fromDatetime:$fromDatetime, toDatetime:$toDatetime, first:$first, last:$last, before:$before, after:$after){
+        edges {
+            node {        
+                id
+                Properties
+                AlternativeId
+                ParentPool {
+                    id
+                    Name
+                } 
+                NestedPool {
+                id                    
+                Name
+                } 
+            }
+            cursor{
+                ID
+            }
+        }
+    }
+    }
+    """
 )
 
 
@@ -995,9 +1052,17 @@ def query_resource_by_alt_id(task, logs):
     alternative_id = task["inputData"]["alternativeId"]
     poolId = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
     first = task["inputData"]["first"] if "first" in task["inputData"] else None
+    last = task["inputData"]["last"] if "last" in task["inputData"] else None
+    after = task["inputData"]["after"] if "after" in task["inputData"] else None
     body = query_resource_by_alt_id_template.render()
     alternative_id = json.loads(alternative_id)
-    variables = {"input": alternative_id}
+    variables = {
+        "input": alternative_id,
+        "poolId": poolId,
+        "first": first,
+        "last": last,
+        "after": after,
+    }
     body = body.replace("\n", "").replace("\\", "")
     log.info("Sending graphql variables: %s\n with query: %s" % (variables, body))
     response = execute(body, variables)
@@ -1242,6 +1307,102 @@ def calculate_desired_size_from_prefix(task, logs):
             )
 
     return completed_response_with_logs(logs, {"result": {"data": str(desired_size)}})
+
+
+@logging_handler(log)
+def query_search_empty_pools(task, logs):
+    """
+    Query search for empty pools in Uniresource
+
+         Args:
+
+             task (dict): dictionary with input data ["resourceTypeId"]
+
+
+         Returns:
+            Response from uniresource. Worker output format::
+            "result": {
+                "data": {
+                    "QueryEmptyResourcePools": [
+                        {
+                            "id": "<id>",
+                            "AllocationStrategy": <Name>
+                            "Name": "<name>"
+                            "Tags": <tag>
+                        }
+                    ]
+                }
+            }
+
+    """
+    resource_type_id = task["inputData"]["resourceTypeId"]
+    body = query_search_empty_pools_template.render()
+    variables = {"resourceTypeId": resource_type_id}
+    log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
+    response = execute(body, variables)
+    if "errors" in response:
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
+    return completed_response_with_logs(logs, {"result": response})
+
+
+@logging_handler(log)
+def query_recently_active_resources(task, logs):
+    """
+    Query resource by alternative id in Uniresource
+         Args:
+             task (dict): dictionary with input data ["alternativeId"] and optional data ["poolId", "first"]
+         Returns:
+            Response from uniresource. Worker output format::
+            "result": {
+                "data": {
+                    "QueryRecentlyActiveResources": {
+                        edges {
+                            node {
+                                id
+                                Properties
+                                AlternativeId
+                                ParentPool {
+                                    id
+                                    Name
+                                }
+                                NestedPool {
+                                id
+                                Name
+                                }
+                            }
+                            cursor{
+                                ID
+                            }
+                        }
+                    }
+                }
+            }
+
+    """
+    fromDatetime = task["inputData"]["fromDatetime"]
+    toDatetime = task["inputData"]["toDatetime"] if "toDatetime" in task["inputData"] else None
+    first = task["inputData"]["first"] if "first" in task["inputData"] else None
+    last = task["inputData"]["last"] if "last" in task["inputData"] else None
+    before = task["inputData"]["before"] if "before" in task["inputData"] else None
+    after = task["inputData"]["after"] if "after" in task["inputData"] else None
+    body = query_recently_active_resources_template.render()
+    variables = {
+        "fromDatetime": fromDatetime,
+        "poolId": toDatetime,
+        "first": first,
+        "last": last,
+        "before": before,
+        "after": after,
+    }
+    log.info("Sending graphql variables: %s\n with query: %s" % (variables, body))
+    response = execute(body, variables)
+    if "errors" in response:
+        return failed_response_with_logs(
+            logs, {"result": {"error": response["errors"][0]["message"]}}
+        )
+    return completed_response_with_logs(logs, {"result": response})
 
 
 def start(cc):
@@ -1573,4 +1734,34 @@ def start(cc):
             "outputKeys": [],
         },
         calculate_desired_size_from_prefix,
+    )
+
+    cc.register(
+        "RESOURCE_MANAGER_query_search_empty_pools",
+        {
+            "name": "RESOURCE_MANAGER_query_search_empty_pools",
+            "description": '{"description": "": [""]}',
+            "retryCount": 0,
+            "timeoutPolicy": "TIME_OUT_WF",
+            "retryLogic": "FIXED",
+            "retryDelaySeconds": 0,
+            "inputKeys": [""],
+            "outputKeys": [],
+        },
+        query_search_empty_pools,
+    )
+
+    cc.register(
+        "RESOURCE_MANAGER_query_recently_active_resources",
+        {
+            "name": "RESOURCE_MANAGER_query_recently_active_resources",
+            "description": '{"description": "": [""]}',
+            "retryCount": 0,
+            "timeoutPolicy": "TIME_OUT_WF",
+            "retryLogic": "FIXED",
+            "retryDelaySeconds": 0,
+            "inputKeys": [""],
+            "outputKeys": [],
+        },
+        query_recently_active_resources,
     )
