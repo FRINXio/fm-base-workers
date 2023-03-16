@@ -2,8 +2,10 @@ import json
 import os
 from collections import namedtuple
 from http.cookies import SimpleCookie
+from typing import Any
+from typing import Final
 
-uniconfig_url_base = os.getenv("UNICONFIG_URL_BASE", "https://uniconfig:8181/rests")
+uniconfig_url_base = os.getenv("UNICONFIG_URL_BASE", "http://uniconfig:8181/rests")
 elastic_url_base = os.getenv("ELASTICSEACRH_URL_BASE", "http://elasticsearch:9200")
 conductor_url_base = os.getenv("CONDUCTOR_URL_BASE", "http://workflow-proxy:8088/proxy/api")
 inventory_url_base = os.getenv("INVENTORY_URL_BASE", "http://inventory:8000/graphql")
@@ -11,6 +13,7 @@ influxdb_url_base = os.getenv("INFLUXDB_URL_BASE", "http://influxdb:8086")
 resource_manager_url_base = os.getenv(
     "RESOURCE_MANAGER_URL_BASE", "http://resource-manager:8884/query"
 )
+
 
 uniconfig_headers = {"Content-Type": "application/json"}
 elastic_headers = {"Content-Type": "application/json"}
@@ -80,6 +83,3 @@ def add_uniconfig_tx_cookie(uniconfig_tx_id):
     if uniconfig_tx_id and uniconfig_tx_id != "":
         header["Cookie"] = "UNICONFIGTXID=" + uniconfig_tx_id
     return header
-
-
-# <<<these could be removed

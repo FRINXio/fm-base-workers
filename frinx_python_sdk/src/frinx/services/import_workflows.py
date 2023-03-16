@@ -3,8 +3,8 @@ import logging
 import os
 
 import requests
-from frinx.services.frinx_rest import conductor_headers
-from frinx.services.frinx_rest import conductor_url_base
+from frinx.common.frinx_rest import conductor_headers
+from frinx.common.frinx_rest import conductor_url_base
 
 local_logs = logging.getLogger(__name__)
 

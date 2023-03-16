@@ -2,8 +2,7 @@ import json
 import unittest
 from unittest.mock import patch
 
-import frinx.workers.uniconfig.cli_worker
-from frinx.services.frinx_rest import uniconfig_url_base
+from frinx.common.frinx_rest import uniconfig_url_base
 
 exec_and_read_rpc = {
     "output": {

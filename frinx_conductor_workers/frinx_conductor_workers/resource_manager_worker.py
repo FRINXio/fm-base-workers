@@ -377,6 +377,8 @@ def query_claimed_resources(task, logs):
     alternative_id = (
         None if "alternativeId" not in task["inputData"] else task["inputData"]["alternativeId"]
     )
+    if pool_id is None:
+        return failed_response_with_logs(logs, {"result": {"error": "No pool id"}})
     variables = {"pool_id": pool_id}
     if alternative_id is not None and len(alternative_id) > 0:
         variables.update({"alternative_id": alternative_id})
@@ -1401,7 +1403,7 @@ def query_recently_active_resources(task, logs):
             logs, {"result": {"error": response["errors"][0]["message"]}}
         )
     return completed_response_with_logs(logs, {"result": response})
-
+    
 
 def start(cc):
     cc.register(
