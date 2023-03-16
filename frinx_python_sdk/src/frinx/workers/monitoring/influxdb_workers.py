@@ -1,3 +1,4 @@
+from typing import Any
 from typing import Optional
 
 from frinx.common.conductor_enums import TaskResultStatus
@@ -25,11 +26,11 @@ class Influx(ServiceWorkersImpl):
             token: str
             bucket: str
             measurement: str
-            tags: dict | str
-            fields: dict | str
+            tags: dict[str, Any] | str
+            fields: dict[str, Any] | str
 
         class WorkerOutput(TaskOutput):
-            output: dict
+            output: dict[str, Any]
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
             response = influxdb_worker.influxWriteData(**task.input_data)
@@ -50,7 +51,7 @@ class Influx(ServiceWorkersImpl):
             format_data: Optional[list[str] | str]
 
         class WorkerOutput(TaskOutput):
-            output: dict
+            output: dict[str, Any]
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
             response = influxdb_worker.influxQueryData(**task.input_data)
@@ -70,8 +71,8 @@ class Influx(ServiceWorkersImpl):
             bucket: str
 
         class WorkerOutput(TaskOutput):
-            code: dict
-            data: dict
+            code: dict[str, Any]
+            data: dict[str, Any]
             logs: Optional[str]
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:

@@ -91,7 +91,7 @@ class WorkerImpl(ABC):
 
         try:
             # TODO check if ok
-            task_result = cls.execute(cls, Task(**task), TaskResult()).dict()
+            task_result = cls.execute(cls, Task(**task), TaskResult()).dict()  # type: ignore[arg-type]
             return task_result
 
         except Exception as e:

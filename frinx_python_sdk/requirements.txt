@@ -1,1 +1,4 @@
 influxdb_client
+requests
+python_graphql_client
+pydantic

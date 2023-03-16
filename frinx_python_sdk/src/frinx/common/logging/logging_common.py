@@ -5,6 +5,7 @@ import logging
 import logging.config
 import os
 from pathlib import Path
+from typing import Any
 from typing import List
 
 import urllib3
@@ -69,7 +70,7 @@ class LoggerConfig(BaseModel):
     disable_existing_loggers: bool = Field(default=False)
 
 
-def configure_logging(model: LoggerConfig | dict | str | None = None) -> None:
+def configure_logging(model: LoggerConfig | dict[str, Any] | str | None = None) -> None:
     match model:
         case str():
             logging.config.dictConfig(json.loads(model))

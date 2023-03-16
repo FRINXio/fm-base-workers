@@ -21,10 +21,7 @@ exclude = [
     "main.py",
     "frinx_python_sdk/test/*",
     "frinx_python_sdk/src/frinx/main.py",
-    "frinx_python_sdk/src/frinx/workers",
-
     "frinx_python_sdk/src/frinx/client",
-    "frinx_python_sdk/src/frinx/workers/*"
 ]
 
 explicit_package_bases = true

@@ -1,4 +1,5 @@
 from typing import Any
+from typing import List
 from typing import Optional
 
 from frinx.common.conductor_enums import RetryLogic
@@ -27,8 +28,8 @@ class TaskOutput(BaseModel):
 class TaskDefinition(BaseModel):
     name: str
     description: str
-    labels: Optional[list] = Field(default=None)
-    rbac: Optional[list[str]] = Field(default=None)
+    labels: Optional[list[object]] = Field(default=None)
+    rbac: Optional[list[object]] = Field(default=None)
     owner_app: Optional[str] = Field(default=None)
     create_time: Optional[int] = Field(default=None)
     update_time: Optional[int] = Field(default=None)

@@ -18,6 +18,7 @@ setup(
     package_dir={"": "src"},
     version="0.0.3",
     description="Python SDK for Frinx Machine Workflow Manager",
+    data_files=[('logging', ['src/frinx/common/logging/logging-config.json'])],
     author="FRINXio",
     author_email="",
     url="https://github.com/FRINXio/fm-base-workers",
