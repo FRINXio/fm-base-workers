@@ -93,8 +93,8 @@ class WorkflowImpl(BaseModel, ABC):
 
     # LABELS, RBAC, DESCRIPTION, INPUT VALUES
     description: str
-    labels: Optional[list[object]] = Field(default=None)  # TODO why list[str] return error
-    rbac: Optional[List[str]] = Field(default=None)
+    labels: Optional[List[object]] = Field(default=None)  # TODO why list[str] return error
+    rbac: Optional[List[object]] = Field(default=None)  # TODO why list[str] return error
 
     # PREDEFINED
     restartable: bool = Field(default=False)

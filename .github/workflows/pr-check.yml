@@ -8,7 +8,7 @@ on:
 
 jobs:
   format-test:
-    name: Format check
+    name: Format & Unit tests check
     runs-on: ubuntu-latest
     timeout-minutes: 5
     strategy:
