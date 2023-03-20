@@ -209,6 +209,55 @@ self.tasks.append(ExclusiveJoinTask(
 
 ```
 
+### FORK_JOIN TASK
+
+```python
+fork_tasks_a = []
+fork_tasks_b = []
+
+fork_tasks_a.append(SimpleTask(
+    name=Inventory.InventoryAddDevice,
+    task_reference_name="add_device_cli",
+    input_parameters=SimpleTaskInputParameters(
+        device_name="IOS01", zone="uniconfig", service_state="IN_SERVICE", mount_body="body"
+    ),
+))
+
+fork_tasks_a.append(SimpleTask(
+    name=Inventory.InventoryInstallDeviceByName,
+    task_reference_name="install_device_cli",
+    input_parameters=SimpleTaskInputParameters(
+        device_name="IOS01"
+    ),
+))
+
+fork_tasks_b.append(SimpleTask(
+    name=Inventory.InventoryAddDevice,
+    task_reference_name="add_device_netconf",
+    input_parameters=SimpleTaskInputParameters(
+        device_name="NTF01", zone="uniconfig", service_state="IN_SERVICE", mount_body="body"
+    ),
+))
+
+fork_tasks_b.append(SimpleTask(
+    name=Inventory.InventoryInstallDeviceByName,
+    task_reference_name="install_device_netconf",
+    input_parameters=SimpleTaskInputParameters(
+        device_name="NTF01"
+    ),
+))
+
+self.tasks.append(ForkTask(
+    name="fork",
+    task_reference_name="fork",
+    fork_tasks=[
+        fork_tasks_a,
+        fork_tasks_b
+    ]
+))
+
+```
+
 ### HUMAN TASK
 
 ```python
@@ -241,7 +290,7 @@ expression = "function e() { if ($.value){return {\"result\": true}} else { retu
 
 ```python
 self.tasks.append(JoinTask(
-    name="join", 
+    name="join",
     task_reference_name="join"
 ))
 ```
@@ -251,7 +300,7 @@ A list of task reference names that this JOIN task will wait for completion
 
 ```python
 self.tasks.append(JoinTask(
-    name="join", 
+    name="join",
     task_reference_name="join",
     join_on=["task1", "task2"]
 ))
@@ -390,7 +439,7 @@ self.tasks.append(SubWorkflowTask(
     task_reference_name="subworkflow",
     sub_workflow_param=sub_workflow_param,
     input_parameters=SubWorkflowInputParameters(
-    **sub_workflow_input
+        **sub_workflow_input
     )
 ))
 ```
@@ -413,7 +462,7 @@ self.tasks.append(SubWorkflowTask(
     task_reference_name="subworkflow",
     sub_workflow_param=sub_workflow_param,
     input_parameters=SubWorkflowInputParameters(
-    **sub_workflow_input
+        **sub_workflow_input
     )
 ))
 ```
@@ -501,7 +550,7 @@ TerminateTask(
     name="terminate",
     task_reference_name="terminate",
     input_parameters=TerminateTaskInputParameters(
-        termination_status=WorkflowStatus.COMPLETED, 
+        termination_status=WorkflowStatus.COMPLETED,
         workflow_output={"output": "COMPLETED"}
     )
 )

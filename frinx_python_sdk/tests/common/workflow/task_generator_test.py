@@ -341,6 +341,125 @@ class TestTaskGenerator(unittest.TestCase):
 
         self.assertDictEqual(test_task, test_mock)
 
+    def test_fork_task(self):
+        fork_tasks_a = []
+        fork_tasks_b = []
+
+        fork_tasks_a.append(
+            task.SimpleTask(
+                name=Inventory.InventoryAddDevice,
+                task_reference_name="add_device_cli",
+                input_parameters=task.SimpleTaskInputParameters(
+                    device_name="IOS01",
+                    zone="uniconfig",
+                    service_state="IN_SERVICE",
+                    mount_body="body",
+                ),
+            )
+        )
+
+        fork_tasks_a.append(
+            task.SimpleTask(
+                name=Inventory.InventoryInstallDeviceByName,
+                task_reference_name="install_device_cli",
+                input_parameters=task.SimpleTaskInputParameters(device_name="IOS01"),
+            )
+        )
+
+        fork_tasks_b.append(
+            task.SimpleTask(
+                name=Inventory.InventoryAddDevice,
+                task_reference_name="add_device",
+                input_parameters=task.SimpleTaskInputParameters(
+                    device_name="NTF01",
+                    zone="uniconfig",
+                    service_state="IN_SERVICE",
+                    mount_body="body",
+                ),
+            )
+        )
+
+        fork_tasks_b.append(
+            task.SimpleTask(
+                name=Inventory.InventoryInstallDeviceByName,
+                task_reference_name="install_device_netconf",
+                input_parameters=task.SimpleTaskInputParameters(device_name="NTF01"),
+            )
+        )
+
+        test_task = task.ForkTask(
+            name="fork", task_reference_name="fork", fork_tasks=[fork_tasks_a, fork_tasks_b]
+        ).dict(exclude_none=True)
+
+        test_mock = {
+            "name": "fork",
+            "task_reference_name": "fork",
+            "type": "FORK_JOIN",
+            "start_delay": 0,
+            "optional": False,
+            "async_complete": False,
+            "default_case": [],
+            "input_parameters": {},
+            "fork_tasks": [
+                [
+                    {
+                        "name": "INVENTORY_add_device",
+                        "task_reference_name": "add_device_cli",
+                        "type": "SIMPLE",
+                        "start_delay": 0,
+                        "optional": False,
+                        "async_complete": False,
+                        "default_case": [],
+                        "input_parameters": {
+                            "zone": "uniconfig",
+                            "device_name": "IOS01",
+                            "mount_body": "body",
+                            "service_state": "IN_SERVICE",
+                        },
+                    },
+                    {
+                        "name": "INVENTORY_install_device_by_name",
+                        "task_reference_name": "install_device_cli",
+                        "type": "SIMPLE",
+                        "start_delay": 0,
+                        "optional": False,
+                        "async_complete": False,
+                        "default_case": [],
+                        "input_parameters": {"device_name": "IOS01"},
+                    },
+                ],
+                [
+                    {
+                        "name": "INVENTORY_add_device",
+                        "task_reference_name": "add_device",
+                        "type": "SIMPLE",
+                        "start_delay": 0,
+                        "optional": False,
+                        "async_complete": False,
+                        "default_case": [],
+                        "input_parameters": {
+                            "zone": "uniconfig",
+                            "device_name": "NTF01",
+                            "mount_body": "body",
+                            "service_state": "IN_SERVICE",
+                        },
+                    },
+                    {
+                        "name": "INVENTORY_install_device_by_name",
+                        "task_reference_name": "install_device_netconf",
+                        "type": "SIMPLE",
+                        "start_delay": 0,
+                        "optional": False,
+                        "async_complete": False,
+                        "default_case": [],
+                        "input_parameters": {"device_name": "NTF01"},
+                    },
+                ],
+            ],
+        }
+
+        self.assertDictEqual(test_task, test_mock)
+
     def test_human_task(self):
         test_task = task.HumanTask(name="human", task_reference_name="human").dict(
             exclude_none=True

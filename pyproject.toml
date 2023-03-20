@@ -30,3 +30,6 @@ pretty = true
 ignore_missing_imports = true
 disallow_untyped_defs= true
 disallow_subclassing_any = false
+
+[tool.pytest.ini_options]
+pythonpath = "frinx_python_sdk/src"
