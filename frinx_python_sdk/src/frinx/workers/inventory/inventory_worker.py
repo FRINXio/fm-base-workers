@@ -40,8 +40,8 @@ class Inventory(ServiceWorkersImpl):
             name = "INVENTORY_install_device_by_id"
             description = "Install device by device ID"
             labels = ["BASIC", "INVENTORY"]
-            timeoutSeconds = 3600
-            responseTimeoutSeconds = 3600
+            timeout_seconds = 3600
+            response_timeout_seconds = 3600
 
         class WorkerInput(TaskInput):
             device_id: Optional[str]
@@ -62,8 +62,8 @@ class Inventory(ServiceWorkersImpl):
             name = "INVENTORY_uninstall_device_by_id"
             description = "Uninstall device by device ID"
             labels = ["BASIC", "INVENTORY"]
-            timeoutSeconds = 3600
-            responseTimeoutSeconds = 3600
+            timeout_seconds = 3600
+            response_timeout_seconds = 3600
 
         class WorkerInput(TaskInput):
             device_id: Optional[str]
@@ -83,8 +83,8 @@ class Inventory(ServiceWorkersImpl):
             name = "INVENTORY_install_device_by_name"
             description = "Install device by device name"
             labels = ["BASIC", "INVENTORY"]
-            timeoutSeconds = 3600
-            responseTimeoutSeconds = 3600
+            timeout_seconds = 3600
+            response_timeout_seconds = 3600
 
         class WorkerInput(TaskInput):
             device_name: str
@@ -105,8 +105,8 @@ class Inventory(ServiceWorkersImpl):
             name = "INVENTORY_uninstall_device_by_name"
             description = "Uninstall device by device name"
             labels = ["BASIC", "INVENTORY"]
-            timeoutSeconds = 3600
-            responseTimeoutSeconds = 3600
+            timeout_seconds = 3600
+            response_timeout_seconds = 3600
 
         class WorkerInput(TaskInput):
             device_name: Optional[str]
@@ -127,8 +127,8 @@ class Inventory(ServiceWorkersImpl):
             name = "INVENTORY_get_labels"
             description = "Get device labels"
             labels = ["BASICS", "MAIN", "INVENTORY"]
-            timeoutSeconds = 3600
-            responseTimeoutSeconds = 3600
+            timeout_seconds = 3600
+            response_timeout_seconds = 3600
 
         class WorkerInput(TaskInput):
             ...
@@ -149,8 +149,8 @@ class Inventory(ServiceWorkersImpl):
             name = "INVENTORY_create_label"
             description = "Create device labels"
             labels = ["BASICS", "MAIN", "INVENTORY"]
-            timeoutSeconds = 3600
-            responseTimeoutSeconds = 3600
+            timeout_seconds = 3600
+            response_timeout_seconds = 3600
 
         class WorkerInput(TaskInput):
             label: str
@@ -171,8 +171,8 @@ class Inventory(ServiceWorkersImpl):
             name = "INVENTORY_add_device"
             description = "Add device to inventory database"
             labels = ["BASICS", "MAIN", "INVENTORY"]
-            timeoutSeconds = 3600
-            responseTimeoutSeconds = 3600
+            timeout_seconds = 3600
+            response_timeout_seconds = 3600
 
         class WorkerInput(TaskInput):
             device_name: str
@@ -199,8 +199,8 @@ class Inventory(ServiceWorkersImpl):
             name = "INVENTORY_get_pages_cursors"
             description = "Get a list of pages cursors from device inventory"
             labels = ["BASIC", "INVENTORY"]
-            retry_timeout = 3600
-            responseTimeoutSeconds = 3600
+            timeout_seconds = 3600
+            response_timeout_seconds = 3600
 
         class WorkerInput(TaskInput):
             labels: Optional[str]
@@ -246,8 +246,8 @@ class Inventory(ServiceWorkersImpl):
             name = "INVENTORY_get_pages_cursors_fork_tasks"
             description = "Get all pages cursors as dynamic fork tasks"
             labels = ["BASIC", "INVENTORY"]
-            timeoutSeconds = 3600
-            responseTimeoutSeconds = 3600
+            timeout_seconds = 3600
+            response_timeout_seconds = 3600
 
         class WorkerInput(TaskInput):
             task: str
@@ -270,8 +270,8 @@ class Inventory(ServiceWorkersImpl):
             name = "INVENTORY_install_in_batch"
             description = "Install devices in batch started from page cursor"
             labels = ["BASIC", "INVENTORY"]
-            timeoutSeconds = 3600
-            responseTimeoutSeconds = 3600
+            timeout_seconds = 3600
+            response_timeout_seconds = 3600
 
         class WorkerInput(TaskInput):
             page_size: str
@@ -294,8 +294,8 @@ class Inventory(ServiceWorkersImpl):
             name = "INVENTORY_uninstall_in_batch"
             description = "Uninstall devices in batch started from page cursor"
             labels = ["BASIC", "INVENTORY"]
-            timeoutSeconds = 3600
-            responseTimeoutSeconds = 3600
+            timeout_seconds = 3600
+            response_timeout_seconds = 3600
 
         class WorkerInput(TaskInput):
             page_size: int
