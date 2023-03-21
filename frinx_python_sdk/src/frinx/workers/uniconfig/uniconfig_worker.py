@@ -93,8 +93,8 @@ class Uniconfig(ServiceWorkersImpl):
             name = "UNICONFIG_commit"
             description = "Commit uniconfig"
             labels = ["BASICS", "UNICONFIG"]
-            responseTimeoutSeconds = 600
-            timeoutSeconds = 600
+            response_timeout_seconds = 600
+            timeout_seconds = 600
 
         class WorkerInput(TaskInput):
             devices: str | list[str]
@@ -118,8 +118,8 @@ class Uniconfig(ServiceWorkersImpl):
             name = "UNICONFIG_dryrun_commit"
             description = "Dryrun Commit uniconfig"
             labels = ["BASICS", "UNICONFIG"]
-            responseTimeoutSeconds = 600
-            timeoutSeconds = 600
+            response_timeout_seconds = 600
+            timeout_seconds = 600
 
         class WorkerInput(TaskInput):
             devices: str
@@ -141,8 +141,8 @@ class Uniconfig(ServiceWorkersImpl):
             name = "UNICONFIG_calculate_diff"
             description = "Calculate uniconfig diff"
             labels = ["BASICS", "UNICONFIG"]
-            responseTimeoutSeconds = 600
-            timeoutSeconds = 600
+            response_timeout_seconds = 600
+            timeout_seconds = 600
 
         class WorkerInput(TaskInput):
             devices: str
@@ -164,8 +164,8 @@ class Uniconfig(ServiceWorkersImpl):
             name = "UNICONFIG_sync_from_network"
             description = "Sync uniconfig from network"
             labels = ["BASICS", "UNICONFIG"]
-            responseTimeoutSeconds = 600
-            timeoutSeconds = 600
+            response_timeout_seconds = 600
+            timeout_seconds = 600
 
         class WorkerInput(TaskInput):
             devices: str
@@ -187,8 +187,8 @@ class Uniconfig(ServiceWorkersImpl):
             name = "UNICONFIG_replace_config_with_oper"
             description = "Replace config with oper in uniconfig"
             labels = ["BASICS", "UNICONFIG"]
-            responseTimeoutSeconds = 600
-            timeoutSeconds = 600
+            response_timeout_seconds = 600
+            timeout_seconds = 600
 
         class WorkerInput(TaskInput):
             devices: str

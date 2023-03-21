@@ -2,7 +2,6 @@ from typing import Any
 from typing import Optional
 
 import frinx.services.http.http_worker as http
-from frinx.common.conductor_enums import TaskResultStatus
 from frinx.common.worker.service import ServiceWorkersImpl
 from frinx.common.worker.task import Task
 from frinx.common.worker.task_def import TaskDefinition
