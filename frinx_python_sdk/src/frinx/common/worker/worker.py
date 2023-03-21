@@ -8,6 +8,7 @@ from frinx.common.conductor_enums import TaskResultStatus
 from frinx.common.util import jsonify_description
 from frinx.common.util import snake_to_camel_case
 from frinx.common.worker.task import Task
+from frinx.common.worker.task_def import BaseTaskdef
 from frinx.common.worker.task_def import DefaultTaskDefinition
 from frinx.common.worker.task_def import TaskDefinition
 from frinx.common.worker.task_def import TaskInput
@@ -29,6 +30,7 @@ class Config:
 @dataclass(config=Config)
 class WorkerImpl(ABC):
     task_def: TaskDefinition = None
+    task_def_template: type[BaseTaskdef] | type[DefaultTaskDefinition] = None
 
     class WorkerDefinition(TaskDefinition):
         ...
@@ -39,11 +41,15 @@ class WorkerImpl(ABC):
     class WorkerOutput(TaskOutput):
         ...
 
-    def __init__(self) -> None:
-        self.task_def = self.task_definition_builder()
+    def __init__(
+        self, task_def_template: type[BaseTaskdef] | type[DefaultTaskDefinition] = None
+    ) -> None:
+        self.task_def = self.task_definition_builder(task_def_template)
 
     @classmethod
-    def task_definition_builder(cls) -> TaskDefinition:
+    def task_definition_builder(
+        cls, task_def_template: type[BaseTaskdef] | type[DefaultTaskDefinition] = None
+    ) -> TaskDefinition:
         cls.validate()
 
         params = {}
@@ -60,15 +66,22 @@ class WorkerImpl(ABC):
         params["description"] = jsonify_description(
             params["description"], params["labels"], params["rbac"]
         )
-        # params.pop("labels")
-        # params.pop("rbac")
+
+        params.pop("labels")
+        params.pop("rbac")
+
+        if task_def_template is None:
+            task_def_template = DefaultTaskDefinition.__fields__.items()
+        else:
+            task_def_template = task_def_template.__fields__.items()
 
         # Transform dict to TaskDefinition object use default values in necessary
         task_def = TaskDefinition(**params)
-        for k, v in DefaultTaskDefinition.__fields__.items():
+
+        for k, v in task_def_template:
             if v.default is not None and task_def.__getattribute__(k) is None:
                 task_def.__setattr__(k, v.default)
-        print(task_def)
+
         return task_def
 
     def register(self, cc: FrinxConductorWrapper) -> None:
