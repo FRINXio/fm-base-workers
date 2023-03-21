@@ -2,6 +2,7 @@ from typing import Any
 from typing import TypeAlias
 
 from pydantic import BaseModel
+from pydantic import Extra
 from pydantic import Field
 
 WorkflowTask: TypeAlias = dict[str, str]
@@ -54,8 +55,8 @@ class Task(BaseModel):
     queue_wait_time: int = Field(default=None)
 
     class Config:
-        # allow_mutation = False
-        # extra = Extra.forbid
+        allow_mutation = True
+        extra = Extra.forbid
         validate_assignment = True
         alias_generator = snake_to_camel_case
         allow_population_by_field_name = True

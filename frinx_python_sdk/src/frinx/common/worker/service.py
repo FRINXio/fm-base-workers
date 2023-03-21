@@ -25,6 +25,6 @@ class ServiceWorkersImpl:
         for attr_name in dir(cls):
             obj = getattr(cls, attr_name)
             if isinstance(obj, type) and issubclass(obj, WorkerImpl):
-                task = obj()
+                task = obj()  # TODO is that good solution?
                 results.append(task)
         return results
