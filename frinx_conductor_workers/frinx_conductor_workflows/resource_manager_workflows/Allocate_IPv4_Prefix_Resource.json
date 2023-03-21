@@ -135,7 +135,7 @@
       }
     ],
     "inputParameters": [
-        "{\"pool_name\":{\"value\":\"\",\"description\":\"Pool name\",\"type\":\"string\"}, \"description\":{\"value\":\"\",\"description\":\"[OPTIONAL] Description for resource\",\"type\":\"string\"}, \"prefix\":{\"value\":\"24\",\"description\":\"Subnet prefix\",\"type\":\"string\"}, \"desired_value\":{\"value\":\"\",\"description\":\"[OPTIONAL] Desired value ip address (for example 192.168.0.0)\",\"type\":\"string\"}}"
+        "{\"pool_name\":{\"value\":\"\",\"description\":\"Pool name\",\"type\":\"string\"}, \"description\":{\"value\":\"\",\"description\":\"[OPTIONAL] Description for resource\",\"type\":\"string\"}, \"prefix\":{\"value\":\"\",\"description\":\"Subnet prefix\",\"type\":\"string\"}, \"desired_value\":{\"value\":\"\",\"description\":\"[OPTIONAL] Desired value ip address (for example 192.168.0.0)\",\"type\":\"string\"}}"
     ],
     "outputParameters": {"result": "${lambda_print_result.output.result}"},
     "schemaVersion": 2
