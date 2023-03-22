@@ -1395,6 +1395,15 @@ def query_recently_active_resources(task, logs):
     last = task["inputData"]["last"] if "last" in task["inputData"] else None
     before = task["inputData"]["before"] if "before" in task["inputData"] else None
     after = task["inputData"]["after"] if "after" in task["inputData"] else None
+    if (after is not None) and (before is not None):
+        return failed_response_with_logs(
+            logs,
+            {
+                "result": {
+                    "error": "Data cannot be extracted with the parameter after and before at the same request"
+                }
+            },
+        )
     body = query_recently_active_resources_template.render()
     variables = {
         "fromDatetime": from_datetime,
