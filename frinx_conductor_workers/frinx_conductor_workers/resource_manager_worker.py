@@ -162,8 +162,8 @@ query_capacity_template = Template(
 
 query_resource_by_alt_id_template = Template(
     """
-    query QueryResourcesByAltId($poolId: ID, $input: Map!, $first: Int, $last: Int, $after: String) {
-    QueryResourcesByAltId(input: $input, poolId: $poolId, first: $first, last: $last, after: $after) {
+    query QueryResourcesByAltId($poolId: ID, $input: Map!, $first: Int, $last: Int, $after: String, $before: String) {
+    QueryResourcesByAltId(input: $input, poolId: $poolId, first: $first, last: $last, after: $after, before: $before) {
         edges {
             cursor {
                 ID
@@ -835,8 +835,6 @@ def update_alt_id_for_resource(task, logs):
         return failed_response_with_logs(logs, {"result": {"error": "No alternative id"}})
     variables = {"pool_id": pool_id, "input": resource_properties, "alternative_id": alternative_id}
     if alternative_id is not None and len(alternative_id) > 0:
-        alternative_id = alternative_id.replace("'", '"')
-        alternative_id = json.loads(alternative_id)
         variables.update({"alternative_id": alternative_id})
     if resource_properties is not None and len(resource_properties) > 0:
         variables.update({"input": resource_properties})
@@ -1013,17 +1011,17 @@ def query_capacity(pool_id):
     log.debug("Sending graphql variables: %s\n with query: %s" % (variables, body))
     data = execute(body, variables)
     log.info(data)
-    freeCapacity = (
+    free_capacity = (
         data["data"]["QueryPoolCapacity"]["freeCapacity"]
         if data["data"]["QueryPoolCapacity"]
         else None
     )
-    utilizedCapacity = (
+    utilized_capacity = (
         data["data"]["QueryPoolCapacity"]["utilizedCapacity"]
         if data["data"]["QueryPoolCapacity"]
         else None
     )
-    return freeCapacity, utilizedCapacity
+    return free_capacity, utilized_capacity
 
 
 @logging_handler(log)
@@ -1050,18 +1048,29 @@ def query_resource_by_alt_id(task, logs):
 
     """
     alternative_id = task["inputData"]["alternativeId"]
-    poolId = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
+    pool_id = task["inputData"]["poolId"] if "poolId" in task["inputData"] else None
     first = task["inputData"]["first"] if "first" in task["inputData"] else None
     last = task["inputData"]["last"] if "last" in task["inputData"] else None
     after = task["inputData"]["after"] if "after" in task["inputData"] else None
+    before = task["inputData"]["before"] if "before" in task["inputData"] else None
+    if (after is not None) and (before is not None):
+        return failed_response_with_logs(
+            logs,
+            {
+                "result": {
+                    "error": "Data cannot be extracted with the parameter after and before at the same request"
+                }
+            },
+        )
     body = query_resource_by_alt_id_template.render()
     alternative_id = json.loads(alternative_id)
     variables = {
         "input": alternative_id,
-        "poolId": poolId,
+        "poolId": pool_id,
         "first": first,
         "last": last,
         "after": after,
+        "before": before,
     }
     body = body.replace("\n", "").replace("\\", "")
     log.info("Sending graphql variables: %s\n with query: %s" % (variables, body))
@@ -1261,7 +1270,6 @@ def calculate_provider_and_customer_address(network_address, resource_type):
     if str(resource_type).startswith("ipv4"):
         network_address = int(ipaddress.IPv4Address(network_address))
     else:
-        str(resource_type).startswith("ipv6")
         network_address = int(ipaddress.IPv6Address(network_address))
     provider_address = int(network_address) + 1
     customer_address = int(network_address) + 2
@@ -1381,16 +1389,25 @@ def query_recently_active_resources(task, logs):
             }
 
     """
-    fromDatetime = task["inputData"]["fromDatetime"]
-    toDatetime = task["inputData"]["toDatetime"] if "toDatetime" in task["inputData"] else None
+    from_datetime = task["inputData"]["fromDatetime"]
+    to_datetime = task["inputData"]["toDatetime"] if "toDatetime" in task["inputData"] else None
     first = task["inputData"]["first"] if "first" in task["inputData"] else None
     last = task["inputData"]["last"] if "last" in task["inputData"] else None
     before = task["inputData"]["before"] if "before" in task["inputData"] else None
     after = task["inputData"]["after"] if "after" in task["inputData"] else None
+    if (after is not None) and (before is not None):
+        return failed_response_with_logs(
+            logs,
+            {
+                "result": {
+                    "error": "Data cannot be extracted with the parameter after and before at the same request"
+                }
+            },
+        )
     body = query_recently_active_resources_template.render()
     variables = {
-        "fromDatetime": fromDatetime,
-        "poolId": toDatetime,
+        "fromDatetime": from_datetime,
+        "toDatetime": to_datetime,
         "first": first,
         "last": last,
         "before": before,
