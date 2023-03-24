@@ -1,0 +1,309 @@
+{
+    "name": "Create_Subnet",
+    "description": "{\"description\":\"Create subnet\",\"labels\":[\"RESOURCE_MANAGER\"]}",
+    "version": 1,
+    "tasks": [
+          {
+            "name": "RESOURCE_MANAGER_query_pool_by_tag",
+            "taskReferenceName": "query_pool_by_tag",
+            "type": "SIMPLE",
+            "inputParameters": {
+                "poolTag": "${workflow.input.parent_pool_name}"
+            }
+          },
+          {
+            "name": "LAMBDA_TASK",
+            "taskReferenceName": "lambda_print_alt_id",
+            "inputParameters": {
+              "address": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].PoolProperties.address}",
+              "prefix": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].PoolProperties.prefix}",
+              "scriptExpression": "return {'subnetAddress': $.address, 'subnetPrefix': $.prefix}"
+            },
+            "type": "LAMBDA",
+            "decisionCases": {},
+            "defaultCase": [],
+            "forkTasks": [],
+            "startDelay": 0,
+            "joinOn": [],
+            "optional": false,
+            "defaultExclusiveJoinTask": [],
+            "asyncComplete": false,
+            "loopOver": []
+          },
+          {
+            "name": "RESOURCE_MANAGER_calculate_desired_size_from_prefix",
+            "taskReferenceName": "calculate_desired_size_from_prefix",
+            "inputParameters": {
+              "prefix": "${workflow.input.prefix}",
+              "resourceType": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].AllocationStrategy.Name}"
+            },
+            "type": "SIMPLE",
+            "startDelay": 0,
+            "optional": false,
+            "asyncComplete": false
+        },
+          {
+            "label": "decision",
+            "name": "decisionTask",
+            "type": "DECISION",
+            "taskReferenceName": "decision_tYpT",
+            "caseExpression": "$.param.data.SearchPoolsByTags.length",
+            "inputParameters": {
+              "param": "${query_pool_by_tag.output.result}"
+            },
+            "decisionCases": {
+              "0": [
+                {
+                  "name": "terminate",
+                  "taskReferenceName": "return_error",
+                  "inputParameters": {
+                    "terminationStatus": "FAILED",
+                    "workflowOutput": {
+                      "result": {
+                        "error": "There is no pool with this name."
+                      }
+                    }
+                  },
+                  "type": "TERMINATE",
+                  "startDelay": 0,
+                  "optional": false
+                }
+              ],
+              "1": [
+                {
+                    "label": "decision",
+                    "name": "decisionTask",
+                    "type": "DECISION",
+                    "taskReferenceName": "decision_pool_type",
+                    "caseExpression": "$.poolType.startsWith(\"ipv4_prefix\") ? 'ipv4_prefix' : $.poolType.startsWith(\"ipv6_prefix\") ? 'ipv6_prefix' : 'defaultCase';",
+                    "inputParameters": {
+                        "poolType": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].AllocationStrategy.Name}"
+                    },
+                    "decisionCases": {
+                        "ipv4_prefix": [
+                              {
+                                "label": "decision",
+                                "name": "decisionTask",
+                                "type": "DECISION",
+                                "taskReferenceName": "decision_if_desiredValue_ipv4",
+                                "inputParameters": {
+                                  "param": "${workflow.input.subnet_ip_address}"
+                                },
+                                "caseExpression": "$.param.length > 0 ? 'True' : 'False'",
+                                "decisionCases": {
+                                    "True": [
+                                        {
+                                            "name": "RESOURCE_MANAGER_claim_resource",
+                                            "taskReferenceName": "claim_resource_ipv4_desiredValue",
+                                            "type": "SIMPLE",
+                                            "inputParameters": {
+                                            "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].id}",
+                                            "hostAddress" : "${workflow.input.subnet_ip_address}",
+                                            "userInput": {"desiredSize": "${calculate_desired_size_from_prefix.output.result.data}", "desiredValue": "${workflow.input.subnet_ip_address}"},
+                                            "description": "parent resource for nested pool",
+                                            "alternativeId": "${lambda_print_alt_id.output.result}"
+                                            }
+                                        }
+                                    ],
+                                    "False": [
+                                        {
+                                            "name": "RESOURCE_MANAGER_claim_resource",
+                                            "taskReferenceName": "claim_resource_ipv4",
+                                            "type": "SIMPLE",
+                                            "inputParameters": {
+                                            "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].id}",
+                                            "userInput": {"desiredSize": "${calculate_desired_size_from_prefix.output.result.data}"},
+                                            "description": "parent resource for nested pool",
+                                            "alternativeId": "${lambda_print_alt_id.output.result}"
+                                            }
+                                        }
+                                    ]
+                              },
+                              "defaultCase": [],
+                              "startDelay": 0,
+                              "optional": false
+                              },
+                              {
+                                "name": "LAMBDA_TASK",
+                                "taskReferenceName": "lambda_decision_result_ipv4",
+                                "inputParameters": {
+                                    "lambdaValue": "${decision_if_desiredValue_ipv4.output.caseOutput}",
+                                    "ipv4_desiredValue": "${claim_resource_ipv4_desiredValue.output.result.data}",
+                                    "ipv4": "${claim_resource_ipv4.output.result.data}",
+                                    "scriptExpression": "if ($.ipv4_desiredValue == null){return $.ipv4} else{return $.ipv4_desiredValue}"
+                                },
+                                "type": "LAMBDA",
+                                "decisionCases": {},
+                                "defaultCase": [],
+                                "forkTasks": [],
+                                "startDelay": 0,
+                                "joinOn": [],
+                                "optional": false,
+                                "defaultExclusiveJoinTask": [],
+                                "asyncComplete": false,
+                                "loopOver": []
+                            },
+                            {
+                              "name": "RESOURCE_MANAGER_create_nested_pool",
+                              "taskReferenceName": "create_nested_pool_ipv4",
+                              "type": "SIMPLE",
+                              "inputParameters": {
+                                  "parentResourceId": "${lambda_decision_result_ipv4.output.result.ClaimResourceWithAltId.id}",
+                                  "poolName": "${workflow.input.parent_pool_name}-${lambda_decision_result_ipv4.output.result.ClaimResourceWithAltId.Properties.address}/${workflow.input.prefix}",
+                                  "resourceType": "ipv4"
+                              }
+                            },
+                            {
+                                "name": "LAMBDA_TASK",
+                                "taskReferenceName": "lambda_print_result",
+                                "inputParameters": {
+                                  "subnet" : "${lambda_decision_result_ipv4.output.result.ClaimResourceWithAltId.Properties}",
+                                  "subnet_name" : "${workflow.input.parent_pool_name}-${lambda_decision_result_ipv4.output.result.ClaimResourceWithAltId.Properties.address}/${workflow.input.prefix}",
+                                  "scriptExpression": "return {\"data\": {\"subnet_properties\": $.subnet, \"subnet_name\": $.subnet_name}}"
+                                },
+                                "type": "LAMBDA",
+                                "decisionCases": {},
+                                "defaultCase": [],
+                                "forkTasks": [],
+                                "startDelay": 0,
+                                "joinOn": [],
+                                "optional": false,
+                                "defaultExclusiveJoinTask": [],
+                                "asyncComplete": false,
+                                "loopOver": []
+                             }
+                        ],
+                        "ipv6_prefix": [
+                              {
+                                "label": "decision",
+                                "name": "decisionTask",
+                                "type": "DECISION",
+                                "taskReferenceName": "decision_if_desiredValue_ipv6",
+                                "inputParameters": {
+                                  "param": "${workflow.input.subnet_ip_address}"
+                                },
+                                "caseExpression": "$.param.length > 0 ? 'True' : 'False'",
+                                "decisionCases": {
+                                    "True": [
+                                        {
+                                            "name": "RESOURCE_MANAGER_claim_resource",
+                                            "taskReferenceName": "claim_resource_ipv6_desiredValue",
+                                            "type": "SIMPLE",
+                                            "inputParameters": {
+                                            "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].id}",
+                                            "hostAddress" : "${workflow.input.subnet_ip_address}",
+                                            "userInput": {"desiredSize": "${calculate_desired_size_from_prefix.output.result.data}", "desiredValue": "${workflow.input.subnet_ip_address}"},
+                                            "description": "parent resource for nested pool",
+                                            "alternativeId": "${lambda_print_alt_id.output.result}"
+                                            }
+                                          }
+                                      ],
+                                    "False": [
+                                        {
+                                            "name": "RESOURCE_MANAGER_claim_resource",
+                                            "taskReferenceName": "claim_resource_ipv6",
+                                            "type": "SIMPLE",
+                                            "inputParameters": {
+                                            "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].id}",
+                                            "userInput": {"desiredSize": "${calculate_desired_size_from_prefix.output.result.data}"},
+                                            "description": "parent resource for nested pool",
+                                            "alternativeId": "${lambda_print_alt_id.output.result}"
+                                            }
+                                          }
+                                      ]
+                                },
+                                "defaultCase": [],
+                                "startDelay": 0,
+                                "optional": false
+                              },
+                              {
+                                "name": "LAMBDA_TASK",
+                                "taskReferenceName": "lambda_decision_result_ipv6",
+                                "inputParameters": {
+                                    "lambdaValue": "${decision_if_desiredValue_ipv6.output.caseOutput}",
+                                    "ipv6_desiredValue": "${claim_resource_ipv6_desiredValue.output.result.data}",
+                                    "ipv6": "${claim_resource_ipv6.output.result.data}",
+                                    "scriptExpression": "if ($.ipv6_desiredValue == null){return $.ipv6} else{return $.ipv6_desiredValue}"
+                                },
+                                "type": "LAMBDA",
+                                "decisionCases": {},
+                                "defaultCase": [],
+                                "forkTasks": [],
+                                "startDelay": 0,
+                                "joinOn": [],
+                                "optional": false,
+                                "defaultExclusiveJoinTask": [],
+                                "asyncComplete": false,
+                                "loopOver": []
+                            },
+                            {
+                              "name": "RESOURCE_MANAGER_create_nested_pool",
+                              "taskReferenceName": "create_nested_pool_ipv6",
+                              "type": "SIMPLE",
+                              "inputParameters": {
+                                  "parentResourceId": "${lambda_decision_result_ipv6.output.result.ClaimResourceWithAltId.id}",
+                                  "poolName": "${workflow.input.parent_pool_name}-${lambda_decision_result_ipv6.output.result.ClaimResourceWithAltId.Properties.address}/${workflow.input.prefix}",
+                                  "resourceType": "ipv6"
+                              }
+                            },
+                            {
+                              "name": "LAMBDA_TASK",
+                              "taskReferenceName": "lambda_print_result_ipv6",
+                              "inputParameters": {
+                                "subnet" : "${lambda_decision_result_ipv6.output.result.ClaimResourceWithAltId.Properties}",
+                                "subnet_name" : "${workflow.input.parent_pool_name}-${lambda_decision_result_ipv6.output.result.ClaimResourceWithAltId.Properties.address}/${workflow.input.prefix}",
+                                "scriptExpression": "return {\"data\": {\"subnet_properties\": $.subnet, \"subnet_name\": $.subnet_name}}"
+                              },
+                              "type": "LAMBDA",
+                              "decisionCases": {},
+                              "defaultCase": [],
+                              "forkTasks": [],
+                              "startDelay": 0,
+                              "joinOn": [],
+                              "optional": false,
+                              "defaultExclusiveJoinTask": [],
+                              "asyncComplete": false,
+                              "loopOver": []
+                           }
+                        ],
+                        "defaultCase": [
+                          {
+                            "name": "terminate",
+                            "taskReferenceName": "return_error_pool_type",
+                            "inputParameters": {
+                              "terminationStatus": "FAILED",
+                              "workflowOutput": {
+                                "result": {
+                                  "error": "Pool type have to be ipv4_prefix or ipv6_prefix"
+                                }
+                              }
+                            },
+                            "type": "TERMINATE",
+                            "startDelay": 0,
+                            "optional": false
+                          }
+                        ]
+                    },
+                    "startDelay": 0,
+                    "optional": false
+                }
+              ]
+            },
+            "startDelay": 0,
+            "optional": false
+        }
+    ],
+    "inputParameters": [
+       "{\"parent_pool_name\":{\"value\":\"\",\"description\":\"Name of the parent pool\",\"type\":\"str\"}, \"prefix\":{\"value\":\"\",\"description\":\"Subnet prefix\",\"type\":\"str\"}, \"subnet_ip_address\":{\"value\":\"\",\"description\":\"[OPTIONAL] Subnet IP address, if you leave it blank it will be set by first available address\",\"type\":\"str\"}}"
+    ],
+    "outputParameters": {},
+    "schemaVersion": 2,
+    "restartable": true,
+    "workflowStatusListenerEnabled": false,
+    "ownerEmail": "admin-user",
+    "timeoutPolicy": "ALERT_ONLY",
+    "timeoutSeconds": 0,
+    "variables": {},
+    "hasSchedule": false,
+    "expectedScheduleName": "Create_Subnet:1"
+}
