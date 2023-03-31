@@ -10,6 +10,7 @@ from frinx.services.uniconfig.models import UniconfigContext
 from frinx.services.uniconfig.models import UniconfigCookiesMultizone
 from frinx.services.uniconfig.models import UniconfigOutput
 from frinx.services.uniconfig.models import UniconfigTransactionList
+from frinx.services.uniconfig.utils import request as uniconfig_request
 
 
 def read_structured_data(
@@ -33,49 +34,49 @@ def read_structured_data(
             data (dict) : JSON response from UniConfig
             url (str): Request URL
     """
-    try:
-        if len(device_id) == 0:
-            raise Exception("Missing input device_id")
-        if not isinstance(device_id, str):
-            raise Exception("Bad input device_id")
-        if uri is None:
-            raise Exception("Missing input uri")
-        if not isinstance(uri, str):
-            raise Exception("Bad input uri")
+    # try:
+    if len(device_id) == 0:
+        raise Exception("Missing input device_id")
+    if not isinstance(device_id, str):
+        raise Exception("Bad input device_id")
+    if uri is None:
+        raise Exception("Missing input uri")
+    if not isinstance(uri, str):
+        raise Exception("Bad input uri")
 
-        if uniconfig_context is None or uniconfig_context == "":
-            uniconfig_context = UniconfigContext()
-        if isinstance(uniconfig_context, str):
-            uniconfig_context = UniconfigContext(**json.loads(uniconfig_context))
-        if isinstance(uniconfig_context, dict):
-            uniconfig_context = UniconfigContext(**uniconfig_context)
-        if not isinstance(uniconfig_context, UniconfigContext):
-            raise Exception("Bad input uniconfig_context")
+    if uniconfig_context is None or uniconfig_context == "":
+        uniconfig_context = UniconfigContext()
+    if isinstance(uniconfig_context, str):
+        uniconfig_context = UniconfigContext(**json.loads(uniconfig_context))
+    if isinstance(uniconfig_context, dict):
+        uniconfig_context = UniconfigContext(**uniconfig_context)
+    if not isinstance(uniconfig_context, UniconfigContext):
+        raise Exception("Bad input uniconfig_context")
 
-        print(type(uniconfig_context), uniconfig_context.dict())
-        uri = uniconfig_utils.apply_functions(uri)
-        uniconfig_cookies = uniconfig_utils.extract_uniconfig_cookies(uniconfig_context)
+    print(type(uniconfig_context), uniconfig_context.dict())
+    uri = uniconfig_utils.apply_functions(uri)
+    uniconfig_cookies = uniconfig_utils.extract_uniconfig_cookies(uniconfig_context)
 
-        id_url = (
-            templates.uniconfig_url_uniconfig_mount.substitute(
-                {"id": device_id, "base_url": uniconfig_utils.get_uniconfig_cluster_from_task()}
-            )
-            + "/frinx-uniconfig-topology:configuration"
-            + (uri if uri else "")
+    id_url = (
+        templates.uniconfig_url_uniconfig_mount.substitute(
+            {"id": device_id, "base_url": uniconfig_utils.get_uniconfig_cluster_from_task()}
         )
-        response = uniconfig_utils.request(method="GET", url=id_url, cookies=uniconfig_cookies)
-        return UniconfigOutput(code=response.code, data=response.data, url=id_url)
-    except Exception as e:
-        # TODO status code check
-        return UniconfigOutput(
-            data=str(e), logs="Unable to read device with ID %s" % device_id, code=500
-        )
+        + "/frinx-uniconfig-topology:configuration"
+        + (uri if uri else "")
+    )
+    response = uniconfig_utils.request(method="GET", url=id_url, cookies=uniconfig_cookies)
+    return UniconfigOutput(code=response.code, data=response.data, url=id_url)
+    # except Exception as e:
+    #     # TODO status code check
+    #     return UniconfigOutput(
+    #         data={ "error":e }, logs="Unable to read device with ID %s" % device_id, code=500
+    #     )
 
 
 def write_structured_data(
     device_id: str,
     uri: str,
-    template: dict,
+    template: str | dict,
     params,
     uniconfig_context: UniconfigContext,
     method="PUT",
@@ -87,7 +88,7 @@ def write_structured_data(
     Args:
         device_id: str
         uri: str
-        template: dict
+        template: str|dict
         params: dict
         uniconfig_context: UniconfigContext
         method: str
@@ -110,7 +111,7 @@ def write_structured_data(
             raise Exception("Bad input uri")
         if len(template) == 0:
             raise Exception("Missing input template")
-        if not isinstance(template, dict):
+        if not isinstance(template, dict | str):
             raise Exception("Bad input template")
 
         if uniconfig_context is None or uniconfig_context == "":
@@ -147,7 +148,7 @@ def write_structured_data(
     except Exception as e:
         # TODO status code check
         return UniconfigOutput(
-            data=str(e), logs="Unable to update device with ID %s" % device_id, code=500
+            data={"error": e}, logs="Unable to update device with ID %s" % device_id, code=500
         )
 
 
@@ -196,7 +197,7 @@ def delete_structured_data(
     except Exception as e:
         # TODO status code check
         return UniconfigOutput(
-            data=str(e), logs="Unable to update device with ID %s" % device_id, code=500
+            data={"error": e}, logs="Unable to update device with ID %s" % device_id, code=500
         )
 
 
@@ -216,6 +217,7 @@ def commit(devices: list[object], uniconfig_context: UniconfigContext) -> Unicon
             data (dict) : JSON response from UniConfig
             url (str): Request URL
     """
+
     if isinstance(uniconfig_context, str):
         uniconfig_context = json.loads(uniconfig_context)
     uniconfig_cookies = uniconfig_utils.extract_uniconfig_cookies_multizone(uniconfig_context)

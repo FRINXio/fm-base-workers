@@ -4,6 +4,7 @@ import urllib
 from collections import namedtuple
 from string import Template
 
+import frinx.common.frinx_rest
 import requests
 from frinx.common.frinx_rest import uniconfig_url_base
 from frinx.common.util import parse_response
@@ -73,8 +74,7 @@ def extract_uniconfig_cookies_multizone(
 
 def get_uniconfig_cluster_from_task() -> str:
     # TODO Is that single node???
-    # return uniconfig_url_base
-    return "http://localhost/api/uniconfig"
+    return uniconfig_url_base
 
 
 def get_devices_by_uniconfig(devices):
