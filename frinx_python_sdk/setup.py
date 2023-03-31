@@ -17,7 +17,7 @@ def __read__(file_name: str) -> AnyStr:
 setup(
     name="frinx-python-sdk",
     package_dir={"": "src"},
-    version="0.0.4",
+    version="0.0.5",
     description="Python SDK for Frinx Machine Workflow Manager",
     data_files=[("logging", ["src/frinx/common/logging/logging-config.json"])],
     author="FRINXio",

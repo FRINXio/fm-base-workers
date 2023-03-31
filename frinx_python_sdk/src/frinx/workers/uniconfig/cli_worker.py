@@ -163,7 +163,7 @@ class CLI(ServiceWorkersImpl):
 
 def response_handler(response: UniconfigOutput, task_result: TaskResult) -> TaskResult:
     match response.code:
-        case 200 | 201:
+        case response_code if response_code in range(200, 299):
             task_result.status = TaskResultStatus.COMPLETED
             if response.code:
                 task_result.add_output_data("response_code", response.code)
