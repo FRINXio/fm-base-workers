@@ -241,8 +241,8 @@ class FrinxConductorWrapper:
             task["status"] = resp["status"]
             task["outputData"] = resp.get("output", {})
             task["logs"] = resp.get("logs", [])
-            print(resp)
-            print(task)
+            logger.debug("Executing a task %s, response: %s", task["taskId"], resp)
+            logger.debug("Executing a task %s, task body: %s", task["taskId"], task)
             self.taskClient.updateTask(task)
         except Exception:
             self.handleTaskException(task)
