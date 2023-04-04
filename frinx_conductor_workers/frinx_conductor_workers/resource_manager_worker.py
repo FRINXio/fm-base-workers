@@ -1298,6 +1298,7 @@ def calculate_desired_size_from_prefix(task, logs):
     if prefix is None:
         return failed_response_with_logs(logs, {"result": {"error": "No prefix"}})
     resource_type = str(task["inputData"]["resourceType"])
+    subnet = task["inputData"]["subnet"] if "subnet" in task["inputData"] else None
 
     if resource_type.startswith("ipv4"):
         if 0 < int(prefix) < 33:
@@ -1313,6 +1314,8 @@ def calculate_desired_size_from_prefix(task, logs):
             return failed_response_with_logs(
                 logs, {"result": {"error": "Prefix must be between 1 and 128 for ipv6"}}
             )
+    if subnet == True:
+        desired_size = desired_size - 2
 
     return completed_response_with_logs(logs, {"result": {"data": str(desired_size)}})
 
