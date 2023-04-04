@@ -95,6 +95,11 @@ class WorkflowTaskImpl(BaseModel):
         validate_assignment = True
         validate_all = True
 
+    def output_ref(self, path: str | None = None) -> str:
+        if path == "" or path is None:
+            return f"${{{self.task_reference_name}.output}}"
+        return f"${{{self.task_reference_name}.output.{path}}}"
+
 
 class DoWhileTask(WorkflowTaskImpl):
     type = TaskType.DO_WHILE

@@ -15,7 +15,6 @@ from frinx.common.workflow.task import WorkflowTaskImpl
 from pydantic import BaseModel
 from pydantic import Extra
 from pydantic import Field
-from pydantic import root_validator
 
 
 class FrontendWFInputFieldType(str, Enum):
@@ -98,7 +97,7 @@ class WorkflowImpl(BaseModel, ABC):
 
     # PREDEFINED
     restartable: bool = Field(default=False)
-    output_parameters: dict[str, object] = Field(default={})
+    output_parameters: WorkflowOutput = Field(default={})
     input_parameters: list[WorkflowInputField | str] = Field(default=[])
     tasks: list[WorkflowTaskImpl] = Field(default=[])
     timeout_policy: TimeoutPolicy = Field(default=TimeoutPolicy.ALERT_ONLY)
