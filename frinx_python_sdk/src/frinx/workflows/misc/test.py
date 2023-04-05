@@ -51,17 +51,17 @@ class TestWorkflow(WorkflowImpl):
         bytes: int
 
     def workflow_builder(self, workflow_inputs: WorkflowInput) -> None:
-        self.tasks.append(
-            SimpleTask(
-                name=TestWorker.LoremIpsum,
-                task_reference_name="generate",
-                input_parameters=SimpleTaskInputParameters(
-                    num_paragraphs=workflow_inputs.num_paragraphs.wf_input,
-                    num_sentences=workflow_inputs.num_sentences.wf_input,
-                    num_words=workflow_inputs.num_words.wf_input,
-                ),
-            )
+        generate_task = SimpleTask(
+            name=TestWorker.LoremIpsum,
+            task_reference_name="generate",
+            input_parameters=SimpleTaskInputParameters(
+                num_paragraphs=workflow_inputs.num_paragraphs.wf_input,
+                num_sentences=workflow_inputs.num_sentences.wf_input,
+                num_words=workflow_inputs.num_words.wf_input,
+            ),
         )
+        self.tasks.append(generate_task)
+
         self.tasks.append(
             SimpleTask(
                 name=TestWorker.Sleep,
@@ -71,16 +71,16 @@ class TestWorkflow(WorkflowImpl):
                 ),
             )
         )
-        self.tasks.append(
-            SimpleTask(
-                name=TestWorker.Echo,
-                task_reference_name="echo",
-                input_parameters=SimpleTaskInputParameters(input="${generate.output.text}"),
-            )
-        )
 
-        self.output_parameters["text"] = "${echo.output.output}"
-        self.output_parameters["bytes"] = "${generate.output.bytes}"
+        echo_task = SimpleTask(
+            name=TestWorker.Echo,
+            task_reference_name="echo",
+            input_parameters=SimpleTaskInputParameters(input=generate_task.output_ref("text")),
+        )
+        self.tasks.append(echo_task)
+
+        self.output_parameters["text"] = echo_task.output_ref("output")
+        self.output_parameters["bytes"] = generate_task.output_ref("bytes")
 
 
 class TestForkWorkflow(WorkflowImpl):

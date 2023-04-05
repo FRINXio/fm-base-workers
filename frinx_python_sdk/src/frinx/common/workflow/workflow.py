@@ -97,7 +97,7 @@ class WorkflowImpl(BaseModel, ABC):
 
     # PREDEFINED
     restartable: bool = Field(default=False)
-    output_parameters: WorkflowOutput = Field(default={})
+    output_parameters: dict[str, object] = Field(default={})
     input_parameters: list[WorkflowInputField | str] = Field(default=[])
     tasks: list[WorkflowTaskImpl] = Field(default=[])
     timeout_policy: TimeoutPolicy = Field(default=TimeoutPolicy.ALERT_ONLY)
