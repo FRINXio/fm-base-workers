@@ -100,7 +100,7 @@ class WorkflowImpl(BaseModel, ABC):
     output_parameters: dict[str, object] = Field(default={})
     input_parameters: list[WorkflowInputField | str] = Field(default=[])
     tasks: list[WorkflowTaskImpl] = Field(default=[])
-    timeout_policy: TimeoutPolicy = Field(default=TimeoutPolicy.ALERT_ONLY)
+    timeout_policy: TimeoutPolicy = Field(default=TimeoutPolicy.TIME_OUT_WORKFLOW)
     timeout_seconds: int = Field(default=60)
 
     owner_app: str = Field(default=None)

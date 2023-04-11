@@ -1,4 +1,4 @@
-from frinx.common.workflow.service import ServiceWorkflowsImpl
+from frinx.common.conductor_enums import TimeoutPolicy
 from frinx.common.workflow.task import DynamicForkTask
 from frinx.common.workflow.task import DynamicForkTaskInputParameters
 from frinx.common.workflow.task import JoinTask
@@ -16,6 +16,7 @@ class TestWorkflow(WorkflowImpl):
     description = "Test workflow built from test workers"
     labels = ["TEST"]
     timeout_seconds = 60 * 5
+    timeout_policy = TimeoutPolicy.TIME_OUT_WORKFLOW
 
     class WorkflowInput(WorkflowImpl.WorkflowInput):
         num_paragraphs = WorkflowInputField(
@@ -89,6 +90,7 @@ class TestForkWorkflow(WorkflowImpl):
     description = "Test workflows executed in a parallel, dynamic fork"
     labels = ["TEST"]
     timeout_seconds = 60 * 5
+    timeout_policy = TimeoutPolicy.TIME_OUT_WORKFLOW
 
     class WorkflowInput(TestWorkflow.WorkflowInput):
         fork_count = WorkflowInputField(
