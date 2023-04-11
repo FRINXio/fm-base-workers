@@ -426,7 +426,7 @@ def create_pool(task, logs):
 
          Args:
 
-             task (dict): dictionary with input data ["resource", "poolName", "poolProperties"]
+             task (dict): dictionary with input data ["resourceType", "poolName", "poolProperties"]
 
              logs: stream of log messages
 
@@ -462,6 +462,11 @@ def create_pool(task, logs):
         for index, key in enumerate(pool_properties.keys()):
             variable_type = type(pool_properties[key])
             property_variable = ""
+            # if input from workflow send bool value as string, then it will be converted back to bool
+            if variable_type is str and (
+                pool_properties[key].lower() == "true" or pool_properties[key].lower() == "false"
+            ):
+                variable_type = type(True)
             if variable_type is str:
                 variable_type = "string"
                 property_variable = "String!"
@@ -474,6 +479,7 @@ def create_pool(task, logs):
             elif variable_type is bool:
                 variable_type = "bool"
                 property_variable = "Boolean"
+                pool_properties[key] = bool(pool_properties[key])
             pool_types_string += key + ': "' + variable_type + '"'
             pool_variables_string += "$" + key + ": " + property_variable
             pool_string += key + ": $" + key
@@ -508,7 +514,7 @@ def create_vlan_pool(task, logs):
     Create vlan pool in Uniresource
     Args:
 
-         task (dict): dictionary with input data ["poolName", "from", "to", "parent_resource_id"]
+         task (dict): dictionary with input data ["poolName", "from", "to", "parentResourceId"]
 
          logs: stream of log messages
     """
@@ -601,7 +607,7 @@ def create_unique_id_pool(task, logs):
     Create vlan range pool in Uniresource
     Args:
 
-         task (dict): dictionary with input data ["poolName", "idFormat"]
+         task (dict): dictionary with input data ["poolName", "idFormat", "from", "to"]
 
          logs: stream of log messages
     """
@@ -659,7 +665,7 @@ def query_pool(task, logs):
 
          Args:
 
-             task (dict): dictionary with input data ["poolNames", "resourceTypeId"]
+             task (dict): dictionary with input data ["poolNames", "resource"]
 
              logs: stream of log messages
 
@@ -923,7 +929,7 @@ def calculate_available_prefixes_for_address_pool(task, logs):
 
          Args:
 
-             task (dict): dictionary with input data ["free_capacity", "resource_type"]
+             task (dict): dictionary with input data ["poolId", "resource_type"]
 
              logs: stream of log messages
         Returns:
@@ -1029,7 +1035,7 @@ def query_resource_by_alt_id(task, logs):
     """
     Query resource by alternative id in Uniresource
          Args:
-             task (dict): dictionary with input data ["alternativeId"] and optional data ["poolId", "first"]
+             task (dict): dictionary with input data ["alternativeId", "poolId", "first", "last", "after", "before"]
          Returns:
             Response from uniresource. Worker output format::
             "result": {
@@ -1089,7 +1095,7 @@ def deallocate_resource(task, logs):
 
          Args:
 
-             task (dict): dictionary with input data ["poolId", "userInput", "alternativeId"]
+             task (dict): dictionary with input data ["poolId", "userInput"]
 
              logs: stream of log messages
 
@@ -1165,7 +1171,7 @@ def calculate_host_and_broadcast_address(task, logs):
 
          Args:
 
-             task (dict): dictionary with input data ["desired_size", "resource_type"] and optional ["customer_address", "provider_address"]
+             task (dict): dictionary with input data ["desiredSize", "resourceType", "customerAddress", "providerAddress", "networkAddress"]
 
              logs: stream of log messages
         Returns:
@@ -1286,7 +1292,7 @@ def calculate_desired_size_from_prefix(task, logs):
 
          Args:
 
-             task (dict): dictionary with input data ["prefix", "resource_type"]
+             task (dict): dictionary with input data ["prefix", "resourceType", "subnet"]
 
              logs: stream of log messages
         Returns:
@@ -1363,7 +1369,7 @@ def query_recently_active_resources(task, logs):
     """
     Query resource by alternative id in Uniresource
          Args:
-             task (dict): dictionary with input data ["alternativeId"] and optional data ["poolId", "first"]
+             task (dict): dictionary with input data ["fromDatetime", "toDatetime", "first", "last", "before", "after"]
          Returns:
             Response from uniresource. Worker output format::
             "result": {
