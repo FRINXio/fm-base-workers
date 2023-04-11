@@ -462,6 +462,10 @@ def create_pool(task, logs):
         for index, key in enumerate(pool_properties.keys()):
             variable_type = type(pool_properties[key])
             property_variable = ""
+            if variable_type is str and (
+                pool_properties[key].lower() == "true" or pool_properties[key].lower() == "false"
+            ):
+                variable_type = type(True)
             if variable_type is str:
                 variable_type = "string"
                 property_variable = "String!"
@@ -474,6 +478,7 @@ def create_pool(task, logs):
             elif variable_type is bool:
                 variable_type = "bool"
                 property_variable = "Boolean"
+                pool_properties[key] = bool(pool_properties[key])
             pool_types_string += key + ': "' + variable_type + '"'
             pool_variables_string += "$" + key + ": " + property_variable
             pool_string += key + ": $" + key
