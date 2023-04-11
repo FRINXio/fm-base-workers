@@ -75,8 +75,13 @@ async def get_external_payload(session, external_id):
             return json.loads(raw_inner.decode("utf-8"))
 
 
-async def get_wf_output(executed_ids, session):
-    wf_execution = await get_wf_execution(session, executed_ids[-1])
+async def get_last_wf_output(executed_ids, session):
+    last_wf_id = executed_ids[-1]
+    return await get_wf_output(last_wf_id, session)
+
+
+async def get_wf_output(last_wf_id, session):
+    wf_execution = await get_wf_execution(session, last_wf_id)
     if "externalOutputPayloadStoragePath" in wf_execution:
         return await get_external_payload(session, wf_execution["externalOutputPayloadStoragePath"])
     return wf_execution.get("output", {})
@@ -146,7 +151,7 @@ async def test_performance_simple_wf():
         stats.update({"wfs_per_minute": (EXECUTIONS / timedelta(seconds=end - start).seconds) * 60})
         LOGGER.info("Execution stats: %s", stats)
 
-        last_wf_output = await get_wf_output(executed_ids, session)
+        last_wf_output = await get_last_wf_output(executed_ids, session)
         LOGGER.debug("Last workflow output: %s", last_wf_output)
         LOGGER.info("Workflow payload size: %s bytes", last_wf_output.get("bytes", -1))
 
@@ -209,11 +214,30 @@ async def test_performance_fork():
         )
         LOGGER.info("Execution stats: %s", stats)
 
-        last_wf_output = await get_wf_output(executed_ids, session)
-        LOGGER.debug("Last workflow output: %s", last_wf_output)
-        LOGGER.info("Workflow payload size: %s bytes", last_wf_output.get("bytes", -1))
-
         assert stats["failed_workflows"] == 0
+
+        last_wf_output = await get_last_wf_output(executed_ids, session)
+        LOGGER.debug("Last workflow output: %s", last_wf_output)
+        LOGGER.info(
+            "Workflow payload size: %s bytes", len(json.dumps(last_wf_output).encode("utf-8"))
+        )
+
+        # There was a race condition in conductor causing missing outputs in joins DEP-328
+        LOGGER.info("Asserting all outputs collected correctly in join")
+        for parent_id in executed_ids:
+            wf_output = await get_wf_output(parent_id, session)
+            assert len(wf_output.items()) == FORKS, (
+                "Workflow %s missing output from child in join" % parent_id
+            )
+            for output_key in wf_output:
+                subwf_output = wf_output[output_key]
+                assert (
+                    len(subwf_output.items()) == 3
+                ), "Workflow %s missing all outputs from child %s in join: %s" % (
+                    parent_id,
+                    output_key,
+                    subwf_output,
+                )
 
 
 @pytest.mark.asyncio
@@ -254,7 +278,7 @@ async def test_performance_simple_wf_external_storage():
         stats.update({"wfs_per_minute": (EXECUTIONS / timedelta(seconds=end - start).seconds) * 60})
         LOGGER.info("Execution stats: %s", stats)
 
-        last_wf_output = await get_wf_output(executed_ids, session)
+        last_wf_output = await get_last_wf_output(executed_ids, session)
         LOGGER.debug("Last workflow output: %s", last_wf_output)
         LOGGER.info("Workflow payload size: %s bytes", last_wf_output.get("bytes", -1))
 
