@@ -3,6 +3,7 @@ import json
 import logging
 from string import Template
 from typing import Any
+from typing import Optional
 
 from aiohttp import ClientSession
 from frinx.common.frinx_rest import uniconfig_headers
@@ -192,13 +193,11 @@ def execute_unmount_cli(device_id: str) -> UniconfigOutput:
 def execute_and_read_rpc_cli(
     device_id: str,
     template: str,
-    params: dict[Any, Any],
+    params: Optional[dict[Any, Any]],
     uniconfig_context: UniconfigContext,
     output_timer: str,
 ) -> UniconfigOutput:
     params = params if params else {}
-    # params = params if isinstance(params, dict) else eval(params) ???
-    params = params if isinstance(params, dict) else eval(str(params))
 
     uniconfig_cookies = uniconfig_utils.extract_uniconfig_cookies(uniconfig_context)
 
