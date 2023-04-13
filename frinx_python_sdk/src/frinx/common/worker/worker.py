@@ -78,14 +78,14 @@ class WorkerImpl(ABC):
         # Transform dict to TaskDefinition object use default values in necessary
         task_def = TaskDefinition(**params)
 
-        for k, v in task_def_template:
-            if v.default is not None and task_def.__getattribute__(k) is None:
-                task_def.__setattr__(k, v.default)
+        for key, value in task_def_template:
+            if value.default is not None and task_def.__getattribute__(key) is None:
+                task_def.__setattr__(key, value.default)
 
         return task_def
 
-    def register(self, cc: FrinxConductorWrapper) -> None:
-        cc.register(
+    def register(self, conductor_client: FrinxConductorWrapper) -> None:
+        conductor_client.register(
             task_type=self.task_def.name,
             task_definition=self.task_def.dict(by_alias=True, exclude_none=True),
             exec_function=self._execute_wrapper,
@@ -99,16 +99,16 @@ class WorkerImpl(ABC):
     def _execute_wrapper(cls, task: RawTaskIO) -> Any:
         try:
             cls.WorkerInput.parse_obj(task["inputData"])
-        except ValidationError as e:
-            return TaskResult(status=TaskResultStatus.FAILED, logs=[TaskExecLog(str(e))]).dict()
+        except ValidationError as error:
+            return TaskResult(status=TaskResultStatus.FAILED, logs=[TaskExecLog(str(error))]).dict()
 
         try:
             # TODO check if ok
             task_result = cls.execute(cls, Task(**task), TaskResult()).dict()  # type: ignore[arg-type]
             return task_result
 
-        except Exception as e:
-            return TaskResult(status=TaskResultStatus.FAILED, logs=[TaskExecLog(str(e))]).dict()
+        except Exception as error:
+            return TaskResult(status=TaskResultStatus.FAILED, logs=[TaskExecLog(str(error))]).dict()
 
     @classmethod
     def validate(cls) -> None:

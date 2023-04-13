@@ -33,7 +33,7 @@ class Influx(ServiceWorkersImpl):
             output: dict[str, Any]
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = influxdb_worker.influxWriteData(**task.input_data)
+            response = influxdb_worker.influx_write_data(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -54,7 +54,7 @@ class Influx(ServiceWorkersImpl):
             output: dict[str, Any]
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = influxdb_worker.influxQueryData(**task.input_data)
+            response = influxdb_worker.influx_query_data(**task.input_data)
             return response_handler(response, task_result)
 
     ###############################################################################
@@ -76,7 +76,7 @@ class Influx(ServiceWorkersImpl):
             logs: Optional[str]
 
         def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
-            response = influxdb_worker.influxCreateBucket(**task.input_data)
+            response = influxdb_worker.influx_create_bucket(**task.input_data)
             return response_handler(response, task_result)
 
 

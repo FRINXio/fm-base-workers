@@ -12,12 +12,12 @@ class ServiceWorkersImpl:
     def __init__(self) -> None:
         self.service_workers = self._inner_class_list()
 
-    def Tasks(self) -> list[WorkerImpl]:
+    def tasks(self) -> list[WorkerImpl]:
         return self.service_workers
 
-    def register(self, cc: FrinxConductorWrapper) -> None:
+    def register(self, conductor_client: FrinxConductorWrapper) -> None:
         for task in self.service_workers:
-            task.register(cc)
+            task.register(conductor_client)
 
     @classmethod
     def _inner_class_list(cls) -> list[WorkerImpl]:

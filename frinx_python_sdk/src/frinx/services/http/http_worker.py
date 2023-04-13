@@ -5,11 +5,11 @@ from typing import Any
 from typing import Optional
 
 import requests
+import requests.auth
+import requests.utils
 from frinx.common.worker.task_result import TaskResult
 from frinx.common.worker.task_result import TaskResultStatus
 from pydantic import BaseModel
-from requests import auth
-from requests import utils
 
 
 class HttpOutput(BaseModel):
@@ -37,7 +37,7 @@ def http_task(http_request: dict[str, Any] | str) -> TaskResult:
         return TaskResult(
             status=TaskResultStatus.FAILED,
             output={"output": {"url": uri}},
-            logs=["Method %s unsupported for %s" % (method, uri)],
+            logs=[f"Method {method} unsupported for {uri}"],
         )
 
     headers = {}
@@ -63,20 +63,20 @@ def http_task(http_request: dict[str, Any] | str) -> TaskResult:
             return TaskResult(
                 status=TaskResultStatus.FAILED,
                 output={"output": {"url": uri}},
-                logs=["Basic auth without username for %s" % uri],
+                logs=[f"Basic auth without username for {uri}"],
             )
 
         if "password" not in http_request["basicAuth"]:
             return TaskResult(
                 status=TaskResultStatus.FAILED,
                 output={"output": {"url": uri}},
-                logs=["Basic auth without password for %s" % uri],
+                logs=[f"Basic auth without password for {uri}"],
             )
         request_auth = requests.auth.HTTPBasicAuth(
             http_request["basicAuth"]["username"], http_request["basicAuth"]["password"]
         )
 
-    r = requests.request(
+    response = requests.request(
         method,
         uri,
         headers=headers,
@@ -87,31 +87,29 @@ def http_task(http_request: dict[str, Any] | str) -> TaskResult:
         verify=verify_cert,
     )
 
-    if 400 <= r.status_code < 600:
+    if 400 <= response.status_code < 600:
         return TaskResult(
             status=TaskResultStatus.FAILED,
             output={
-                "statusCode": r.status_code,
-                "response": {"headers": dict(r.headers)},
-                "body": r.content.decode("utf-8", "ignore"),
-                "cookies": requests.utils.dict_from_cookiejar(r.cookies),
+                "statusCode": response.status_code,
+                "response": {"headers": dict(response.headers)},
+                "body": response.content.decode("utf-8", "ignore"),
+                "cookies": requests.utils.dict_from_cookiejar(response.cookies),
             },
             logs=[
-                "HTTP %s request to %s succeeded. Headers: %s"
-                % (r.request.method, r.request.url, r.request.headers.items())
+                f"HTTP {response.request.method} request to {response.request.url} succeeded. Headers: {response.request.headers.items()}"
             ],
         )
 
     return TaskResult(
         status=TaskResultStatus.COMPLETED,
         output={
-            "statusCode": r.status_code,
-            "response": {"headers": dict(r.headers)},
-            "body": r.content.decode("utf-8", "ignore"),
-            "cookies": requests.utils.dict_from_cookiejar(r.cookies),
+            "statusCode": response.status_code,
+            "response": {"headers": dict(response.headers)},
+            "body": response.content.decode("utf-8", "ignore"),
+            "cookies": requests.utils.dict_from_cookiejar(response.cookies),
         },
         logs=[
-            "HTTP %s request to %s succeeded. Headers: %s"
-            % (r.request.method, r.request.url, r.request.headers.items())
+            f"HTTP {response.request.method} request to {response.request.url} succeeded. Headers: {response.request.headers.items()}"
         ],
     )

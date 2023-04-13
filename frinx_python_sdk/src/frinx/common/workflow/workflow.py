@@ -69,8 +69,6 @@ class WorkflowInputField(BaseModel):
 
 class WorkflowImpl(BaseModel, ABC):
     class WorkflowInput(BaseModel):
-        ...
-
         class Config:
             allow_mutation = False
             extra = Extra.forbid
@@ -80,8 +78,6 @@ class WorkflowImpl(BaseModel, ABC):
             super().__init__(**values)
 
     class WorkflowOutput(BaseModel):
-        ...
-
         class Config:
             allow_mutation = False
             extra = Extra.forbid

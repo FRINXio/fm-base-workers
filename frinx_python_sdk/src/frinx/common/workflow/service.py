@@ -1,22 +1,22 @@
 import logging
 
-logger = logging.getLogger(__name__)
-
-from typing import Optional
-
 from frinx.common.workflow.workflow import WorkflowImpl
+
+logger = logging.getLogger(__name__)
 
 
 class ServiceWorkflowsImpl:
     service_workflows: list[type[WorkflowImpl]] = []
 
-    def __init__(self, workflows: list[type[WorkflowImpl]] = [], exclude: bool = False) -> None:
+    def __init__(self, workflows: list[type[WorkflowImpl]] = None, exclude: bool = False) -> None:
         """
 
         Args:
             workflows: list of Workflows [workflow subclasses]
             exclude: If true, exclude workflows from all workflows. Else install only selected.
         """
+        if workflows is None:
+            workflows = []
         self.service_workflows = self._inner_class_list(workflows, exclude)
 
     def register(self, overwrite: bool = False) -> None:
@@ -74,7 +74,7 @@ class ServiceWorkflowsImpl:
                     else:
                         return class_workflows
                     return required_workflows
-        except Exception as e:
-            logger.error(e)
+        except Exception as error:
+            logger.error(error)
             return []
             # TODO what should happened?

@@ -106,8 +106,8 @@ def configure_logging_from_file(
         config_file = logging_config
 
     if config_file.exists():
-        with config_file.open() as f:
-            config = json.load(f)
+        with config_file.open() as file:
+            config = json.load(file)
             logging.config.dictConfig(config)
     else:
         raise FileNotFoundError("Couldn't configure the logger using %s", repr(config_file))

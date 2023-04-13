@@ -7,7 +7,7 @@ from frinx.services.monitoring.influxdb_utils import InfluxOutput
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 
-def influxQueryData(
+def influx_query_data(
     org: str, token: str, query: str, format_data: list[str] | str | None = None
 ) -> InfluxOutput:
     if org is None or len(org) == 0:
@@ -36,7 +36,7 @@ def influxQueryData(
     return response
 
 
-def influxCreateBucket(org: str, token: str, bucket: str) -> InfluxOutput:
+def influx_create_bucket(org: str, token: str, bucket: str) -> InfluxOutput:
     if org is None or len(org) == 0:
         raise ValueError("Bad input org %s:", org)
     if token is None or len(token) == 0:
@@ -65,7 +65,7 @@ def influxCreateBucket(org: str, token: str, bucket: str) -> InfluxOutput:
     return response
 
 
-def influxWriteData(
+def influx_write_data(
     org: str,
     token: str,
     bucket: str,

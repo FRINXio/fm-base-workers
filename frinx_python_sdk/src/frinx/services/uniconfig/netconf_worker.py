@@ -26,8 +26,8 @@ async def read_structured_data(
 
     id_url = Template(topology_uri).substitute({"id": device_name}) + "/yang-ext:mount" + uri
     try:
-        async with session.get(id_url, ssl=False, headers=uniconfig_headers) as r:
-            res = await r.json()
+        async with session.get(id_url, ssl=False, headers=uniconfig_headers) as req:
+            res = await req.json()
             logger.info("LLDP raw data: %s", res["output"]["output"])
             return res["output"]["output"]
     except Exception:
