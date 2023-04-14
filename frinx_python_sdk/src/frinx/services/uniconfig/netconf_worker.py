@@ -26,10 +26,10 @@ async def read_structured_data(
 
     id_url = Template(topology_uri).substitute({"id": device_name}) + "/yang-ext:mount" + uri
     try:
-        async with session.get(id_url, ssl=False, headers=uniconfig_headers) as req:
-            res = await req.json()
-            logger.info("LLDP raw data: %s", res["output"]["output"])
-            return res["output"]["output"]
+        async with session.get(id_url, ssl=False, headers=uniconfig_headers) as request:
+            response = await request.json()
+            logger.info("LLDP raw data: %s", response["output"]["output"])
+            return response["output"]["output"]
     except Exception:
         logger.error("Reading structured data from Uniconfig has failed")
         raise

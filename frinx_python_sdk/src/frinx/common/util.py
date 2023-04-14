@@ -24,14 +24,14 @@ def jsonify_description(
     return output
 
 
-def parse_response(resp: requests.Response) -> tuple[int, str]:
-    decode = resp.content.decode("utf8")
+def parse_response(response: requests.Response) -> tuple[int, str]:
+    decode = response.content.decode("utf8")
     try:
         response_json = json.loads(decode if decode else "{}")
     except ValueError:
         response_json = json.loads("{}")
 
-    response_code = resp.status_code
+    response_code = response.status_code
     return response_code, response_json
 
 
