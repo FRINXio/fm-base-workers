@@ -11,9 +11,9 @@ from frinx.services.inventory import utils as inventory_utils
 def get_device_status(device_name: str) -> inventory_utils.InventoryOutput:
     try:
         variables = {"deviceName": str(device_name)}
-        return inventory_utils.execute_inventory(templates.device_info_template, variables)
-    except Exception as e:
-        return inventory_utils.InventoryOutput(data=str(e), status="failed", code=500)
+        return inventory_utils.execute_inventory(templates.DEVICE_INFO_TEMPLATE, variables)
+    except Exception as error:
+        return inventory_utils.InventoryOutput(data=str(error), status="failed", code=500)
 
 
 def install_device_by_id(device_id: str) -> inventory_utils.InventoryOutput:
@@ -21,13 +21,13 @@ def install_device_by_id(device_id: str) -> inventory_utils.InventoryOutput:
         if len(device_id) == 0:
             raise Exception("Missing input data")
 
-        variables = templates.install_device_variables
+        variables = templates.INSTALL_DEVICE_VARIABLES
         variables["id"] = device_id
 
-        return inventory_utils.execute_inventory(templates.install_device_template, variables)
+        return inventory_utils.execute_inventory(templates.INSTALL_DEVICE_TEMPLATE, variables)
 
-    except Exception as e:
-        return inventory_utils.InventoryOutput(data=str(e), status="failed", code=500)
+    except Exception as error:
+        return inventory_utils.InventoryOutput(data=str(error), status="failed", code=500)
 
 
 def uninstall_device_by_id(device_id: str) -> inventory_utils.InventoryOutput:
@@ -35,13 +35,13 @@ def uninstall_device_by_id(device_id: str) -> inventory_utils.InventoryOutput:
         if len(device_id) == 0:
             raise Exception("Missing input data")
 
-        variables = templates.install_device_variables
+        variables = templates.INSTALL_DEVICE_VARIABLES
         variables["id"] = device_id
 
-        return inventory_utils.execute_inventory(templates.uninstall_device_template, variables)
+        return inventory_utils.execute_inventory(templates.UNINSTALL_DEVICE_TEMPLATE, variables)
 
-    except Exception as e:
-        return inventory_utils.InventoryOutput(data=str(e), status="failed", code=500)
+    except Exception as error:
+        return inventory_utils.InventoryOutput(data=str(error), status="failed", code=500)
 
 
 def install_device_by_name(device_name: str) -> inventory_utils.InventoryOutput:
@@ -56,13 +56,13 @@ def install_device_by_name(device_name: str) -> inventory_utils.InventoryOutput:
 
         # TODO install only one device or all by regex?
 
-        variables = templates.install_device_variables
+        variables = templates.INSTALL_DEVICE_VARIABLES
         variables["id"] = response.data["devices"]["edges"][0]["node"]["id"]
 
-        return inventory_utils.execute_inventory(templates.install_device_template, variables)
+        return inventory_utils.execute_inventory(templates.INSTALL_DEVICE_TEMPLATE, variables)
 
-    except Exception as e:
-        return inventory_utils.InventoryOutput(data=str(e), status="failed", code=500)
+    except Exception as error:
+        return inventory_utils.InventoryOutput(data=str(error), status="failed", code=500)
 
 
 def uninstall_device_by_name(device_name: str) -> inventory_utils.InventoryOutput:
@@ -76,31 +76,31 @@ def uninstall_device_by_name(device_name: str) -> inventory_utils.InventoryOutpu
             raise Exception("Device " + device_name + " missing in inventory")
 
         # TODO uninstall only one device or all by regex?
-        variables = templates.install_device_variables
+        variables = templates.INSTALL_DEVICE_VARIABLES
         variables["id"] = response.data["devices"]["edges"][0]["node"]["id"]
 
-        return inventory_utils.execute_inventory(templates.uninstall_device_template, variables)
+        return inventory_utils.execute_inventory(templates.UNINSTALL_DEVICE_TEMPLATE, variables)
 
-    except Exception as e:
-        return inventory_utils.InventoryOutput(data=str(e), status="failed", code=500)
+    except Exception as error:
+        return inventory_utils.InventoryOutput(data=str(error), status="failed", code=500)
 
 
 def get_labels() -> inventory_utils.InventoryOutput:
     try:
-        return inventory_utils.execute_inventory(templates.label_ids_template, None)
+        return inventory_utils.execute_inventory(templates.LABEL_IDS_TEMPLATE, None)
 
-    except Exception as e:
-        return inventory_utils.InventoryOutput(data=str(e), status="failed", code=500)
+    except Exception as error:
+        return inventory_utils.InventoryOutput(data=str(error), status="failed", code=500)
 
 
 def create_label(label: str) -> inventory_utils.InventoryOutput:
     try:
         variables = templates.InputVariable(templates.CreateLabelInput(name=str(label)))
 
-        return inventory_utils.execute_inventory(templates.create_label_template, variables)
+        return inventory_utils.execute_inventory(templates.CREATE_LABEL_TEMPLATE, variables)
 
-    except Exception as e:
-        return inventory_utils.InventoryOutput(data=str(e), status="failed", code=500)
+    except Exception as error:
+        return inventory_utils.InventoryOutput(data=str(error), status="failed", code=500)
 
 
 def add_device(
@@ -159,11 +159,11 @@ def add_device(
             )
         )
 
-        return inventory_utils.execute_inventory(templates.add_device_template, variables)
+        return inventory_utils.execute_inventory(templates.ADD_DEVICE_TEMPLATE, variables)
 
-    except Exception as e:
-        print(e.args)
-        return inventory_utils.InventoryOutput(data=str(e), status="failed", code=500)
+    except Exception as error:
+        print(error.args)
+        return inventory_utils.InventoryOutput(data=str(error), status="failed", code=500)
 
 
 def get_device_pages_cursors(labels=None) -> inventory_utils.InventoryOutput:
@@ -190,7 +190,7 @@ def get_device_pages_cursors(labels=None) -> inventory_utils.InventoryOutput:
             variables = templates.DevicePageCursorInput(
                 first=device_step, after=last_page_id, labels=label_names
             )
-            response = inventory_utils.execute_inventory(templates.device_page_template, variables)
+            response = inventory_utils.execute_inventory(templates.DEVICE_PAGE_TEMPLATE, variables)
 
             match response.status:
                 case "data":
@@ -212,8 +212,8 @@ def get_device_pages_cursors(labels=None) -> inventory_utils.InventoryOutput:
             for j in range(cursor_count):
                 try:
                     page_loop[i].append(page_ids[i * cursor_count + j])
-                except Exception as e:
-                    print(e)
+                except Exception as error:
+                    print(error)
                     break
 
         return inventory_utils.InventoryOutput(
@@ -226,9 +226,9 @@ def get_device_pages_cursors(labels=None) -> inventory_utils.InventoryOutput:
             code=200,
         )
 
-    except Exception as e:
-        print(e.args)
-        return inventory_utils.InventoryOutput(data=str(e), status="failed", code=500)
+    except Exception as error:
+        print(error.args)
+        return inventory_utils.InventoryOutput(data=str(error), status="failed", code=500)
 
 
 def page_device_dynamic_fork_tasks(
@@ -257,11 +257,11 @@ def page_device_dynamic_fork_tasks(
         device_step = 40
         dynamic_tasks = []
         dynamic_tasks_i = {}
-        taskReferenceName_id = 0
+        task_reference_name_id = 0
 
         for device_id in page_ids:
-            task_body = copy.deepcopy(templates.task_body_template)
-            task_body["taskReferenceName"] = "devices_page_" + str(taskReferenceName_id)
+            task_body = copy.deepcopy(templates.TASK_BODY_TEMPLATE)
+            task_body["taskReferenceName"] = "devices_page_" + str(task_reference_name_id)
             task_body["subWorkflowParam"]["name"] = task
             dynamic_tasks.append(task_body)
 
@@ -269,8 +269,10 @@ def page_device_dynamic_fork_tasks(
             per_device_params.update({"page_id": device_id})
             per_device_params.update({"page_size": device_step})
             per_device_params.update({"labels": labels_list})
-            dynamic_tasks_i.update({"devices_page_" + str(taskReferenceName_id): per_device_params})
-            taskReferenceName_id += 1
+            dynamic_tasks_i.update(
+                {"devices_page_" + str(task_reference_name_id): per_device_params}
+            )
+            task_reference_name_id += 1
 
         return inventory_utils.InventoryOutput(
             data={"dynamic_tasks_i": dynamic_tasks_i, "dynamic_tasks": dynamic_tasks},
@@ -278,9 +280,9 @@ def page_device_dynamic_fork_tasks(
             code=200,
         )
 
-    except Exception as e:
-        print(e.args)
-        return inventory_utils.InventoryOutput(data=str(e), status="failed", code=500)
+    except Exception as error:
+        print(error.args)
+        return inventory_utils.InventoryOutput(data=str(error), status="failed", code=500)
 
 
 def all_devices_fork_tasks(
@@ -315,7 +317,7 @@ def all_devices_fork_tasks(
         for device in ids:
             device_id = device["node"]["name"]
 
-            task_body = copy.deepcopy(templates.task_body_template)
+            task_body = copy.deepcopy(templates.TASK_BODY_TEMPLATE)
             if optional == "true":
                 task_body["optional"] = True
             task_body["taskReferenceName"] = device_id
@@ -332,9 +334,9 @@ def all_devices_fork_tasks(
             code=200,
         )
 
-    except Exception as e:
-        print(e.args)
-        return inventory_utils.InventoryOutput(data=str(e), status="failed", code=500)
+    except Exception as error:
+        print(error.args)
+        return inventory_utils.InventoryOutput(data=str(error), status="failed", code=500)
 
 
 def install_in_batch(page_size: int, page_id="", labels=None) -> inventory_utils.InventoryOutput:
@@ -357,7 +359,7 @@ def install_in_batch(page_size: int, page_id="", labels=None) -> inventory_utils
             first=page_size, after=page_id, labels=labels_list
         )
 
-        response = inventory_utils.execute_inventory(templates.device_page_id_template, variables)
+        response = inventory_utils.execute_inventory(templates.DEVICE_PAGE_ID_TEMPLATE, variables)
 
         # TODO check if error propagated to exception
 
@@ -366,7 +368,7 @@ def install_in_batch(page_size: int, page_id="", labels=None) -> inventory_utils
             variables = templates.InstallDeviceInput(id=str(device_id["node"]["id"]))
 
             response = inventory_utils.execute_inventory(
-                templates.install_device_template, variables
+                templates.INSTALL_DEVICE_TEMPLATE, variables
             )
 
             per_device_params = dict({})
@@ -388,9 +390,9 @@ def install_in_batch(page_size: int, page_id="", labels=None) -> inventory_utils
             data={"response_code": 200, "response_body": device_status}, status="data", code=200
         )
 
-    except Exception as e:
-        print(e.args)
-        return inventory_utils.InventoryOutput(data=str(e), status="failed", code=500)
+    except Exception as error:
+        print(error.args)
+        return inventory_utils.InventoryOutput(data=str(error), status="failed", code=500)
 
 
 def uninstall_in_batch(page_size: int, page_id="", labels=None) -> inventory_utils.InventoryOutput:
@@ -416,14 +418,14 @@ def uninstall_in_batch(page_size: int, page_id="", labels=None) -> inventory_uti
             first=page_size, after=page_id, labels=labels_list
         )
 
-        response = inventory_utils.execute_inventory(templates.device_page_id_template, variables)
+        response = inventory_utils.execute_inventory(templates.DEVICE_PAGE_ID_TEMPLATE, variables)
 
         device_status = {}
         for device_id in response.data["devices"]["edges"]:
             variables = templates.InstallDeviceInput(id=str(device_id["node"]["id"]))
 
             response = inventory_utils.execute_inventory(
-                templates.uninstall_device_template, variables
+                templates.UNINSTALL_DEVICE_TEMPLATE, variables
             )
 
             per_device_params = dict({})
@@ -441,6 +443,6 @@ def uninstall_in_batch(page_size: int, page_id="", labels=None) -> inventory_uti
 
             device_status.update({device_id["node"]["name"]: per_device_params})
 
-    except Exception as e:
-        print(e.args)
-        return inventory_utils.InventoryOutput(data=str(e), status="failed", code=500)
+    except Exception as error:
+        print(error.args)
+        return inventory_utils.InventoryOutput(data=str(error), status="failed", code=500)

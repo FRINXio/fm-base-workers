@@ -19,30 +19,32 @@ def register_workflow(workflow: str, overwrite: bool = False) -> None:
         match overwrite:
             case True:
                 logger.debug(json.dumps([json.loads(workflow)]))
-                r = requests.put(
+                response = requests.put(
                     workflow_import_url,
                     data=json.dumps([json.loads(workflow)]),
                     headers=conductor_headers,
+                    timeout=60,
                 )
-                logger.info("Response status code - %s", r.status_code)
-                if r.status_code != requests.codes.ok:
+                logger.info("Response status code - %s", response.status_code)
+                if not response.ok:
                     logger.warning(
-                        "Import of workflow failed. " "Ignoring the workflow. Response content: %s",
-                        r.content,
+                        "Import of workflow failed. Ignoring the workflow. Response content: %s",
+                        response.content,
                     )
             case False:
                 logger.debug(json.dumps(json.loads(workflow)))
 
-                r = requests.post(
+                response = requests.post(
                     workflow_import_url,
                     data=json.dumps(json.loads(workflow)),
                     headers=conductor_headers,
+                    timeout=60,
                 )
-                logger.info("Response status code - %s", r.status_code)
-                if r.status_code != requests.codes.ok:
+                logger.info("Response status code - %s", response.status_code)
+                if not response.ok:
                     logger.warning(
-                        "Import of workflow failed. " "Ignoring the workflow. Response content: %s",
-                        r.content,
+                        "Import of workflow failed. Ignoring the workflow. Response content: %s",
+                        response.content,
                     )
     except Exception as err:
         logger.error("Error while registering workflow", err)
@@ -62,18 +64,19 @@ def import_workflows(path: str) -> None:
                             payload = []
                             payload_json = json.load(payload_file)
                             payload.append(payload_json)
-                            r = requests.put(
+                            response = requests.put(
                                 workflow_import_url,
                                 data=json.dumps(payload),
                                 headers=conductor_headers,
+                                timeout=60,
                             )
-                            logger.info("Response status code - %s", r.status_code)
-                            if r.status_code != 204:
+                            logger.info("Response status code - %s", response.status_code)
+                            if response.status_code != 204:
                                 logger.warning(
                                     "Import of workflow %s failed. "
                                     "Ignoring the workflow. Response content: %s",
                                     entry.name,
-                                    r.content,
+                                    response.content,
                                 )
                     except Exception as err:
                         logger.error("Error while registering workflow %s", entry.name, err)

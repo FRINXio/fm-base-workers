@@ -145,10 +145,10 @@ def write_structured_data(
             method=method, url=id_url, data=data_json, cookies=uniconfig_cookies
         )
         return UniconfigOutput(code=response.code, data=response.data, url=id_url)
-    except Exception as e:
+    except Exception as error:
         # TODO status code check
         return UniconfigOutput(
-            data={"error": e}, logs="Unable to update device with ID %s" % device_id, code=500
+            data={"error": error}, logs=f"Unable to update device with ID {device_id}", code=500
         )
 
 
@@ -194,10 +194,10 @@ def delete_structured_data(
         )
         response = uniconfig_utils.request(method="DELETE", url=id_url, cookies=uniconfig_cookies)
         return UniconfigOutput(code=response.code, data=response.data, url=id_url)
-    except Exception as e:
+    except Exception as error:
         # TODO status code check
         return UniconfigOutput(
-            data={"error": e}, logs="Unable to update device with ID %s" % device_id, code=500
+            data={"error": error}, logs=f"Unable to update device with ID {device_id}", code=500
         )
 
 
@@ -390,11 +390,11 @@ def create_tx_multizone(devices: list[str], oam_domain=None) -> UniconfigOutput:
     uniconfig_cookies_multizone = {}
     response = UniconfigOutput(code=500, data={})
 
-    for d in devices_by_uniconfig:
-        response = uniconfig_utils.create_tx_internal(uniconfig_cluster=d.uc_cluster)
+    for device in devices_by_uniconfig:
+        response = uniconfig_utils.create_tx_internal(uniconfig_cluster=device.uc_cluster)
         match response.code:
             case requests.codes.created:
-                uniconfig_cookies_multizone[d.uc_cluster] = response.data["uniconfig_cookies"]
+                uniconfig_cookies_multizone[device.uc_cluster] = response.data["uniconfig_cookies"]
             case _:
                 for already_opened_tx_uc_cluster in uniconfig_cookies_multizone:
                     uniconfig_utils.close_tx_internal(
@@ -403,9 +403,9 @@ def create_tx_multizone(devices: list[str], oam_domain=None) -> UniconfigOutput:
                     )
                 return UniconfigOutput(
                     code=response.code,
-                    data={"failed_zone": d.uc_cluster, "response": response.data},
+                    data={"failed_zone": device.uc_cluster, "response": response.data},
                     logs=[
-                        f'Unable to create multizone transactions. Failed for: "{d.uc_cluster}".Close sent to already opened transactions: "{uniconfig_cookies_multizone}"'
+                        f'Unable to create multizone transactions. Failed for: "{device.uc_cluster}".Close sent to already opened transactions: "{uniconfig_cookies_multizone}"'
                     ],
                 )
     return UniconfigOutput(

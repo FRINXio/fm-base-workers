@@ -49,7 +49,7 @@ class InstallDeviceInput(InventoryVariable):
     id: str
 
 
-add_device_template = """
+ADD_DEVICE_TEMPLATE = """
 mutation AddDevice($input: AddDeviceInput!) {
   addDevice(input: $input) {
     device {
@@ -59,7 +59,7 @@ mutation AddDevice($input: AddDeviceInput!) {
   }
 } """
 
-install_device_template = """
+INSTALL_DEVICE_TEMPLATE = """
 mutation InstallDevice($id: String!){
   installDevice(id:$id){
     device{
@@ -69,9 +69,9 @@ mutation InstallDevice($id: String!){
   }
 } """
 
-install_device_variables = {"id": None}
+INSTALL_DEVICE_VARIABLES = {"id": None}
 
-uninstall_device_template = """
+UNINSTALL_DEVICE_TEMPLATE = """
 mutation UninstallDevice($id: String!){
   uninstallDevice(id:$id){
     device{
@@ -81,7 +81,7 @@ mutation UninstallDevice($id: String!){
   }
 } """
 
-create_label_template = """
+CREATE_LABEL_TEMPLATE = """
 mutation CreateLabel($input: CreateLabelInput!) {
   createLabel(input: $input){
     label {
@@ -93,7 +93,7 @@ mutation CreateLabel($input: CreateLabelInput!) {
   }
 } """
 
-cli_device_template = {
+CLI_DEVICE_TEMPLATE = {
     "cli": {
         "cli-topology:host": "",
         "cli-topology:port": "",
@@ -107,7 +107,7 @@ cli_device_template = {
     }
 }
 
-netconf_device_template = {
+NETCONF_DEVICE_TEMPLATE = {
     "netconf": {
         "netconf-node-topology:host": "",
         "netconf-node-topology:port": "",
@@ -120,14 +120,14 @@ netconf_device_template = {
     }
 }
 
-task_body_template = {
+TASK_BODY_TEMPLATE = {
     "name": "sub_task",
     "taskReferenceName": "",
     "type": "SUB_WORKFLOW",
     "subWorkflowParam": {"name": "", "version": 1},
 }
 
-label_ids_template = """
+LABEL_IDS_TEMPLATE = """
 query {
   labels {
     edges {
@@ -142,7 +142,7 @@ query {
 }
 """
 
-device_page_template = """
+DEVICE_PAGE_TEMPLATE = """
 query GetDevices(
   $first: Int!, 
   $after: String!,
@@ -158,7 +158,7 @@ query GetDevices(
   }
 } """
 
-device_page_id_template = """
+DEVICE_PAGE_ID_TEMPLATE = """
 query GetDevices($labels: [String!], $first: Int!, $after: String!) {
   devices( filter: { labels: $labels}, first:$first, after:$after) {
     pageInfo {
@@ -176,7 +176,7 @@ query GetDevices($labels: [String!], $first: Int!, $after: String!) {
   }
 } """
 
-device_info_template = """
+DEVICE_INFO_TEMPLATE = """
 query Devices(
   $labels: [String!]
   $deviceName: String
@@ -200,7 +200,7 @@ query Devices(
   }
 } """
 
-device_by_label_template = """
+DEVICE_BY_LABEL_TEMPLATE = """
 query Devices(
   $labels: [String!]
 ) {

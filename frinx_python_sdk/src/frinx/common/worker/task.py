@@ -1,13 +1,13 @@
 from typing import Any
 from typing import TypeAlias
 
+from frinx.common.util import snake_to_camel_case
 from pydantic import BaseModel
 from pydantic import Extra
 from pydantic import Field
 
 WorkflowTask: TypeAlias = dict[str, str]
 TaskDef: TypeAlias = dict[str, str]
-from frinx.common.util import snake_to_camel_case
 
 
 class Task(BaseModel):

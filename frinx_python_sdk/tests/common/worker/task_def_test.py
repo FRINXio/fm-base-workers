@@ -1,4 +1,3 @@
-import json
 import unittest
 from typing import Any
 from typing import Optional
@@ -64,7 +63,7 @@ class TestTaskGenerator(unittest.TestCase):
                 def execute(self, task_def: Task, task_result: TaskResult) -> TaskResult:
                     pass
 
-        tasks = Http().Tasks()
+        tasks = Http().tasks()
         test_task = []
         for task in tasks:
             test_task.append(task.task_def.dict(exclude_none=True, by_alias=True))

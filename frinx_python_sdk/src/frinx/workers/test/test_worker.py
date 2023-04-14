@@ -95,16 +95,16 @@ class TestWorker(ServiceWorkersImpl):
             dynamic_tasks = []
             dynamic_tasks_i = {}
 
-            for t in range(0, wf_count):
+            for task_ref in range(0, wf_count):
                 dynamic_tasks.append(
                     {
                         "name": "sub_task",
-                        "taskReferenceName": str(t),
+                        "taskReferenceName": str(task_ref),
                         "type": "SUB_WORKFLOW",
                         "subWorkflowParam": {"name": wf_name, "version": 1},
                     }
                 )
-                dynamic_tasks_i[str(t)] = wf_inputs
+                dynamic_tasks_i[str(task_ref)] = wf_inputs
 
             task_result.add_output_data("dynamic_tasks_i", dynamic_tasks_i)
             task_result.add_output_data("dynamic_tasks", dynamic_tasks)

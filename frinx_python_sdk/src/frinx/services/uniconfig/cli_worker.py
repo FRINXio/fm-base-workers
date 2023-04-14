@@ -33,8 +33,8 @@ async def execute_and_read_rpc_cli(
     try:
         async with session.post(
             id_url, data=json.dumps(exec_body), ssl=False, headers=uniconfig_headers
-        ) as r:
-            res = await r.json()
+        ) as req:
+            res = await req.json()
             logger.info("LLDP raw data: %s", res["output"]["output"])
             return res["output"]["output"]
     except Exception:
@@ -183,10 +183,10 @@ def execute_unmount_cli(device_id: str) -> UniconfigOutput:
             logs=f"Mount point with ID ${device_id} removed",
         )
 
-    except Exception as e:
+    except Exception as error:
         # TODO status code check
         return UniconfigOutput(
-            data={"output": e}, logs="Unable to read device with ID %s" % device_id, code=500
+            data={"output": error}, logs=f"Unable to read device with ID {device_id}", code=500
         )
 
 

@@ -1,7 +1,8 @@
 import json
 import os
-from collections import namedtuple
-from http.cookies import SimpleCookie
+
+# from collections import namedtuple
+# from http.cookies import SimpleCookie
 from typing import Any
 from typing import Tuple
 
@@ -33,14 +34,14 @@ conductor_headers = {
 additional_uniconfig_request_params = {"verify": False, "headers": uniconfig_headers}
 
 
-def parse_response(r: Response) -> Tuple[int, dict[Any, Any]]:
-    decode = r.content.decode("utf8")
+def parse_response(response: Response) -> Tuple[int, dict[Any, Any]]:
+    decode = response.content.decode("utf8")
     try:
         response_json = json.loads(decode if decode else "{}")
-    except ValueError as e:
+    except ValueError:
         response_json = json.loads("{}")
 
-    response_code = r.status_code
+    response_code = response.status_code
     return response_code, response_json
 
 

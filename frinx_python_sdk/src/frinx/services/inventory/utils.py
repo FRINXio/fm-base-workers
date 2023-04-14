@@ -73,13 +73,14 @@ def execute_inventory(body: str, variables: Any) -> InventoryOutput:
 
     if response.get("errors") is not None:
         return InventoryOutput(data=response["errors"], status="errors", code=404)
-    elif response.get("data") is not None:
+
+    if response.get("data") is not None:
         return InventoryOutput(data=response["data"], status="data", code=200)
-    else:
-        return InventoryOutput(data="Request failed", status="failed", code=500)
+
+    return InventoryOutput(data="Request failed", status="failed", code=500)
 
 
-def get_zone_id(zone_name: str) -> str:
+def get_zone_id(zone_name: str) -> str | None:
     zone_id_device = "query { zones { edges { node {  id name } } } }"
 
     body = execute_inventory(zone_id_device, {})
@@ -88,9 +89,11 @@ def get_zone_id(zone_name: str) -> str:
         if node["node"]["name"] == zone_name:
             return node["node"]["id"]
 
+    return None
+
 
 def get_all_devices(labels: str) -> dict:
-    device_id_name = copy.deepcopy(templates.device_by_label_template)
+    device_id_name = copy.deepcopy(templates.DEVICE_BY_LABEL_TEMPLATE)
 
     variables = {"labels": str(str(labels))}
 

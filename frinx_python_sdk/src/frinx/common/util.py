@@ -2,7 +2,6 @@ import json
 from typing import Any
 
 import requests
-from pydantic import BaseModel
 
 
 def jsonify_description(
@@ -25,22 +24,22 @@ def jsonify_description(
     return output
 
 
-def parse_response(r: requests.Response) -> tuple[int, str]:
-    decode = r.content.decode("utf8")
+def parse_response(response: requests.Response) -> tuple[int, str]:
+    decode = response.content.decode("utf8")
     try:
         response_json = json.loads(decode if decode else "{}")
-    except ValueError as e:
+    except ValueError:
         response_json = json.loads("{}")
 
-    response_code = r.status_code
+    response_code = response.status_code
     return response_code, response_json
 
 
-def snake_to_camel_case(StrictString: str) -> str:
+def snake_to_camel_case(string: str) -> str:
     """Returns camelCase version of provided snake_case StrictString."""
-    if not StrictString:
+    if not string:
         return ""
 
-    words = StrictString.split("_")
+    words = string.split("_")
     result = words[0].lower() + "".join(n.capitalize() for n in words[1:])
     return result
