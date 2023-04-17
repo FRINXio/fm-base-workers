@@ -17,7 +17,11 @@ URL_CLI_MOUNT_RPC = (
 
 
 async def execute_and_read_rpc_cli(
-    device_name: str, command: str, session: ClientSession, output_timer=None
+    device_name: str,
+    command: str,
+    session: ClientSession,
+    timeout: Optional[int] = None,
+    output_timer=None,
 ):
     execute_and_read_template = {"input": {"command": ""}}
     exec_body = copy.deepcopy(execute_and_read_template)
@@ -32,7 +36,11 @@ async def execute_and_read_rpc_cli(
     )
     try:
         async with session.post(
-            id_url, data=json.dumps(exec_body), ssl=False, headers=uniconfig_headers
+            id_url,
+            data=json.dumps(exec_body),
+            ssl=False,
+            headers=uniconfig_headers,
+            timeout=timeout,
         ) as req:
             res = await req.json()
             logger.info("LLDP raw data: %s", res["output"]["output"])
@@ -196,6 +204,7 @@ def execute_and_read_rpc_cli(
     params: Optional[dict[Any, Any]],
     uniconfig_context: UniconfigContext,
     output_timer: str,
+    timeout: Optional[int] = None,
 ) -> UniconfigOutput:
     params = params if params else {}
 
@@ -217,7 +226,7 @@ def execute_and_read_rpc_cli(
     )
 
     response = uniconfig_utils.request(
-        "POST", id_url, data=json.dumps(exec_body), cookies=uniconfig_cookies
+        "POST", id_url, data=json.dumps(exec_body), cookies=uniconfig_cookies, timeout=timeout
     )
     match response.code:
         case 200:
@@ -228,14 +237,18 @@ def execute_and_read_rpc_cli(
     return UniconfigOutput(code=response.code, data=response.data, url=id_url, logs=logs)
 
 
-def execute_get_cli_journal(device_id: str, uniconfig_context: UniconfigContext) -> UniconfigOutput:
+def execute_get_cli_journal(
+    device_id: str,
+    uniconfig_context: UniconfigContext,
+    timeout: Optional[int] = None,
+) -> UniconfigOutput:
     uniconfig_cookies = uniconfig_utils.extract_uniconfig_cookies(uniconfig_context)
 
     id_url = templates.uniconfig_url_cli_read_journal.substitute(
         {"id": device_id, "base_url": uniconfig_utils.get_uniconfig_cluster_from_task()}
     )
 
-    response = uniconfig_utils.request("POST", id_url, data=None, cookies=uniconfig_cookies)
+    response = uniconfig_utils.request("POST", id_url, data=None, cookies=uniconfig_cookies, timeout=timeout)
 
     match response.code:
         case 200:
@@ -250,7 +263,11 @@ execute_template = {"input": {"command": "", "wait-for-output-timer": "5"}}
 
 
 def execute_cli(
-    device_id: str, template: str, params: dict[Any, Any], uniconfig_context: UniconfigContext
+    device_id: str,
+    template: str,
+    params: dict[Any, Any],
+    uniconfig_context: UniconfigContext,
+    timeout: Optional[int] = None,
 ) -> UniconfigOutput:
     params = params if params else {}
     # params = params if isinstance(params, dict) else eval(params) ???
@@ -271,7 +288,7 @@ def execute_cli(
     )
 
     response = uniconfig_utils.request(
-        "POST", id_url, data=json.dumps(exec_body), cookies=uniconfig_cookies
+        "POST", id_url, data=json.dumps(exec_body), cookies=uniconfig_cookies, timeout=timeout
     )
 
     match response.code:
@@ -284,7 +301,11 @@ def execute_cli(
 
 
 def execute_and_expect_cli(
-    device_id: str, template: str, params: dict[Any, Any], uniconfig_context: UniconfigContext
+    device_id: str,
+    template: str,
+    params: dict[Any, Any],
+    uniconfig_context: UniconfigContext,
+    timeout: Optional[int] = None,
 ) -> UniconfigOutput:
     params = params if params else {}
     # params = params if isinstance(params, dict) else eval(params) ???
@@ -305,7 +326,7 @@ def execute_and_expect_cli(
     )
 
     response = uniconfig_utils.request(
-        "POST", id_url, data=json.dumps(exec_body), cookies=uniconfig_cookies
+        "POST", id_url, data=json.dumps(exec_body), cookies=uniconfig_cookies, timeout=timeout
     )
 
     match response.code:
