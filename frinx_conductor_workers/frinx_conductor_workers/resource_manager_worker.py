@@ -32,17 +32,17 @@ claim_resource_template = Template(
 
 create_pool_template = Template(
     """
-    mutation CreatePool($pool_name: String!, $resource_type_id: ID!, $resource_type_strat_id: ID!,{{ pool_properties_variables }}) {
+    mutation CreatePool($pool_name: String!, $tags: [String!], $resource_type_id: ID!, $resource_type_strat_id: ID!, {{ pool_properties_variables }}) {
     {{ create_pool }}(
         input: {
             resourceTypeId: $resource_type_id,
             poolName: $pool_name,
             allocationStrategyId: $resource_type_strat_id,
             poolDealocationSafetyPeriod: 0,
+            tags: $tags, 
             {{ pool_properties_types }},
             {{ pool_properties }},
             {{ parent_resource_id }},
-            tags: [$pool_name],
         }
     ) {
         pool { id }
@@ -134,7 +134,7 @@ update_alternative_id_for_resource_template = Template(
 
 create_nested_pool_template = Template(
     """
-    mutation CreateNestedAllocPool($pool_name: String!, $resource_type_id: ID!, $resource_type_strat_id: ID!, $parentResourceId: ID!) {
+    mutation CreateNestedAllocPool($pool_name: String!, $tags: [String!], $resource_type_id: ID!, $resource_type_strat_id: ID!, $parentResourceId: ID!) {
         CreateNestedAllocatingPool(
             input: {
                 resourceTypeId: $resource_type_id,
@@ -142,7 +142,7 @@ create_nested_pool_template = Template(
                 allocationStrategyId: $resource_type_strat_id,
                 poolDealocationSafetyPeriod: 0
                 parentResourceId: $parentResourceId,
-                tags: [$pool_name]
+                tags: $tags,
            }
     ) {
         pool { id , PoolProperties }
@@ -426,7 +426,7 @@ def create_pool(task, logs):
 
          Args:
 
-             task (dict): dictionary with input data ["resourceType", "poolName", "poolProperties"]
+             task (dict): dictionary with input data ["resourceType", "poolName", "poolProperties", "tags"]
 
              logs: stream of log messages
 
@@ -446,15 +446,26 @@ def create_pool(task, logs):
 
     pool_name = task["inputData"]["poolName"]
     resource_type = task["inputData"]["resourceType"]
+    tags = task["inputData"]["tags"] if "tags" in task["inputData"] else None
     resource_type_id, resource_strategy_id = query_resource_id(resource_type)
     if resource_type_id is None or resource_strategy_id is None:
         log.warning("Unknown resource: %s", resource_type)
         return failed_response_with_logs(logs, {"result": {"error": "Unknown resource"}})
 
+    tags_list = []
+    if tags is not None:
+        if tags is str:
+            tags_list.append(tags)
+        else:
+            for tag in tags:
+                tags_list.append(tag)
+
+    tags_list.append(pool_name)
     variables = {
         "resource_type_id": resource_type_id,
         "resource_type_strat_id": resource_strategy_id,
         "pool_name": pool_name,
+        "tags": tags_list,
     }
     pool_types_string, pool_string, pool_variables_string = "", "", ""
     if task["inputData"]["poolProperties"]:
@@ -964,7 +975,7 @@ def create_nested_pool(task, logs):
 
          Args:
 
-             task (dict): dictionary with input data ["poolName", "resourceType", "parentResourceId"]
+             task (dict): dictionary with input data ["poolName", "resourceType", "parentResourceId", "tags"]
 
              logs: stream of log messages
 
@@ -986,16 +997,27 @@ def create_nested_pool(task, logs):
     pool_name = task["inputData"]["poolName"]
     resource_type = task["inputData"]["resourceType"]
     parent_resource_id = task["inputData"]["parentResourceId"]
+    tags = task["inputData"]["tags"] if "tags" in task["inputData"] else None
     resource_type_id, resource_strategy_id = query_resource_id(resource_type)
     if resource_type_id is None or resource_strategy_id is None:
         log.warning("Unknown resource: %s", resource_type)
         return failed_response_with_logs(logs, {"result": {"error": "Unknown resource"}})
 
+    tags_list = []
+    if tags is not None:
+        if tags is str:
+            tags_list.append(tags)
+        else:
+            for tag in tags:
+                tags_list.append(tag)
+
+    tags_list.append(pool_name)
     variables = {
         "resource_type_id": resource_type_id,
         "resource_type_strat_id": resource_strategy_id,
         "pool_name": pool_name,
         "parentResourceId": parent_resource_id,
+        "tags": tags_list,
     }
 
     body = create_nested_pool_template.render()
