@@ -270,8 +270,6 @@ def execute_cli(
     timeout: Optional[int] = None,
 ) -> UniconfigOutput:
     params = params if params else {}
-    # params = params if isinstance(params, dict) else eval(params) ???
-    params = params if isinstance(params, dict) else eval(str(params))
 
     uniconfig_cookies = uniconfig_utils.extract_uniconfig_cookies(uniconfig_context)
 
@@ -308,8 +306,6 @@ def execute_and_expect_cli(
     timeout: Optional[int] = None,
 ) -> UniconfigOutput:
     params = params if params else {}
-    # params = params if isinstance(params, dict) else eval(params) ???
-    params = params if isinstance(params, dict) else eval(str(params))
 
     uniconfig_cookies = uniconfig_utils.extract_uniconfig_cookies(uniconfig_context)
 
