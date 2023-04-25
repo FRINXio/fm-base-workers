@@ -238,9 +238,7 @@ def execute_and_read_rpc_cli(
 
 
 def execute_get_cli_journal(
-    device_id: str,
-    uniconfig_context: UniconfigContext,
-    timeout: Optional[int] = None,
+    device_id: str, uniconfig_context: UniconfigContext, timeout: Optional[int] = None
 ) -> UniconfigOutput:
     uniconfig_cookies = uniconfig_utils.extract_uniconfig_cookies(uniconfig_context)
 
@@ -248,7 +246,9 @@ def execute_get_cli_journal(
         {"id": device_id, "base_url": uniconfig_utils.get_uniconfig_cluster_from_task()}
     )
 
-    response = uniconfig_utils.request("POST", id_url, data=None, cookies=uniconfig_cookies, timeout=timeout)
+    response = uniconfig_utils.request(
+        "POST", id_url, data=None, cookies=uniconfig_cookies, timeout=timeout
+    )
 
     match response.code:
         case 200:
