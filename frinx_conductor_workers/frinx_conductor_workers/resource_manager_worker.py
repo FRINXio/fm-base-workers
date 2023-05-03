@@ -537,7 +537,17 @@ def create_vlan_pool(task, logs):
     )
     if parent_resource_id == "":
         parent_resource_id = None
+    tags = task["inputData"]["tags"] if "tags" in task["inputData"] else None
 
+    tags_list = []
+    if tags is not None:
+        if tags is str:
+            tags_list.append(tags)
+        else:
+            for tag in tags:
+                tags_list.append(tag)
+
+    tags_list.append(pool_name)
     resource_type_id, resource_strategy_id = query_resource_id("vlan")
     variables = {
         "pool_name": pool_name,
@@ -545,6 +555,7 @@ def create_vlan_pool(task, logs):
         "resource_type_strat_id": resource_strategy_id,
         "from": int(from_range) if from_range else from_range,
         "to": int(to_range) if to_range else to_range,
+        "tags": tags_list,
     }
 
     if parent_resource_id is not None:
@@ -585,6 +596,16 @@ def create_vlan_range_pool(task, logs):
     pool_name = task["inputData"]["poolName"]
     from_range = task["inputData"]["from"]
     to_range = task["inputData"]["to"]
+    tags = task["inputData"]["tags"] if "tags" in task["inputData"] else None
+
+    tags_list = []
+    if tags is not None:
+        if tags is str:
+            tags_list.append(tags)
+        else:
+            for tag in tags:
+                tags_list.append(tag)
+    tags_list.append(pool_name)
 
     resource_type_id, resource_strategy_id = query_resource_id("vlan_range")
     variables = {
@@ -593,6 +614,7 @@ def create_vlan_range_pool(task, logs):
         "resource_type_strat_id": resource_strategy_id,
         "from": int(from_range) if from_range else from_range,
         "to": int(to_range) if to_range else to_range,
+        "tags": tags_list,
     }
 
     body = create_pool_template.render(
@@ -627,16 +649,27 @@ def create_unique_id_pool(task, logs):
     from_value = task["inputData"]["from"] if "from" in task["inputData"] else None
     if from_value == "":
         from_value = None
-
     to_value = task["inputData"]["to"] if "to" in task["inputData"] else None
     if to_value == "":
         to_value = None
+    tags = task["inputData"]["tags"] if "tags" in task["inputData"] else None
+
+    tags_list = []
+    if tags is not None:
+        if tags is str:
+            tags_list.append(tags)
+        else:
+            for tag in tags:
+                tags_list.append(tag)
+
+    tags_list.append(pool_name)
 
     resource_type_id, resource_strategy_id = query_resource_id("unique_id")
     variables = {
         "resource_type_id": resource_type_id,
         "resource_type_strat_id": resource_strategy_id,
         "pool_name": pool_name,
+        "tags": tags_list,
     }
 
     to_poperty_type = ', to: "int"' if to_value is not None else ""
