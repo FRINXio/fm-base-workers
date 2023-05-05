@@ -4,6 +4,7 @@ import json
 from enum import Enum
 from typing import Any
 
+from frinx.common.frinx_rest import inventory_url_base
 from frinx.common.frinx_rest import x_tenant_id
 from frinx.services.inventory import templates
 from python_graphql_client import GraphqlClient
@@ -19,8 +20,7 @@ inventory_headers = {
     "Keep-Alive": "timeout=5",
 }
 
-# client = GraphqlClient(endpoint="inventory_url_base", headers=inventory_headers)
-client = GraphqlClient(endpoint="http://localhost/api/inventory", headers=inventory_headers)
+client = GraphqlClient(endpoint=inventory_url_base, headers=inventory_headers)
 
 
 class ServiceState(str, Enum):
