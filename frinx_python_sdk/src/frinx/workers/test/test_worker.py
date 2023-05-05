@@ -27,7 +27,8 @@ class TestWorker(ServiceWorkersImpl):
         class WorkerOutput(TaskOutput):
             output: str
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
+            task_result = TaskResult()
             task_result.status = TaskResultStatus.COMPLETED
             task_result.add_output_data("output", task.input_data.get("input", ""))
             task_result.logs = "Echo worker invoked successfully"
@@ -51,7 +52,8 @@ class TestWorker(ServiceWorkersImpl):
         class WorkerOutput(TaskOutput):
             time: int
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
+            task_result = TaskResultStatus()
             sleep = task.input_data.get("time", self.DEFAULT_SLEEP)
             if sleep < 0 or sleep > 600:
                 task_result.status = TaskResultStatus.FAILED
@@ -87,7 +89,7 @@ class TestWorker(ServiceWorkersImpl):
             dynamic_tasks_i: dict
             dynamic_tasks: list
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             wf_count = task.input_data.get("wf_count", 10)
             wf_name = task.input_data.get("wf_name", "Test_workflow")
             wf_inputs = task.input_data.get("wf_inputs", {})
@@ -106,6 +108,7 @@ class TestWorker(ServiceWorkersImpl):
                 )
                 dynamic_tasks_i[str(task_ref)] = wf_inputs
 
+            task_result = TaskResult()
             task_result.add_output_data("dynamic_tasks_i", dynamic_tasks_i)
             task_result.add_output_data("dynamic_tasks", dynamic_tasks)
             task_result.status = TaskResultStatus.COMPLETED
@@ -130,12 +133,13 @@ class TestWorker(ServiceWorkersImpl):
             text: str
             bytes: int
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             text = generate_text(
                 num_paragraphs=task.input_data.get("num_paragraphs", 3),
                 num_sentences=task.input_data.get("num_sentences", 3),
                 num_words=task.input_data.get("num_words", 3),
             )
+            task_result = TaskResult()
             task_result.add_output_data("text", text)
             task_result.add_output_data("bytes", len(text.encode("utf-8")))
             task_result.status = TaskResultStatus.COMPLETED

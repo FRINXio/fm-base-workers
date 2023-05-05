@@ -40,7 +40,7 @@ class TestTaskGenerator(unittest.TestCase):
                     status_code: int = Field(..., alias="statusCode")
                     cookies: dict[str, Any]
 
-                def execute(self, task_def: Task, task_result: TaskResult) -> TaskResult:
+                def execute(self, task_def: Task) -> TaskResult:
                     pass
 
             class HttpTask2(WorkerImpl):
@@ -60,7 +60,7 @@ class TestTaskGenerator(unittest.TestCase):
                     status_code: int = Field(..., alias="statusCode")
                     cookies: dict[str, Any]
 
-                def execute(self, task_def: Task, task_result: TaskResult) -> TaskResult:
+                def execute(self, task_def: Task) -> TaskResult:
                     pass
 
         tasks = Http().tasks()
@@ -123,7 +123,7 @@ class TestTaskGenerator(unittest.TestCase):
                 status_code: int = Field(..., alias="statusCode")
                 cookies: dict[str, Any]
 
-            def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+            def execute(self, task: Task) -> TaskResult:
                 response = http.http_task(**task.input_data)
                 return response
 

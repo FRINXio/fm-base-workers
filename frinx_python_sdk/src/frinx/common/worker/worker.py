@@ -92,7 +92,7 @@ class WorkerImpl(ABC):
         )
 
     @abstractmethod
-    def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+    def execute(self, task: Task) -> TaskResult:
         pass
 
     @classmethod
@@ -104,7 +104,7 @@ class WorkerImpl(ABC):
 
         try:
             # TODO check if ok
-            task_result = cls.execute(cls, Task(**task), TaskResult()).dict()  # type: ignore[arg-type]
+            task_result = cls.execute(cls, Task(**task)).dict()  # type: ignore[arg-type]
             return task_result
 
         except Exception as error:
