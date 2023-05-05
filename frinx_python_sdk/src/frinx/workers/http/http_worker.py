@@ -32,6 +32,6 @@ class Http(ServiceWorkersImpl):
             status_code: int = Field(..., alias="statusCode")
             cookies: dict[str, Any]
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = http.http_task(**task.input_data)
             return response

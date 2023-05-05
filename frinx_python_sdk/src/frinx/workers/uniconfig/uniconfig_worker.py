@@ -36,9 +36,9 @@ class Uniconfig(ServiceWorkersImpl):
             response_code: int
             response_body: Any
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = uniconfig.read_structured_data(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
     ###############################################################################
 
@@ -60,9 +60,9 @@ class Uniconfig(ServiceWorkersImpl):
             response_code: int
             response_body: Any
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = uniconfig.write_structured_data(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
     ###############################################################################
 
@@ -82,9 +82,9 @@ class Uniconfig(ServiceWorkersImpl):
             response_code: int
             response_body: Any
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = uniconfig.delete_structured_data(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
     ###############################################################################
 
@@ -105,11 +105,11 @@ class Uniconfig(ServiceWorkersImpl):
             response_code: int
             response_body: Any
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             print(task)
             time.sleep(5)
             response = uniconfig.commit(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
     ###############################################################################
 
@@ -130,9 +130,9 @@ class Uniconfig(ServiceWorkersImpl):
             response_code: int
             response_body: Any
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = uniconfig.dryrun_commit(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
     ###############################################################################
 
@@ -153,9 +153,9 @@ class Uniconfig(ServiceWorkersImpl):
             response_code: int
             response_body: Any
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = uniconfig.calc_diff(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
     ###############################################################################
 
@@ -176,9 +176,9 @@ class Uniconfig(ServiceWorkersImpl):
             response_code: int
             response_body: Any
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = uniconfig.sync_from_network(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
     ###############################################################################
 
@@ -199,9 +199,9 @@ class Uniconfig(ServiceWorkersImpl):
             response_code: int
             response_body: Any
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = uniconfig.replace_config_with_oper(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
     ###############################################################################
 
@@ -217,9 +217,9 @@ class Uniconfig(ServiceWorkersImpl):
         class WorkerOutput(TaskOutput):
             uniconfig_contexts: dict[str, Any]
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = uniconfig.find_started_tx(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
     ###############################################################################
 
@@ -235,9 +235,9 @@ class Uniconfig(ServiceWorkersImpl):
         class WorkerOutput(TaskOutput):
             ...
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = uniconfig.rollback_all_tx(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
     ###############################################################################
 
@@ -286,15 +286,15 @@ class Uniconfig(ServiceWorkersImpl):
         class WorkerOutput(TaskOutput):
             UNICONFIGTXID_multizone: dict[str, Any]
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = uniconfig.close_tx_multizone(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
 
-def response_handler(response: UniconfigOutput, task_result: TaskResult) -> TaskResult:
+def response_handler(response: UniconfigOutput) -> TaskResult:
     match response.code:
         case response_code if response_code in range(200, 299):
-            task_result.status = TaskResultStatus.COMPLETED
+            task_result = TaskResult(status=TaskResultStatus.COMPLETED)
             if response.code:
                 task_result.add_output_data("response_code", response.code)
             if response.data:
@@ -306,7 +306,7 @@ def response_handler(response: UniconfigOutput, task_result: TaskResult) -> Task
 
             return task_result
         case _:
-            task_result.status = TaskResultStatus.FAILED
+            task_result = TaskResult(status=TaskResultStatus.FAILED)
             task_result.logs = task_result.logs or str(response)
             if response.code:
                 task_result.add_output_data("response_code", response.code)

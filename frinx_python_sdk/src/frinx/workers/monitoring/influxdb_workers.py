@@ -32,9 +32,9 @@ class Influx(ServiceWorkersImpl):
         class WorkerOutput(TaskOutput):
             output: dict[str, Any]
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = influxdb_worker.influx_write_data(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
     ###############################################################################
     class InfluxQueryData(WorkerImpl):
@@ -53,9 +53,9 @@ class Influx(ServiceWorkersImpl):
         class WorkerOutput(TaskOutput):
             output: dict[str, Any]
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = influxdb_worker.influx_query_data(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
     ###############################################################################
     class InfluxCreateBucket(WorkerImpl):
@@ -75,15 +75,15 @@ class Influx(ServiceWorkersImpl):
             data: dict[str, Any]
             logs: Optional[str]
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = influxdb_worker.influx_create_bucket(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
 
-def response_handler(response: InfluxOutput, task_result: TaskResult) -> TaskResult:
+def response_handler(response: InfluxOutput) -> TaskResult:
     match response.code:
         case 200 | 201:
-            task_result.status = TaskResultStatus.COMPLETED
+            task_result = TaskResult(status=TaskResultStatus.COMPLETED)
             if response.code:
                 task_result.add_output_data("response_code", response.code)
             if response.data:
@@ -93,6 +93,7 @@ def response_handler(response: InfluxOutput, task_result: TaskResult) -> TaskRes
 
             return task_result
         case _:
+            task_result = TaskResult(status=TaskResultStatus.FAILED)
             task_result.status = TaskResultStatus.FAILED
             task_result.logs = task_result.logs or str(response)
             if response.code:

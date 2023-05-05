@@ -47,9 +47,9 @@ class NETCONF(ServiceWorkersImpl):
             response_body: dict[str, Any]
             response_code: int
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = netconf_worker.execute_mount_netconf(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
     ###############################################################################
     class NetconfMountAnyNetconf(WorkerImpl):
@@ -69,9 +69,9 @@ class NETCONF(ServiceWorkersImpl):
             response_body: dict[str, Any]
             response_code: int
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = netconf_worker.execute_mount_any(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
     ###############################################################################
 
@@ -89,9 +89,9 @@ class NETCONF(ServiceWorkersImpl):
             response_body: dict[str, Any]
             response_code: int
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = netconf_worker.execute_unmount_netconf(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
     ###############################################################################
 
@@ -113,15 +113,15 @@ class NETCONF(ServiceWorkersImpl):
             response_body: dict[str, Any]
             response_code: int
 
-        def execute(self, task: Task, task_result: TaskResult) -> TaskResult:
+        def execute(self, task: Task) -> TaskResult:
             response = netconf_worker.read_structured_data_sync(**task.input_data)
-            return response_handler(response, task_result)
+            return response_handler(response)
 
 
-def response_handler(response: UniconfigOutput, task_result: TaskResult) -> TaskResult:
+def response_handler(response: UniconfigOutput) -> TaskResult:
     match response.code:
         case response_code if response_code in range(200, 299):
-            task_result.status = TaskResultStatus.COMPLETED
+            task_result = TaskResult(status=TaskResultStatus.COMPLETED)
             if response.code:
                 task_result.add_output_data("response_code", response.code)
             if response.data:
@@ -133,7 +133,7 @@ def response_handler(response: UniconfigOutput, task_result: TaskResult) -> Task
 
             return task_result
         case _:
-            task_result.status = TaskResultStatus.FAILED
+            task_result = TaskResult(status=TaskResultStatus.FAILED)
             task_result.logs = task_result.logs or str(response)
             if response.code:
                 task_result.add_output_data("response_code", response.code)

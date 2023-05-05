@@ -137,7 +137,7 @@ class TestReadStructuredData(unittest.TestCase):
 
             worker = uniconfig_worker.Uniconfig.UniconfigReadStructuredDeviceData()
 
-            response = worker.execute(task=task, task_result=TaskResult())
+            response = worker.execute(task=task)
 
             self.assertEqual(response.status, TaskResultStatus.COMPLETED)
 
@@ -189,7 +189,7 @@ class TestReadStructuredData(unittest.TestCase):
 
                 worker = uniconfig_worker.Uniconfig.UniconfigReadStructuredDeviceData()
 
-                response = worker.execute(task=task, task_result=TaskResult())
+                response = worker.execute(task=task)
                 self.assertEqual(response.status, TaskResultStatus.FAILED)
 
         except Exception as e:
@@ -220,7 +220,7 @@ class TestWriteStructuredData(unittest.TestCase):
 
             worker = uniconfig_worker.Uniconfig.UniconfigWriteStructuredDeviceData()
 
-            response = worker.execute(task=task, task_result=TaskResult())
+            response = worker.execute(task=task)
 
             self.assertEqual(response.status, TaskResultStatus.COMPLETED)
             self.assertEqual(
@@ -260,7 +260,7 @@ class TestWriteStructuredData(unittest.TestCase):
 
             worker = uniconfig_worker.Uniconfig.UniconfigWriteStructuredDeviceData()
 
-            response = worker.execute(task=task, task_result=TaskResult())
+            response = worker.execute(task=task)
 
             self.assertEqual(response.status, TaskResultStatus.FAILED)
             self.assertEqual(response.output["response_code"], 404)
@@ -294,7 +294,7 @@ class TestWriteStructuredData(unittest.TestCase):
 
             worker = uniconfig_worker.Uniconfig.UniconfigWriteStructuredDeviceData()
 
-            response = worker.execute(task=task, task_result=TaskResult())
+            response = worker.execute(task=task)
 
             self.assertEqual(response.status, TaskResultStatus.FAILED)
             self.assertEqual(response.output["response_code"], 404)
@@ -323,7 +323,7 @@ class TestDeleteStructuredData(unittest.TestCase):
 
             worker = uniconfig_worker.Uniconfig.UniconfigDeleteStructuredDeviceData()
 
-            response = worker.execute(task=task, task_result=TaskResult())
+            response = worker.execute(task=task)
 
             self.assertEqual(response.status, TaskResultStatus.COMPLETED)
             self.assertEqual(response.output["response_code"], 204)
@@ -345,7 +345,7 @@ class TestDeleteStructuredData(unittest.TestCase):
 
             worker = uniconfig_worker.Uniconfig.UniconfigDeleteStructuredDeviceData()
 
-            response = worker.execute(task=task, task_result=TaskResult())
+            response = worker.execute(task=task)
 
             self.assertEqual(response.status, TaskResultStatus.FAILED)
             self.assertEqual(response.output["response_code"], 404)
@@ -371,7 +371,7 @@ class TestCommit(unittest.TestCase):
 
             worker = uniconfig_worker.Uniconfig.UniconfigCommit()
 
-            response = worker.execute(task=task, task_result=TaskResult())
+            response = worker.execute(task=task)
 
             self.assertEqual(response.status, TaskResultStatus.COMPLETED)
 
