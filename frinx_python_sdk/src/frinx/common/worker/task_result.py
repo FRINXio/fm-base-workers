@@ -8,7 +8,7 @@ from pydantic import validator
 
 
 class TaskResult(BaseModel):
-    status: TaskResultStatus = Field(default=None)
+    status: TaskResultStatus
     output: dict[str, Any] = Field(default={})
     logs: list[str] | str = Field(default=[])
 
