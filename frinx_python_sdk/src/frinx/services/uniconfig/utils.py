@@ -23,7 +23,7 @@ def request(method, url, cookies=None, data=None, timeout=60) -> UniconfigRpcRes
         cookies=cookies,
         data=data,
         timeout=timeout,
-        headers=uniconfig_headers
+        headers=uniconfig_headers,
     )
 
     code, data = parse_response(response)
