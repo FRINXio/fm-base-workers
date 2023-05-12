@@ -6,6 +6,7 @@ from string import Template
 
 import frinx.common.frinx_rest
 import requests
+from frinx.common.frinx_rest import uniconfig_headers
 from frinx.common.frinx_rest import uniconfig_url_base
 from frinx.common.util import parse_response
 from frinx.services.uniconfig.models import *
@@ -16,7 +17,9 @@ from frinx.services.uniconfig.templates import uniconfig_url_uniconfig_tx_create
 
 def request(method, url, cookies=None, data=None, timeout=60) -> UniconfigRpcResponse:
     print(method, url, cookies)
-    response = requests.request(method=method, url=url, cookies=cookies, data=data, timeout=timeout)
+    response = requests.request(
+        url=url, cookies=cookies, data=data, timeout=timeout, headers=uniconfig_headers
+    )
 
     code, data = parse_response(response)
     response_cookies = parse_response_cookies(response)
