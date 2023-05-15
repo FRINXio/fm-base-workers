@@ -1,0 +1,212 @@
+name: adhoc_demand
+run-name: ${{ github.workflow }} - conductor
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: '00 17 * * *'
+
+jobs:
+  deploy_conductor_run_tests:
+    name: Deploy conductor and run tests
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Clone conductor
+      uses: actions/checkout@v3
+      with:
+        repository: FRINXio/conductor
+        ref: master
+        token: ${{ secrets.TOKEN }}
+        submodules: true
+        path: ./conductor/conductor
+
+    - name: Check
+      run: |
+        pwd
+        ls
+        echo "-------------------"
+
+        cd conductor/conductor
+        pwd
+        ls
+        echo "Repo conductor - last commit:"
+        git log -n1
+
+        echo "-------------------"
+        cd conductor-community
+        pwd
+        ls
+        echo "Submodule conductor-community - last commit:"
+        git log -n1
+
+    - name: Start Postgres
+      run: |
+        cd conductor/conductor
+        pwd
+        ls -al README.md
+        echo "Read README.md - how to start postgres"
+
+        DOCKER_CONTAINER_NAME="psql"
+
+        docker run --name $DOCKER_CONTAINER_NAME \
+                   -p 5432:5432 \
+                   -e POSTGRES_PASSWORD=postgres \
+                   -d \
+                   postgres:latest \
+                   postgres \
+                      -c shared_preload_libraries=pg_stat_statements \
+                      -c pg_stat_statements.track=all \
+                      -c max_connections=200
+
+        timeout 90s bash -c "until docker exec $DOCKER_CONTAINER_NAME pg_isready ; do sleep 5 ; done"
+        echo "----> postgres container should be up"
+        docker ps
+
+    - name: Start conductor
+      run: |
+        cd conductor/conductor
+
+        #https://stackoverflow.com/questions/74245389/how-to-run-spring-boot-server-in-background-gh-actions
+        #https://github.com/appleboy/ssh-action/issues/40
+        echo "Start conductor in background + log in the file conductor.out and conductor.err"
+        nohup ./gradlew bootRun > conductor.out 2> conductor.err < /dev/null &
+
+    - name: Wait for conductor to start
+      timeout-minutes: 6
+      run: |
+        cd conductor/conductor
+        pwd
+        echo "Conductor has been started in background - wait ..."
+        ls -al conductor.out
+
+        echo "Waiting for string 'Started Conductor in' to appear in conductor.out ...";
+        while [[ -z $(grep "Started Conductor in" conductor.out) ]];
+        do
+          # tail -n1 conductor.out
+          echo "...."
+          sleep 60;
+        done
+
+        echo "Done:"
+        grep "Started Conductor in" conductor.out
+
+    - name: Conductor started - show log conductor.out
+      run: |
+        cd conductor/conductor
+        pwd
+        ls -al conductor.out
+        cat conductor.out
+
+    - name: Clone fm-base-workers
+      uses: actions/checkout@v3
+      with:
+        repository: FRINXio/fm-base-workers
+        ref: master
+        token: ${{ secrets.TOKEN }}
+        path: ./conductor/fm-base-workers
+
+    - name: Check
+      run: |
+        pwd
+        ls
+        echo "-------------------"
+
+        cd conductor/fm-base-workers
+        pwd
+        ls
+
+        echo "-------------------"
+        python3 --version
+        pip3 --version
+
+        echo "-------------------"
+        find . -name requirements.txt
+        cat requirements.txt
+        cat system_tests/requirements.txt
+        cat frinx_python_sdk/requirements.txt
+
+    - name: Prepare python virtual environment
+      run: |
+        cd conductor/fm-base-workers
+        pwd
+        echo "----> 01. INSTALL virtualenv"
+        sudo apt install python3-virtualenv
+        echo "----> 02. CREATE virtualenv"
+        virtualenv venv
+        echo "----> 03. START virtualenv"
+        source venv/bin/activate
+        python3 --version
+        pip3 freeze
+        echo "----> 04. INSTALL python libraries"
+        sudo apt-get install libpq-dev
+        pip3 install -r ./requirements.txt
+        pip3 install -r ./system_tests/requirements.txt
+        pip3 install -r ./frinx_python_sdk/requirements.txt
+
+        echo "-------------------"
+        echo "----> 05. CHECK python libraries"
+        pip3 freeze
+
+    - name: Start frinx_python_sdk
+      run: |
+        #pwd
+        #echo $GITHUB_WORKSPACE
+
+        cd conductor/fm-base-workers
+        pwd
+
+        source venv/bin/activate
+
+        echo "Start frinx_python_sdk in background + log into frinx_python_sdk.out and frinx_python_sdk.err"
+
+        CONDUCTOR_URL_BASE=http://localhost:8080/api \
+        LOG_LEVEL=INFO \
+        PYTHONPATH=$GITHUB_WORKSPACE/conductor/fm-base-workers/frinx_python_sdk/src \
+        nohup python3 frinx_python_sdk/src/frinx/main.py > frinx_python_sdk.out 2> frinx_python_sdk.err < /dev/null &
+
+    - name: Check frinx_python_sdk started - show log frinx_python_sdk.err
+      run: |
+        cd conductor/fm-base-workers
+        pwd
+
+        while [[ -z $(sudo grep "Starting a queue polling" frinx_python_sdk.err) ]];
+        do
+          echo "Waiting for starting frinx_python_sdk";
+          sleep 1;
+        done
+
+        echo "-------------------"
+        ls -al frinx_python_sdk.out
+        cat frinx_python_sdk.out
+
+        echo "-------------------"
+        ls -al frinx_python_sdk.err
+        cat frinx_python_sdk.err
+
+    - name: Execute tests
+      id: execute_tests
+      timeout-minutes: 30
+      run: |
+        cd conductor/fm-base-workers
+        source venv/bin/activate
+
+        cd system_tests
+        pwd
+        
+        python3 -m pytest tests/frinx/test_performance.py
+
+    - name: Upload pytest logs
+      if: ${{ ( success() || failure() ) &&  ( steps.execute_tests.outcome != 'skipped' ) }}
+      uses: actions/upload-artifact@v3.1.1
+      with:
+         name: ${{ github.workflow }}_pytest_logs.zip
+         path: |
+            ${{ github.workspace }}/conductor/conductor/conductor.out
+            ${{ github.workspace }}/conductor/conductor/conductor.err
+            ${{ github.workspace }}/conductor/fm-base-workers/frinx_python_sdk.out
+            ${{ github.workspace }}/conductor/fm-base-workers/frinx_python_sdk.err
+            ${{ github.workspace }}/conductor/fm-base-workers/system_tests/log.log_file
+         if-no-files-found: error
+         retention-days: 1
