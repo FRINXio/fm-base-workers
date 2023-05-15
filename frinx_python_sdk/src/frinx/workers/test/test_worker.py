@@ -28,10 +28,8 @@ class TestWorker(ServiceWorkersImpl):
             output: str
 
         def execute(self, task: Task) -> TaskResult:
-            task_result = TaskResult()
-            task_result.status = TaskResultStatus.COMPLETED
+            task_result = TaskResult(status=TaskResultStatus.COMPLETED, logs=["Echo worker invoked successfully"])
             task_result.add_output_data("output", task.input_data.get("input", ""))
-            task_result.logs = "Echo worker invoked successfully"
             return task_result
 
     ###############################################################################
@@ -53,21 +51,15 @@ class TestWorker(ServiceWorkersImpl):
             time: int
 
         def execute(self, task: Task) -> TaskResult:
-            task_result = TaskResultStatus()
             sleep = task.input_data.get("time", self.DEFAULT_SLEEP)
             if sleep < 0 or sleep > 600:
-                task_result.status = TaskResultStatus.FAILED
-                task_result.logs = "Invalid sleep time, must be > 0 and < 600"
-                return task_result
+                return TaskResult(status=TaskResultStatus.FAILED, logs=["Invalid sleep time, must be > 0 and < 600"])
 
             import time
 
-            task_result.logs = "Sleep worker invoked. Sleeping"
+            task_result = TaskResult(status=TaskResultStatus.COMPLETED, logs=["Sleep worker invoked. Sleeping"])
             time.sleep(sleep)
             task_result.add_output_data("time", sleep)
-            task_result.status = TaskResultStatus.COMPLETED
-            task_result.logs = "Sleep worker invoked successfully"
-
             return task_result
 
     ###############################################################################
@@ -108,11 +100,9 @@ class TestWorker(ServiceWorkersImpl):
                 )
                 dynamic_tasks_i[str(task_ref)] = wf_inputs
 
-            task_result = TaskResult()
+            task_result = TaskResult(status=TaskResultStatus.COMPLETED, logs=["Dynamic fork generator worker invoked successfully"])
             task_result.add_output_data("dynamic_tasks_i", dynamic_tasks_i)
             task_result.add_output_data("dynamic_tasks", dynamic_tasks)
-            task_result.status = TaskResultStatus.COMPLETED
-            task_result.logs = "Dynamic fork generator worker invoked successfully"
 
             return task_result
 
@@ -139,11 +129,9 @@ class TestWorker(ServiceWorkersImpl):
                 num_sentences=task.input_data.get("num_sentences", 3),
                 num_words=task.input_data.get("num_words", 3),
             )
-            task_result = TaskResult()
+            task_result = TaskResult(status=TaskResultStatus.COMPLETED, logs=["Lorem ipsum worker invoked successfully"])
             task_result.add_output_data("text", text)
             task_result.add_output_data("bytes", len(text.encode("utf-8")))
-            task_result.status = TaskResultStatus.COMPLETED
-            task_result.logs = "Lorem ipsum worker invoked successfully"
 
             return task_result
 
