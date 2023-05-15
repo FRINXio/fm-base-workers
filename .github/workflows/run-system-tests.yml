@@ -1,5 +1,4 @@
-name: adhoc_demand
-run-name: ${{ github.workflow }} - conductor
+name: conductor system tests
 
 on:
   workflow_dispatch:
