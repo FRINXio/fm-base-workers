@@ -6,6 +6,10 @@ on:
   schedule:
     - cron: '00 17 * * *'
 
+  push:
+    branches:
+      - master
+
 jobs:
   deploy_conductor_run_tests:
     name: Deploy conductor and run tests
