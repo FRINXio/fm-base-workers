@@ -218,7 +218,7 @@ jobs:
         printf -v start '%(%s)T'
         echo "measure_duration_start=$start" | tee  -a  $GITHUB_ENV
 
-        # TODO debug python3 -m pytest tests/frinx/test_performance.py
+        python3 -m pytest tests/frinx/test_performance.py
 
     - name: Execute tests - measure duration
       if: ${{ ( success() || failure() ) &&  ( steps.execute_tests.outcome != 'skipped' ) }}
