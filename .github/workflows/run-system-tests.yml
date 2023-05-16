@@ -44,6 +44,9 @@ jobs:
         echo "Submodule conductor-community - last commit:"
         git log -n1
 
+        FRINX_CONDUCTOR_VERSION=$(git describe --tags)
+        echo "FRINX_CONDUCTOR_VERSION=$FRINX_CONDUCTOR_VERSION" | tee  -a  $GITHUB_ENV
+
     - name: Start Postgres
       run: |
         cd conductor/conductor
@@ -130,6 +133,9 @@ jobs:
         cat system_tests/requirements.txt
         cat frinx_python_sdk/requirements.txt
 
+        FRINX_CONDUCTOR_WORKERS_AND_PYTHON_SDK_VERSION=$(git describe --tags)
+        echo "FRINX_CONDUCTOR_WORKERS_AND_PYTHON_SDK_VERSION=$FRINX_CONDUCTOR_WORKERS_AND_PYTHON_SDK_VERSION" | tee  -a  $GITHUB_ENV
+
     - name: Prepare python virtual environment
       run: |
         cd conductor/fm-base-workers
@@ -188,6 +194,15 @@ jobs:
         ls -al frinx_python_sdk.err
         cat frinx_python_sdk.err
 
+    - name: Clone ga_workflows_collected_data
+      if: ${{ ( success() || failure() ) &&  ( steps.execute_tests.outcome != 'skipped' ) }}
+      uses: actions/checkout@v3
+      with:
+        repository: FRINXio/ga_workflows_collected_data
+        ref: main
+        token: ${{ secrets.token_ga_workflows_collected_data }}
+        path: ./ga_workflows_collected_data
+
     - name: Execute tests
       id: execute_tests
       timeout-minutes: 30
@@ -198,7 +213,27 @@ jobs:
         cd system_tests
         pwd
         
+        printf -v start '%(%s)T'
+        echo "measure_duration_start=$start" | tee  -a  $GITHUB_ENV
+
         python3 -m pytest tests/frinx/test_performance.py
+
+    - name: Execute tests - measure duration
+      if: ${{ ( success() || failure() ) &&  ( steps.execute_tests.outcome != 'skipped' ) }}
+      run: |
+        printf -v measure_duration_end '%(%s)T'
+        echo "duration= in $(( (measure_duration_end - ${{ env.measure_duration_start }}) / 60 )) min. " | tee  -a  $GITHUB_ENV
+
+        duration=$(( (measure_duration_end - ${{ env.measure_duration_start }}) / 60 ))  # minutes
+        timestamp_now=$(date +%s)
+        git config --global user.email "support@frinx.io"
+        git config --global user.name "FRINXrepo"
+        echo "${timestamp_now}000,${{ github.workflow }},${{ github.run_id }},${{ github.event_name }},${{ job.status }},${{ env.FRINX_CONDUCTOR_VERSION }}+${{ env.FRINX_CONDUCTOR_WORKERS_AND_PYTHON_SDK_VERSION }},$duration" >> ./ga_workflows_collected_data/${{ github.workflow }}
+        cd ./ga_workflows_collected_data
+        git add ${{ github.workflow }}
+        git commit -am "${{ github.workflow }} tests in $duration minutes"
+        git pull -r
+        git push -f origin main
 
     - name: Upload pytest logs
       if: ${{ ( success() || failure() ) &&  ( steps.execute_tests.outcome != 'skipped' ) }}
@@ -213,3 +248,4 @@ jobs:
             ${{ github.workspace }}/conductor/fm-base-workers/system_tests/log.log_file
          if-no-files-found: error
          retention-days: 1
+
