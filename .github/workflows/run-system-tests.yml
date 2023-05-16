@@ -21,6 +21,7 @@ jobs:
       with:
         repository: FRINXio/conductor
         ref: master
+        fetch-depth: 0
         token: ${{ secrets.TOKEN }}
         submodules: true
         path: ./conductor/conductor
@@ -110,6 +111,7 @@ jobs:
       with:
         repository: FRINXio/fm-base-workers
         ref: ${{ github.ref }}
+        fetch-depth: 0
         token: ${{ secrets.TOKEN }}
         path: ./conductor/fm-base-workers
 
