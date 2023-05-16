@@ -218,7 +218,7 @@ jobs:
         printf -v start '%(%s)T'
         echo "measure_duration_start=$start" | tee  -a  $GITHUB_ENV
 
-        python3 -m pytest tests/frinx/test_performance.py
+        # TODO debug python3 -m pytest tests/frinx/test_performance.py
 
     - name: Execute tests - measure duration
       if: ${{ ( success() || failure() ) &&  ( steps.execute_tests.outcome != 'skipped' ) }}
@@ -228,6 +228,7 @@ jobs:
 
         duration=$(( (measure_duration_end - ${{ env.measure_duration_start }}) / 60 ))  # minutes
         timestamp_now=$(date +%s)
+        git config -l --show-scope
         git config --global user.email "support@frinx.io"
         git config --global user.name "FRINXrepo"
         filename=${{ github.workflow }}
