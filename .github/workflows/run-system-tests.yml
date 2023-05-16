@@ -230,7 +230,8 @@ jobs:
         timestamp_now=$(date +%s)
         git config --global user.email "support@frinx.io"
         git config --global user.name "FRINXrepo"
-        filename="${${{ github.workflow }}// /_}"
+        filename=${{ github.workflow }}
+        filename="${filename// /_}"
         echo "${timestamp_now}000,${{ github.workflow }},${{ github.run_id }},${{ github.event_name }},${{ job.status }},${{ env.FRINX_CONDUCTOR_VERSION }}+${{ env.FRINX_CONDUCTOR_WORKERS_AND_PYTHON_SDK_VERSION }},$duration" >> ./ga_workflows_collected_data/$filename
         cd ./ga_workflows_collected_data
         git add $filename
