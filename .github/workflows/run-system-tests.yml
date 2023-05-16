@@ -20,7 +20,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         repository: FRINXio/conductor
-        ref: master
+        ref: ${{ github.ref }}
         token: ${{ secrets.TOKEN }}
         submodules: true
         path: ./conductor/conductor
@@ -37,15 +37,15 @@ jobs:
         echo "Repo conductor - last commit:"
         git log -n1
 
+        FRINX_CONDUCTOR_VERSION=$(git describe --tags)
+        echo "FRINX_CONDUCTOR_VERSION=$FRINX_CONDUCTOR_VERSION" | tee  -a  $GITHUB_ENV
+
         echo "-------------------"
         cd conductor-community
         pwd
         ls
         echo "Submodule conductor-community - last commit:"
         git log -n1
-
-        FRINX_CONDUCTOR_VERSION=$(git describe --tags)
-        echo "FRINX_CONDUCTOR_VERSION=$FRINX_CONDUCTOR_VERSION" | tee  -a  $GITHUB_ENV
 
     - name: Start Postgres
       run: |
