@@ -235,7 +235,8 @@ jobs:
         filename="${filename// /_}"
         echo "${timestamp_now}000,${{ github.workflow }},${{ github.run_id }},${{ github.event_name }},${{ job.status }},${{ env.FRINX_CONDUCTOR_VERSION }}+${{ env.FRINX_CONDUCTOR_WORKERS_AND_PYTHON_SDK_VERSION }},$duration" >> ./ga_workflows_collected_data/$filename
         cd ./ga_workflows_collected_data
-        git add $filename
+        git status
+        git add $filename ${filename}.json
         git commit -am "${{ github.workflow }} tests in $duration minutes"
         git pull -r
         git push -f origin main
