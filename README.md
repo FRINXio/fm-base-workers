@@ -39,4 +39,4 @@ e.g.:
 Uniconfig host can be configured in env.:```UNICONFIG_URL_BASE=http://uniconfig:8181/rests```
 
 # Conductor system tests grafana dashboard
-http://localhost:3000/public-dashboards/93faf068d01d45289a17ef659795c918
+http://10.19.0.253:3000/public-dashboards/93faf068d01d45289a17ef659795c918
