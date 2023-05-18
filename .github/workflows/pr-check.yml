@@ -40,7 +40,7 @@ jobs:
 
       - name: Test with pytest
         run: |
-          pytest -v --ignore=system-tests
+          pytest -v --ignore=system_tests
 
 #       - name: Install mypy
 #         run: pip install mypy
