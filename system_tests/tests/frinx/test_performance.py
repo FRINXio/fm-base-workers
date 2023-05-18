@@ -38,7 +38,6 @@ CONDUCTOR_WF_EXEC_RQ_FORK = {
 CONDUCTOR_HEADERS = {"Content-Type": "application/json", "Accept": "application/json"}
 
 
-
 async def exec_wf(session, wf_rq: dict = CONDUCTOR_WF_EXEC_RQ, index=0) -> str:
     url = CONDUCTOR_URL + "workflow"
     LOGGER.debug("Executing workflow %s", index)
@@ -168,13 +167,13 @@ async def test_performance_simple_wf(timestamp=None, context="simple"):
                 THIS_FUNCTION_NAME = "test_performance_simple_wf"  # Note: possible to use inspect.currentframe().f_code.co_name
             elif "batch" in context:
                 THIS_FUNCTION_NAME = "test_performance_simple_wf_long"
-                stats.update({"batch": int(context.replace("batch", "" ))})
-            with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, 'r') as openfile:
+                stats.update({"batch": int(context.replace("batch", ""))})
+            with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, "r") as openfile:
                 json_object = json.load(openfile)
             stats.update({"timestamp": 1000 * timestamp})
             if not THIS_FUNCTION_NAME in json_object:
                 json_object.update({THIS_FUNCTION_NAME: []})
-            json_object[ THIS_FUNCTION_NAME ].append(stats)
+            json_object[THIS_FUNCTION_NAME].append(stats)
             with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, "w") as outfile:
                 outfile.write(json.dumps(json_object, indent=4))
 
@@ -241,12 +240,12 @@ async def test_performance_fork():
 
         if pytest.COLLECT_STATS_FOLDER:
             THIS_FUNCTION_NAME = "test_performance_fork"  # Note: possible to use inspect.currentframe().f_code.co_name
-            with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, 'r') as openfile:
+            with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, "r") as openfile:
                 json_object = json.load(openfile)
             stats.update({"timestamp": 1000 * timestamp})
             if not THIS_FUNCTION_NAME in json_object:
                 json_object.update({THIS_FUNCTION_NAME: []})
-            json_object[ THIS_FUNCTION_NAME ].append(stats)
+            json_object[THIS_FUNCTION_NAME].append(stats)
             with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, "w") as outfile:
                 outfile.write(json.dumps(json_object, indent=4))
 
@@ -322,12 +321,12 @@ async def test_performance_simple_wf_external_storage():
 
         if pytest.COLLECT_STATS_FOLDER:
             THIS_FUNCTION_NAME = "test_performance_simple_wf_external_storage"  # Note: possible to use inspect.currentframe().f_code.co_name
-            with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, 'r') as openfile:
+            with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, "r") as openfile:
                 json_object = json.load(openfile)
             stats.update({"timestamp": 1000 * timestamp})
             if not THIS_FUNCTION_NAME in json_object:
                 json_object.update({THIS_FUNCTION_NAME: []})
-            json_object[ THIS_FUNCTION_NAME ].append(stats)
+            json_object[THIS_FUNCTION_NAME].append(stats)
             with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, "w") as outfile:
                 outfile.write(json.dumps(json_object, indent=4))
 
