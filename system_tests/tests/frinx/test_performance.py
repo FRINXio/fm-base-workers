@@ -202,8 +202,7 @@ async def test_performance_fork():
     SLEEP = 4
     SAMPLING_RATE = 1
 
-    if timestamp is None:
-        timestamp = time.time()
+    timestamp = time.time()
 
     async with aiohttp.ClientSession() as session:
         start = timer()
@@ -281,8 +280,7 @@ async def test_performance_simple_wf_external_storage():
     SLEEP = 4
     SAMPLING_RATE = 10
 
-    if timestamp is None:
-        timestamp = time.time()
+    timestamp = time.time()
 
     async with aiohttp.ClientSession() as session:
         start = timer()
