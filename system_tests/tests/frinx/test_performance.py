@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import statistics
-import time as sleep_time
+import time
 from datetime import timedelta
 from timeit import default_timer as timer
 
@@ -12,6 +12,7 @@ import pytest
 
 LOGGER = logging.getLogger(__name__)
 CONDUCTOR_URL = os.environ.get("CONDUCTOR_URL", "http://localhost:8080/api/")
+COLLECT_STATS_FILENAME = "conductor_system_tests.json"
 
 CONDUCTOR_WF_EXEC_RQ = {
     "name": "Test_workflow",
@@ -113,10 +114,13 @@ async def collect_stats(session, wf_ids: tuple[str]) -> dict:
 
 
 @pytest.mark.asyncio
-async def test_performance_simple_wf():
+async def test_performance_simple_wf(timestamp=None, context="simple"):
     EXECUTIONS = 1000
     SLEEP = 4
     SAMPLING_RATE = 10
+
+    if timestamp is None:
+        timestamp = time.time()
 
     async with aiohttp.ClientSession() as session:
         start = timer()
@@ -143,7 +147,7 @@ async def test_performance_simple_wf():
                 break
 
             logging.info("Still running: %s workflows", running_wfs_len)
-            sleep_time.sleep(SLEEP)
+            time.sleep(SLEEP)
 
         end = timer()
 
@@ -157,6 +161,21 @@ async def test_performance_simple_wf():
 
         assert stats["failed_workflows"] == 0
 
+        if pytest.COLLECT_STATS_FOLDER:
+            if context == "simple":
+                THIS_FUNCTION_NAME = "test_performance_simple_wf"  # Note: possible to use inspect.currentframe().f_code.co_name
+            elif "batch" in context:
+                THIS_FUNCTION_NAME = "test_performance_simple_wf_long"
+                stats.update({"batch": int(context.replace("batch", ""))})
+            with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, "r") as openfile:
+                json_object = json.load(openfile)
+            stats.update({"timestamp": 1000 * timestamp})
+            if not THIS_FUNCTION_NAME in json_object:
+                json_object.update({THIS_FUNCTION_NAME: []})
+            json_object[THIS_FUNCTION_NAME].append(stats)
+            with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, "w") as outfile:
+                outfile.write(json.dumps(json_object, indent=4))
+
         return stats
 
 
@@ -167,7 +186,7 @@ async def test_performance_simple_wf_long():
     all_stats = []
     for i in range(0, BATCHES):
         LOGGER.info("Executing batch: %s", i)
-        stats = await test_performance_simple_wf()
+        stats = await test_performance_simple_wf(time.time(), f"batch{i:02}")
         all_stats.append(stats)
 
     for stat in all_stats:
@@ -180,6 +199,8 @@ async def test_performance_fork():
     FORKS = 100
     SLEEP = 4
     SAMPLING_RATE = 1
+
+    timestamp = time.time()
 
     async with aiohttp.ClientSession() as session:
         start = timer()
@@ -204,7 +225,7 @@ async def test_performance_fork():
                 break
 
             logging.info("Still running: %s workflows", running_wfs_len)
-            sleep_time.sleep(SLEEP)
+            time.sleep(SLEEP)
 
         end = timer()
 
@@ -215,6 +236,17 @@ async def test_performance_fork():
         LOGGER.info("Execution stats: %s", stats)
 
         assert stats["failed_workflows"] == 0
+
+        if pytest.COLLECT_STATS_FOLDER:
+            THIS_FUNCTION_NAME = "test_performance_fork"  # Note: possible to use inspect.currentframe().f_code.co_name
+            with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, "r") as openfile:
+                json_object = json.load(openfile)
+            stats.update({"timestamp": 1000 * timestamp})
+            if not THIS_FUNCTION_NAME in json_object:
+                json_object.update({THIS_FUNCTION_NAME: []})
+            json_object[THIS_FUNCTION_NAME].append(stats)
+            with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, "w") as outfile:
+                outfile.write(json.dumps(json_object, indent=4))
 
         last_wf_output = await get_last_wf_output(executed_ids, session)
         LOGGER.debug("Last workflow output: %s", last_wf_output)
@@ -246,6 +278,8 @@ async def test_performance_simple_wf_external_storage():
     SLEEP = 4
     SAMPLING_RATE = 10
 
+    timestamp = time.time()
+
     async with aiohttp.ClientSession() as session:
         start = timer()
         LOGGER.info("Executing %s workflows", EXECUTIONS)
@@ -270,7 +304,7 @@ async def test_performance_simple_wf_external_storage():
                 break
 
             logging.info("Still running: %s workflows", running_wfs_len)
-            sleep_time.sleep(SLEEP)
+            time.sleep(SLEEP)
 
         end = timer()
 
@@ -283,6 +317,17 @@ async def test_performance_simple_wf_external_storage():
         LOGGER.info("Workflow payload size: %s bytes", last_wf_output.get("bytes", -1))
 
         assert stats["failed_workflows"] == 0
+
+        if pytest.COLLECT_STATS_FOLDER:
+            THIS_FUNCTION_NAME = "test_performance_simple_wf_external_storage"  # Note: possible to use inspect.currentframe().f_code.co_name
+            with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, "r") as openfile:
+                json_object = json.load(openfile)
+            stats.update({"timestamp": 1000 * timestamp})
+            if not THIS_FUNCTION_NAME in json_object:
+                json_object.update({THIS_FUNCTION_NAME: []})
+            json_object[THIS_FUNCTION_NAME].append(stats)
+            with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, "w") as outfile:
+                outfile.write(json.dumps(json_object, indent=4))
 
 
 def parse_running_wf_ids(running_wfs: bytes):
