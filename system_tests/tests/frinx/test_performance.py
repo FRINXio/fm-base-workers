@@ -237,6 +237,17 @@ async def test_performance_fork():
 
         assert stats["failed_workflows"] == 0
 
+        if pytest.COLLECT_STATS_FOLDER:
+            THIS_FUNCTION_NAME = "test_performance_fork"  # Note: possible to use inspect.currentframe().f_code.co_name
+            with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, 'r') as openfile:
+                json_object = json.load(openfile)
+            stats.update({"timestamp": 1000 * timestamp})
+            if not THIS_FUNCTION_NAME in json_object:
+                json_object.update({THIS_FUNCTION_NAME: []})
+            json_object[ THIS_FUNCTION_NAME ].append(stats)
+            with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, "w") as outfile:
+                outfile.write(json.dumps(json_object, indent=4))
+
         last_wf_output = await get_last_wf_output(executed_ids, session)
         LOGGER.debug("Last workflow output: %s", last_wf_output)
         LOGGER.info(
@@ -304,6 +315,17 @@ async def test_performance_simple_wf_external_storage():
         LOGGER.info("Workflow payload size: %s bytes", last_wf_output.get("bytes", -1))
 
         assert stats["failed_workflows"] == 0
+
+        if pytest.COLLECT_STATS_FOLDER:
+            THIS_FUNCTION_NAME = "test_performance_simple_wf_external_storage"  # Note: possible to use inspect.currentframe().f_code.co_name
+            with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, 'r') as openfile:
+                json_object = json.load(openfile)
+            stats.update({"timestamp": 1000 * timestamp})
+            if not THIS_FUNCTION_NAME in json_object:
+                json_object.update({THIS_FUNCTION_NAME: []})
+            json_object[ THIS_FUNCTION_NAME ].append(stats)
+            with open(pytest.COLLECT_STATS_FOLDER + COLLECT_STATS_FILENAME, "w") as outfile:
+                outfile.write(json.dumps(json_object, indent=4))
 
 
 def parse_running_wf_ids(running_wfs: bytes):
