@@ -2,7 +2,6 @@ import asyncio
 import json
 import logging
 import os
-import pytest
 import statistics
 import time
 from datetime import timedelta
