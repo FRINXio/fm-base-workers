@@ -105,10 +105,18 @@ async def collect_stats(session, wf_ids: tuple[str]) -> dict:
 
         durations.append(wf_duration_ms)
 
-    return {
+    duration_quantiles = [round(q, 1) for q in statistics.quantiles(durations, n=10)]
+    q = 0
+    duration_quantiles_dict = dict()
+    for quantile in duration_quantiles:
+        q = q + 10
+        duration_quantiles_dict[f"quantile{q}_duration_seconds"] = quantile / 1000
+
+    return duration_quantiles_dict | {
         "median_duration_seconds": timedelta(milliseconds=statistics.median(durations)).seconds,
         "average_duration_seconds": timedelta(milliseconds=statistics.mean(durations)).seconds,
-        "duration_quantiles": [round(q, 1) for q in statistics.quantiles(durations, n=10)],
+        "max_duration_seconds": timedelta(milliseconds=max(durations)).seconds,
+        "min_duration_seconds": timedelta(milliseconds=min(durations)).seconds,
         "failed_workflows": failed,
     }
 
