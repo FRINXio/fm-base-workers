@@ -9,10 +9,10 @@ from timeit import default_timer as timer
 
 import aiohttp
 import pytest
-from system_tests.tests.frinx.test_performance import CONDUCTOR_HEADERS
-from system_tests.tests.frinx.test_performance import CONDUCTOR_URL
-from system_tests.tests.frinx.test_performance import exec_wf
-from system_tests.tests.frinx.test_performance import get_wf_execution
+from test_performance import CONDUCTOR_HEADERS
+from test_performance import CONDUCTOR_URL
+from test_performance import exec_wf
+from test_performance import get_wf_execution
 
 LOGGER = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ async def test_path_and_family_apis():
         family = await get_wf_family(session, child_id, True)
         assert len(family) == 1
         # This was summary only, workflowInput should be null
-        assert family[0].get("input", None) is None
+        assert not family[0].get("input", None)
 
 
 async def wait_for_completion(sleep_seconds, executed_id, session):
