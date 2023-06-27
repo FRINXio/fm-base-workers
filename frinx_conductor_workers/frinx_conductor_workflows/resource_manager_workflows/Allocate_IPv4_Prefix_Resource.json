@@ -67,8 +67,9 @@
         "name": "RESOURCE_MANAGER_calculate_desired_size_from_prefix",
         "taskReferenceName": "calculate_desired_size_from_prefix",
         "inputParameters": {
+          "subnet": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].PoolProperties.subnet}",
           "prefix": "${workflow.input.prefix}",
-          "resourceType": "ipv4"
+          "resourceType": "ipv4_prefix"
         },
         "type": "SIMPLE",
         "startDelay": 0,
@@ -137,6 +138,6 @@
     "inputParameters": [
         "{\"pool_name\":{\"value\":\"\",\"description\":\"Pool name\",\"type\":\"string\"}, \"description\":{\"value\":\"\",\"description\":\"[OPTIONAL] Description for resource\",\"type\":\"string\"}, \"prefix\":{\"value\":\"24\",\"description\":\"Subnet prefix\",\"type\":\"string\"}, \"desired_value\":{\"value\":\"\",\"description\":\"[OPTIONAL] Desired value ip address (for example 192.168.0.0)\",\"type\":\"string\"}}"
     ],
-    "outputParameters": {"result": "${lambda_print_result.output.result}"},
+    "outputParameters": {"result": {"data": "${lambda_print_result.output.result}"}},
     "schemaVersion": 2
 }
