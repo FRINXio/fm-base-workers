@@ -10,7 +10,7 @@ def __read__(file_name):
 setup(
     name="frinx_conductor_workers",
     packages=["frinx_conductor_workers", "frinx_conductor_workflows"],
-    version="1.1.11",
+    version="1.1.12",
     description="Conductor python client workers",
     author="Frinx",
     author_email="info@frinx.io",
