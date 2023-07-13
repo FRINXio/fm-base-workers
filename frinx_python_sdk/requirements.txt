@@ -1,4 +1,4 @@
 influxdb_client
 requests
 python_graphql_client
-pydantic
+pydantic==1.10.7
