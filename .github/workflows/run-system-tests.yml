@@ -180,17 +180,15 @@ jobs:
         pip3 freeze
 
     - name: Check frinx_python_sdk started - show log frinx_python_sdk.err
-      timeout-minutes: 1
       run: |
         cd conductor/fm-base-workers
         pwd
 
-        #while [[ -z $(sudo grep "Starting a queue polling" frinx_python_sdk.err) ]];
-        #do
-        #  echo "Waiting for starting frinx_python_sdk";
-        #  sleep 1;
-        #done
-        sleep 60
+        while [[ -z $(sudo grep "Starting a queue polling" frinx_python_sdk.err) ]];
+        do
+          echo "Waiting for starting frinx_python_sdk";
+          sleep 1;
+        done
 
         echo "-------------------"
         ls -al frinx_python_sdk.out
