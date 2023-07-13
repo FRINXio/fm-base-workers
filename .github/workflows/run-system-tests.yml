@@ -180,6 +180,7 @@ jobs:
         pip3 freeze
 
     - name: Check frinx_python_sdk started - show log frinx_python_sdk.err
+      timeout-minutes: 1
       run: |
         cd conductor/fm-base-workers
         pwd
