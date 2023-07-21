@@ -60,7 +60,11 @@ query_pool_template = Template(
         },
         resourceTypeId: $resource_type_id)
     {
-        id
+        edges{
+            nodes{
+                id
+            }
+        }
     }
     }"""
 )
@@ -81,10 +85,14 @@ query_pool_by_tag_template = Template(
     """
     query SearchPools($poolTag: String!) {
     SearchPoolsByTags(tags: { matchesAny: [{matchesAll: [$poolTag]}]}) {
-        id
-        AllocationStrategy {Name}
-        Name
-        PoolProperties
+        edges {
+            node {
+                id
+                AllocationStrategy {Name}
+                Name
+                PoolProperties
+            }
+        }
     }
     } """
 )
@@ -216,14 +224,18 @@ query_search_empty_pools_template = Template(
     """
     query getEmptyPools($resourceTypeId: ID) {
     QueryEmptyResourcePools(resourceTypeId: $resourceTypeId) {
-        id
-        Name
-        Tags {
-            Tag
-        }
-        AllocationStrategy {
-            Name        
-        }    
+        edges{
+            node{
+                id
+                Name
+                Tags {
+                    Tag
+                }
+                AllocationStrategy {
+                    Name        
+                } 
+            }
+        }   
     }
     }"""
 )
@@ -719,7 +731,13 @@ def query_pool(task, logs):
               "data": {
                 "QueryResourcePools": [
                   {
-                    "id": "<id>"
+                    "edges": [
+                      {
+                        "node": {
+                            "id": "<id>"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -802,10 +820,16 @@ def query_pool_by_tag(task, logs):
                 "data": {
                     "SearchPoolsByTags": [
                         {
-                            "id": "<id>",
-                            "AllocationStrategy": <Name>
-                            "Name": "<name>"
-                            "PoolProperties": <PoolProperties>
+                          "edges": [
+                            {
+                              "node": {
+                                "id": "<id>",
+                                "AllocationStrategy": <Name>
+                                "Name": "<name>"
+                                "PoolProperties": <PoolProperties>
+                              }
+                            }
+                          ]
                         }
                     ]
                 }
@@ -1397,10 +1421,16 @@ def query_search_empty_pools(task, logs):
                 "data": {
                     "QueryEmptyResourcePools": [
                         {
-                            "id": "<id>",
-                            "AllocationStrategy": <Name>
-                            "Name": "<name>"
-                            "Tags": <tag>
+                          "edges": [
+                            {
+                              "node": {
+                                "id": "<id>",
+                                "AllocationStrategy": <Name>
+                                "Name": "<name>"
+                                "Tags": <tag>
+                              }
+                            }
+                          ]
                         }
                     ]
                 }
