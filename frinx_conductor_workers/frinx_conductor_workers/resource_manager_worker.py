@@ -60,8 +60,8 @@ query_pool_template = Template(
         },
         resourceTypeId: $resource_type_id)
     {
-        edges{
-            nodes{
+        edges {
+            node {
                 id
             }
         }
@@ -224,8 +224,8 @@ query_search_empty_pools_template = Template(
     """
     query getEmptyPools($resourceTypeId: ID) {
     QueryEmptyResourcePools(resourceTypeId: $resourceTypeId) {
-        edges{
-            node{
+        edges {
+            node {
                 id
                 Name
                 Tags {
