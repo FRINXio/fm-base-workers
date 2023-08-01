@@ -735,7 +735,7 @@ def query_pool(task, logs):
                             "node": {
                                 "id": "<id>"
                             }
-                          }         
+                          }
                         ]
                     }
                 }
