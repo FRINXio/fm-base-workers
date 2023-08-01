@@ -727,20 +727,18 @@ def query_pool(task, logs):
 
         Returns:
             Response from uniresource. Worker output format::
-            "result":{
-              "data": {
-                "QueryResourcePools": [
-                  {
-                    "edges": [
-                      {
-                        "node": {
-                            "id": "<id>"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              }
+            "result": {
+                "data": {
+                    "QueryResourcePools": {
+                        "edges": [
+                          {
+                            "node": {
+                                "id": "<id>"
+                            }
+                          }         
+                        ]
+                    }
+                }
             }
 
     """
@@ -818,20 +816,18 @@ def query_pool_by_tag(task, logs):
             Response from uniresource. Worker output format::
             "result": {
                 "data": {
-                    "SearchPoolsByTags": [
-                        {
-                          "edges": [
-                            {
-                              "node": {
-                                "id": "<id>",
-                                "AllocationStrategy": <Name>
-                                "Name": "<name>"
-                                "PoolProperties": <PoolProperties>
-                              }
+                    "SearchPoolsByTags": {
+                        "edges": [
+                          {
+                            "node": {
+                            "id": "<id>",
+                            "AllocationStrategy": <Name>
+                            "Name": "<name>"
+                            "PoolProperties": <PoolProperties>
                             }
-                          ]
-                        }
-                    ]
+                          }
+                        ]
+                    }
                 }
             }
 
@@ -1419,20 +1415,18 @@ def query_search_empty_pools(task, logs):
             Response from uniresource. Worker output format::
             "result": {
                 "data": {
-                    "QueryEmptyResourcePools": [
-                        {
-                          "edges": [
-                            {
-                              "node": {
-                                "id": "<id>",
-                                "AllocationStrategy": <Name>
-                                "Name": "<name>"
-                                "Tags": <tag>
-                              }
+                    "QueryEmptyResourcePools": {
+                        "edges": [
+                          {
+                            "node": {
+                              "id": "<id>",
+                              "AllocationStrategy": <Name>
+                              "Name": "<name>"
+                              "Tags": <tag>
                             }
-                          ]
-                        }
-                    ]
+                          }
+                        ]
+                    }
                 }
             }
 
