@@ -1486,6 +1486,16 @@ def query_recently_active_resources(task, logs):
     return completed_response_with_logs(logs, {"result": response})
 
 
+@logging_handler(log)
+def return_status_to_delete(task, logs):
+    data = task["inputData"]["data"]
+    to_delete_data = []
+    for single_data in data:
+        if "to_delete" in single_data["node"]["AlternativeId"]["status"]:
+            to_delete_data.append(single_data)
+    return completed_response_with_logs(logs, {"result": to_delete_data})
+
+
 def start(cc):
     cc.register(
         "RESOURCE_MANAGER_claim_resource",
@@ -1845,4 +1855,19 @@ def start(cc):
             "outputKeys": [],
         },
         query_recently_active_resources,
+    )
+
+    cc.register(
+        "RESOURCE_MANAGER_return_status_to_delete",
+        {
+            "name": "RESOURCE_MANAGER_return_status_to_delete",
+            "description": '{"description": "": [""]}',
+            "retryCount": 0,
+            "timeoutPolicy": "TIME_OUT_WF",
+            "retryLogic": "FIXED",
+            "retryDelaySeconds": 0,
+            "inputKeys": [""],
+            "outputKeys": [],
+        },
+        return_status_to_delete,
     )
