@@ -1,4 +1,5 @@
 """This module contains helper functions and objects for logging."""
+
 import io
 import logging
 

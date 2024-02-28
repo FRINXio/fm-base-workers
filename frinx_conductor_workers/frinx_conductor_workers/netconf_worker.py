@@ -102,9 +102,9 @@ def execute_mount_netconf(task):
         and task["inputData"]["between-attempts-timeout-millis"] is not None
         and task["inputData"]["between-attempts-timeout-millis"] is not ""
     ):
-        mount_body["input"]["netconf"][
-            "netconf-node-topology:between-attempts-timeout-millis"
-        ] = task["inputData"]["between-attempts-timeout-millis"]
+        mount_body["input"]["netconf"]["netconf-node-topology:between-attempts-timeout-millis"] = (
+            task["inputData"]["between-attempts-timeout-millis"]
+        )
 
     if (
         "connection-timeout-millis" in task["inputData"]
