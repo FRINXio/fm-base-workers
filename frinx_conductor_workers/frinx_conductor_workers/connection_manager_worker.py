@@ -42,13 +42,11 @@ def execute_install_nodes(task):
 
     response_code, response_json = parse_response(r)
 
-    if response_code is 200:
+    if response_code in [requests.codes.no_content, requests.codes.conflict]:
         status = "COMPLETED"
 
-        for node in response_json["output"]["node-results"]:
-            if status_condition and node["status"] == "fail":
-                status = "FAILED"
-                break
+        if status_condition and response_code == requests.codes.conflict:
+            status = "FAILED"
 
         return {
             "status": status,
@@ -97,13 +95,11 @@ def execute_uninstall_nodes(task):
 
     response_code, response_json = parse_response(r)
 
-    if response_code is 200:
+    if response_code in [requests.codes.no_content, requests.codes.not_found]:
         status = "COMPLETED"
 
-        for node in response_json["output"]["node-results"]:
-            if status_condition and node["status"] == "fail":
-                status = "FAILED"
-                break
+        if status_condition and response_code == requests.codes.not_found:
+            status = "FAILED"
 
         return {
             "status": status,

@@ -267,10 +267,15 @@ def replace_config_with_oper(task):
     )
 
 
-def create_commit_request(device_list):
-    commit_body = {"input": {"target-nodes": {}}}
-    commit_body["input"]["target-nodes"]["node"] = device_list
-    return commit_body
+def create_nodes_request(device_list):
+    input_body = {"input": {"target-nodes": {}}}
+    input_body["input"]["target-nodes"]["node"] = device_list
+    return input_body
+
+
+def create_global_request():
+    input_body = {"input": {}}
+    return input_body
 
 
 def parse_devices(task, fail_on_empty=True):
@@ -297,7 +302,11 @@ def parse_devices(task, fail_on_empty=True):
     return extracted_devices
 
 
-def request_uniconfig(devices, url, uniconfig_cookies_multizone={}):
+def request_uniconfig(devices, url, uniconfig_cookies_multizone=None):
+
+    if not uniconfig_cookies_multizone:
+        uniconfig_cookies_multizone = {}
+
     responses = []
 
     original_url = url
@@ -308,7 +317,7 @@ def request_uniconfig(devices, url, uniconfig_cookies_multizone={}):
 
         r = requests.post(
             url,
-            data=json.dumps(create_commit_request(device.device_names)),
+            data=json.dumps(create_nodes_request(device.device_names)),
             cookies=uniconfig_cookies,
             **additional_uniconfig_request_params,
         )
@@ -320,10 +329,7 @@ def request_uniconfig(devices, url, uniconfig_cookies_multizone={}):
             "response_code": response_code,
             "response_body": response_json,
         }
-        if (
-            response_code == requests.codes.ok
-            and response_json["output"]["overall-status"] == "complete"
-        ):
+        if response_code in [requests.codes.ok, requests.codes.no_content]:
             responses.append(response)
         else:
             return util.failed_response(response)
@@ -331,7 +337,10 @@ def request_uniconfig(devices, url, uniconfig_cookies_multizone={}):
     return util.completed_response({"responses": responses})
 
 
-def commit_uniconfig(devices, url, uniconfig_cookies_multizone={}):
+def commit_uniconfig(devices, url, uniconfig_cookies_multizone=None):
+    if not uniconfig_cookies_multizone:
+        uniconfig_cookies_multizone = {}
+
     responses = []
 
     original_url = url
@@ -342,7 +351,7 @@ def commit_uniconfig(devices, url, uniconfig_cookies_multizone={}):
 
         r = requests.post(
             url,
-            data=json.dumps(create_commit_request(device.device_names)),
+            data=json.dumps(create_global_request()),
             cookies=uniconfig_cookies,
             **additional_uniconfig_request_params,
         )
@@ -355,10 +364,7 @@ def commit_uniconfig(devices, url, uniconfig_cookies_multizone={}):
             "response_body": response_body,
         }
 
-        if (
-            response_code == requests.codes.ok
-            and response_body["output"]["overall-status"] == "complete"
-        ):
+        if response_code in [requests.codes.ok, requests.codes.no_content]:
             responses.append(response)
 
         else:
@@ -366,11 +372,13 @@ def commit_uniconfig(devices, url, uniconfig_cookies_multizone={}):
             # pass it to the user.
             error_messages = {}
             try:
-                nodes = response_body["output"]["node-results"]["node-result"]
+                errors = response_body["errors"]["error"]
 
-                for node in nodes:
-                    if node.get("error-message"):
-                        error_messages.update({node["node-id"]: node["error-message"]})
+                for error in errors:
+                    if error.get("error-message"):
+                        error_messages.update(
+                            {error["error-info"]["node-id"]: error["error-message"]}
+                        )
 
             except KeyError:
                 error_messages["uncaught_error"] = response
@@ -719,7 +727,7 @@ def revert_tx_internal(uniconfig_cluster, tx_id, uniconfig_cookies):
         **additional_uniconfig_request_params,
     )
 
-    if response.status_code != requests.codes.ok:
+    if response.status_code != requests.codes.no_content:
         response_body = response.content.decode("utf8")
         response_code = response.status_code
         # return_logs.error(

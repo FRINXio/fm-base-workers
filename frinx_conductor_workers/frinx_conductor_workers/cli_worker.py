@@ -80,14 +80,7 @@ def execute_mount_cli(task):
     )
     response_code, response_json = parse_response(r)
 
-    error_message_for_already_installed = "Node has already been installed using CLI protocol"
-
-    failed = response_json.get("output", {}).get("status") == "fail"
-    already_installed = (
-        response_json.get("output", {}).get("error-message") == error_message_for_already_installed
-    )
-
-    if not failed or already_installed:
+    if response_code in [requests.codes.no_content, requests.codes.conflict]:
         return {
             "status": "COMPLETED",
             "output": {

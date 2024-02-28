@@ -83,6 +83,19 @@ alarms_response = {
     }
 }
 
+netconf_node_already_installed = {
+    "errors": {
+        "error": [
+            {
+                "error-tag": "data-exists",
+                "error-info": {"node-id": "xr6", "topology-id": "protocol"},
+                "error-message": "Node has already been installed using other protocols",
+                "error-type": "application",
+            }
+        ]
+    }
+}
+
 
 class MockResponse:
     def __init__(self, content, status_code):
@@ -95,30 +108,6 @@ class MockResponse:
 
 class TestMount(unittest.TestCase):
     def test_mount_new_device(self):
-        with patch("frinx_conductor_workers.netconf_worker.requests.post") as mock:
-            mock.return_value = MockResponse(bytes(json.dumps({}), encoding="utf-8"), 201)
-            request = frinx_conductor_workers.netconf_worker.execute_mount_netconf(
-                {
-                    "inputData": {
-                        "device_id": "xr6",
-                        "host": "192.168.1.1",
-                        "port": "830",
-                        "keepalive-delay": "1000",
-                        "tcp-only": "false",
-                        "username": "name",
-                        "password": "password",
-                    }
-                }
-            )
-            self.assertEqual(request["status"], "COMPLETED")
-            self.assertEqual(
-                request["output"]["url"],
-                uniconfig_url_base + "/operations/connection-manager:install-node",
-            )
-            self.assertEqual(request["output"]["response_code"], 201)
-            self.assertEqual(request["output"]["response_body"], {})
-
-    def test_mount_existing_device(self):
         with patch("frinx_conductor_workers.netconf_worker.requests.post") as mock:
             mock.return_value = MockResponse(bytes(json.dumps({}), encoding="utf-8"), 204)
             request = frinx_conductor_workers.netconf_worker.execute_mount_netconf(
@@ -141,6 +130,32 @@ class TestMount(unittest.TestCase):
             )
             self.assertEqual(request["output"]["response_code"], 204)
             self.assertEqual(request["output"]["response_body"], {})
+
+    def test_mount_existing_device(self):
+        with patch("frinx_conductor_workers.netconf_worker.requests.post") as mock:
+            mock.return_value = MockResponse(
+                bytes(json.dumps(netconf_node_already_installed), encoding="utf-8"), 409
+            )
+            request = frinx_conductor_workers.netconf_worker.execute_mount_netconf(
+                {
+                    "inputData": {
+                        "device_id": "xr6",
+                        "host": "192.168.1.1",
+                        "port": "830",
+                        "keepalive-delay": "1000",
+                        "tcp-only": "false",
+                        "username": "name",
+                        "password": "password",
+                    }
+                }
+            )
+            self.assertEqual(request["status"], "COMPLETED")
+            self.assertEqual(
+                request["output"]["url"],
+                uniconfig_url_base + "/operations/connection-manager:install-node",
+            )
+            self.assertEqual(request["output"]["response_code"], 409)
+            self.assertEqual(request["output"]["response_body"], netconf_node_already_installed)
 
 
 class TestUnmount(unittest.TestCase):
