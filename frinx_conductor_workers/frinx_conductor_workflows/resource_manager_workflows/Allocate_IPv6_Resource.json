@@ -17,7 +17,7 @@
         "name": "decisionTask",
         "taskReferenceName": "pool_exists",
         "inputParameters": {
-          "pool_exists": "${query_pool_by_tag.output.result.data.SearchPoolsByTags.edges}"
+          "pool_exists": "${query_pool_by_tag.output.result.data.SearchPoolsByTags}"
         },
         "type": "DECISION",
         "caseExpression": "$.pool_exists.length > 0 ? 'True' : 'False'",
@@ -48,8 +48,8 @@
         "name": "LAMBDA_TASK",
         "taskReferenceName": "lambda_print_alt_id",
         "inputParameters": {
-          "address": "${query_pool_by_tag.output.result.data.SearchPoolsByTags.edges[0].node.PoolProperties.address}",
-          "prefix": "${query_pool_by_tag.output.result.data.SearchPoolsByTags.edges[0].node.PoolProperties.prefix}",
+          "address": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].PoolProperties.address}",
+          "prefix": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].PoolProperties.prefix}",
           "scriptExpression": "return {'subnetAddress': $.address, 'subnetPrefix': $.prefix}"
         },
         "type": "LAMBDA",
@@ -79,7 +79,7 @@
                 "taskReferenceName": "claim_resource_with_desired_value",
                 "type": "SIMPLE",
                 "inputParameters": {
-                "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags.edges[0].node.id}",
+                "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].id}",
                 "userInput": {"desiredValue": "${workflow.input.desired_value}"},
                 "description": "${workflow.input.description}",
                 "alternativeId": "${lambda_print_alt_id.output.result}"
@@ -92,7 +92,7 @@
                 "taskReferenceName": "claim_resource_without_desired_value",
                 "type": "SIMPLE",
                 "inputParameters": {
-                "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags.edges[0].node.id}",
+                "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].id}",
                 "description": "${workflow.input.description}",
                 "alternativeId": "${lambda_print_alt_id.output.result}"
                 }
