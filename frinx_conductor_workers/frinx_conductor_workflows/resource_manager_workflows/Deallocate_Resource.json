@@ -17,7 +17,7 @@
         "taskReferenceName": "deallocate_resource",
         "type": "SIMPLE",
         "inputParameters": {
-            "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags.edges[0].node.id}",
+            "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].id}",
             "userInput": {"address": "${workflow.input.ip_address}"}
         }
       }

@@ -15,8 +15,8 @@
             "name": "LAMBDA_TASK",
             "taskReferenceName": "lambda_print_alt_id",
             "inputParameters": {
-              "address": "${query_pool_by_tag.output.result.data.SearchPoolsByTags.edges[0].node.PoolProperties.address}",
-              "prefix": "${query_pool_by_tag.output.result.data.SearchPoolsByTags.edges[0].node.PoolProperties.prefix}",
+              "address": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].PoolProperties.address}",
+              "prefix": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].PoolProperties.prefix}",
               "scriptExpression": "return {'subnetAddress': $.address, 'subnetPrefix': $.prefix}"
             },
             "type": "LAMBDA",
@@ -34,9 +34,8 @@
             "name": "RESOURCE_MANAGER_calculate_desired_size_from_prefix",
             "taskReferenceName": "calculate_desired_size_from_prefix",
             "inputParameters": {
-              "subnet": "${query_pool_by_tag.output.result.data.SearchPoolsByTags.edges[0].node.PoolProperties.subnet}",
               "prefix": "${workflow.input.prefix}",
-              "resourceType": "${query_pool_by_tag.output.result.data.SearchPoolsByTags.edges[0].node.AllocationStrategy.Name}"
+              "resourceType": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].AllocationStrategy.Name}"
             },
             "type": "SIMPLE",
             "startDelay": 0,
@@ -78,7 +77,7 @@
                     "taskReferenceName": "decision_pool_type",
                     "caseExpression": "$.poolType.startsWith(\"ipv4_prefix\") ? 'ipv4_prefix' : $.poolType.startsWith(\"ipv6_prefix\") ? 'ipv6_prefix' : 'defaultCase';",
                     "inputParameters": {
-                        "poolType": "${query_pool_by_tag.output.result.data.SearchPoolsByTags.edges[0].node.AllocationStrategy.Name}"
+                        "poolType": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].AllocationStrategy.Name}"
                     },
                     "decisionCases": {
                         "ipv4_prefix": [
@@ -98,7 +97,7 @@
                                             "taskReferenceName": "claim_resource_ipv4_desiredValue",
                                             "type": "SIMPLE",
                                             "inputParameters": {
-                                            "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags.edges[0].node.id}",
+                                            "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].id}",
                                             "hostAddress" : "${workflow.input.subnet_ip_address}",
                                             "userInput": {"desiredSize": "${calculate_desired_size_from_prefix.output.result.data}", "desiredValue": "${workflow.input.subnet_ip_address}"},
                                             "description": "parent resource for nested pool",
@@ -112,7 +111,7 @@
                                             "taskReferenceName": "claim_resource_ipv4",
                                             "type": "SIMPLE",
                                             "inputParameters": {
-                                            "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags.edges[0].node.id}",
+                                            "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].id}",
                                             "userInput": {"desiredSize": "${calculate_desired_size_from_prefix.output.result.data}"},
                                             "description": "parent resource for nested pool",
                                             "alternativeId": "${lambda_print_alt_id.output.result}"
@@ -191,7 +190,7 @@
                                             "taskReferenceName": "claim_resource_ipv6_desiredValue",
                                             "type": "SIMPLE",
                                             "inputParameters": {
-                                            "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags.edges[0].node.id}",
+                                            "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].id}",
                                             "hostAddress" : "${workflow.input.subnet_ip_address}",
                                             "userInput": {"desiredSize": "${calculate_desired_size_from_prefix.output.result.data}", "desiredValue": "${workflow.input.subnet_ip_address}"},
                                             "description": "parent resource for nested pool",
@@ -205,7 +204,7 @@
                                             "taskReferenceName": "claim_resource_ipv6",
                                             "type": "SIMPLE",
                                             "inputParameters": {
-                                            "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags.edges[0].node.id}",
+                                            "poolId": "${query_pool_by_tag.output.result.data.SearchPoolsByTags[0].id}",
                                             "userInput": {"desiredSize": "${calculate_desired_size_from_prefix.output.result.data}"},
                                             "description": "parent resource for nested pool",
                                             "alternativeId": "${lambda_print_alt_id.output.result}"
