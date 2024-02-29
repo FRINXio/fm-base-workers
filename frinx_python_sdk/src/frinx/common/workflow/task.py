@@ -173,7 +173,12 @@ class DynamicForkTask(WorkflowTaskImpl):
     type = TaskType.FORK_JOIN_DYNAMIC
     dynamic_fork_tasks_param: str = Field(default="dynamicTasks")
     dynamic_fork_tasks_input_param_name: str = Field(default="dynamicTasksInput")
-    input_parameters: DynamicForkArraysTaskInputParameters | DynamicForkTaskInputParameters | DynamicForkArraysTaskFromDefInputParameters | DynamicForkTaskFromDefInputParameters
+    input_parameters: (
+        DynamicForkArraysTaskInputParameters
+        | DynamicForkTaskInputParameters
+        | DynamicForkArraysTaskFromDefInputParameters
+        | DynamicForkTaskFromDefInputParameters
+    )
 
 
 class ForkTask(WorkflowTaskImpl):

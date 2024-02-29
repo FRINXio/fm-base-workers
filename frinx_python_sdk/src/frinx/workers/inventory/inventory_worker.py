@@ -130,8 +130,7 @@ class Inventory(ServiceWorkersImpl):
             timeout_seconds = 3600
             response_timeout_seconds = 3600
 
-        class WorkerInput(TaskInput):
-            ...
+        class WorkerInput(TaskInput): ...
 
         class WorkerOutput(TaskOutput):
             url: str

@@ -153,9 +153,11 @@ def add_device(
                 labelIds=label_ids if type(label_ids) is not None else None,
                 vendor=vendor if type(vendor) is not None and len(vendor) > 0 else None,
                 model=model if type(model) is not None and len(model) > 0 else None,
-                deviceSize=str(device_size)
-                if type(device_size) is not None and len(device_size) > 0
-                else None,
+                deviceSize=(
+                    str(device_size)
+                    if type(device_size) is not None and len(device_size) > 0
+                    else None
+                ),
             )
         )
 

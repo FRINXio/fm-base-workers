@@ -232,8 +232,7 @@ class Uniconfig(ServiceWorkersImpl):
         class WorkerInput(TaskInput):
             uniconfig_contexts: str
 
-        class WorkerOutput(TaskOutput):
-            ...
+        class WorkerOutput(TaskOutput): ...
 
         def execute(self, task: Task) -> TaskResult:
             response = uniconfig.rollback_all_tx(**task.input_data)
