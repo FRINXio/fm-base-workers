@@ -105,9 +105,7 @@ query_claimed_resource_template = Template(
         {{ input }})
     {
         edges {
-            cursor {
-                ID
-            }
+            cursor
             node {
                 id
                 Properties
@@ -173,9 +171,7 @@ query_resource_by_alt_id_template = Template(
     query QueryResourcesByAltId($poolId: ID, $input: Map!, $first: Int, $last: Int, $after: String, $before: String) {
     QueryResourcesByAltId(input: $input, poolId: $poolId, first: $first, last: $last, after: $after, before: $before) {
         edges {
-            cursor {
-                ID
-            }
+            cursor
             node {
                 id
                 Properties
@@ -258,9 +254,7 @@ query_recently_active_resources_template = Template(
                 Name
                 } 
             }
-            cursor{
-                ID
-            }
+            cursor
         }
     }
     }
@@ -356,9 +350,7 @@ def query_claimed_resources(task, logs):
               "data": {
                 "<query_type>": {
                     edges [
-                        cursor {
-                            <ID>
-                        }
+                        cursor: "<ID>"
                         node {
                           "id": "<id>",
                           "Properties": {
@@ -1468,9 +1460,7 @@ def query_recently_active_resources(task, logs):
                                 Name
                                 }
                             }
-                            cursor{
-                                ID
-                            }
+                            cursor: "<ID>"
                         }
                     }
                 }
