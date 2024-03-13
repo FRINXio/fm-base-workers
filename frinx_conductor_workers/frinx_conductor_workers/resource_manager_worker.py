@@ -168,7 +168,7 @@ query_capacity_template = Template(
 
 query_resource_by_alt_id_template = Template(
     """
-    query QueryResourcesByAltId($poolId: ID, $input: Map!, $first: Int, $last: Int, $after: String, $before: String) {
+    query QueryResourcesByAltId($poolId: ID, $input: Map!, $first: Int, $last: Int, $after: Cursor, $before: Cursor) {
     QueryResourcesByAltId(input: $input, poolId: $poolId, first: $first, last: $last, after: $after, before: $before) {
         edges {
             cursor
